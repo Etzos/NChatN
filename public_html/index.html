@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>Nowhere Else and Beyond - Chat</title>
+<!--<link href="normal.css" rel="stylesheet" type="text/css">-->
+<link href='chat.css' rel='stylesheet' type='type/css'>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="chat.js"></script> 
+
+<script type="text/javascript">
+	// Handle keydown events
+	// Sending chat
+	// Receiveing chat
+	// Getting online list
+	// /who
+	// /help
+	// /report
+	// /away
+	// Get chat speed
+	// Check for invasions
+	// Smiley box
+	// (Server change needed) Turn chat smileys into images
+	// Initial pop
+	// (Server change needed) Server side commands implements client-side
+</script>
+
+</head>
+
+<body style="background-color: black;">
+
+	<div id="headerContainer">
+		[<a href="#" onClick="toggleHelp(); return false;">Commands</a>]
+		<div id="chatHelp">
+			To chat with other players, simply enter your message and press
+			enter! <br>
+			<br> Chat supports the following commands:
+			<table cellspacing="0" cellpadding="2" border="0">
+				<tr>
+					<td class="bolden">/look</td>
+					<td style="width: 130px;">&lt;username&gt;</td>
+					<td>Look at a player in chat.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/kick</td>
+					<td>&lt;username&gt;</td>
+					<td>Kick another player.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/who</td>
+					<td>&lt;username&gt;</td>
+					<td>See the player"s stat card.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/me</td>
+					<td>&lt;username&gt; &lt;action&gt;</td>
+					<td>Do something as yourself in chat.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/msg</td>
+					<td>&lt;username&gt; &lt;message&gt;</td>
+					<td>Whisper to someone in chat privately.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/r</td>
+					<td>&lt;username&gt; &lt;reply&gt;</td>
+					<td>Reply to a player"s whisper in private.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/online</td>
+					<td>&lt;username&gt;</td>
+					<td>List online players.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/hug</td>
+					<td>&lt;username&gt;</td>
+					<td>Hug another player.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/store</td>
+					<td>&lt;username&gt; &lt;message&gt;</td>
+					<td>Store a message for a player. The player will see it when
+						he/she opens chat. This is displayed publically.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/private</td>
+					<td>&lt;username&gt; &lt;message&gt;</td>
+					<td>Does the same thing as <span class="bolden">/store</span>,
+						but will be displayed in private.
+					</td>
+				</tr>
+				<tr>
+					<td class="bolden">/help</td>
+					<td></td>
+					<td>Request help. Have you tried checking the Wiki first?</td>
+				</tr>
+				<tr>
+					<td class="bolden">/yawn</td>
+					<td></td>
+					<td>Yawn.</td>
+				</tr>
+				<tr>
+					<td class="bolden">/afk</td>
+					<td></td>
+					<td>Go afk (away from keyboard).</td>
+				</tr>
+				<tr>
+					<td class="bolden">/away</td>
+					<td></td>
+					<td>Does the same as <span class="bolden">/afk</span>.
+					</td>
+				</tr>
+				<tr>
+					<td class="bolden">/report</td>
+					<td></td>
+					<td>Send a report to the admins about a player that is misbehaving in chat.
+					</td>
+				</tr>
+			</table>
+			<br> If the username contains a space replace it with an
+			underscore (_).<br> For example, the name 'Black Orchid' would
+			become 'Black_Orchid'.
+
+			<div class="centered">
+				[<a href="#" onClick="toggleHelp(); return false;">Close</a>]
+			</div>
+		</div>
+
+		<div id="invasions"></div> <!-- TODO! -->
+		
+		<div id="speedIndicator"></div> <!-- TODO! -->
+
+        <form name="channelAdd" onSubmit="return false;" method="GET" action="">
+			<!-- Yeah, GET probably isn"t the best, but whatever -->
+			<select id="channel">
+				<!-- @TODO: This part needs to be generated on page load -->
+				<option value="4">Big Island</option>
+				<option value="0">Lodge</option>
+				<option value="1">Newbie</option>
+				<option value="6">Trade channel</option>
+			</select>
+		</form>
+
+		<div id="quickCommands">[Away] [Leave]</div>
+	</div>
+
+	<div id="channelContainer">
+	<div class="relDiv">
+		<div id="onlineListContainer">
+		<div class="relDiv">
+			<div class="channelHeader">Players In Channel</div>
+			<div id="onlineList">
+				Blah
+			</div>
+			<div id="onlineSelectContainer">
+				<select>
+					<option value="*">-- To All --</option>
+					<option value="Etzos">Etzos</option>
+				</select>
+			</div>
+		</div>
+		</div>
+		<div id="chatContainer">
+		<div class="relDiv">
+			<div class="channelHeader">Messages</div>
+			<div id="chat">
+				Blah indeed
+			</div>
+			<div id="chatMessageContainer">
+				<form onSubmit="sendMessage(); return false;" action="">
+					<input type="text" >
+				</form>
+			</div>
+		</div>
+		</div>
+	</div>
+	</div>
+
+	<div id="tabContainer">
+		<div id="TAB0" class="chatTabDiv">
+			<a href="#" onClick="return false;">Lodge</a>
+		</div>
+	</div>
+
+    <!-- This is the ONE left over from the original chat right now -->
+	<DIV ID=help1 STYLE='position: absolute; left: 0; top: 0; width: 150px; visibility: hidden; background-color: #FFFF99; border: 1px solid #FF9900; padding: 3px; font-size: 10px;'></DIV>
+</body>
+</html>
