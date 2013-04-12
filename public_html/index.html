@@ -4,12 +4,15 @@
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 <title>Nowhere Else and Beyond - Chat</title>
 <!--<link href="normal.css" rel="stylesheet" type="text/css">-->
-<link href='chat.css' rel='stylesheet' type='type/css'>
+<link href='chat.css' rel='stylesheet' type='text/css'>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
 <script type="text/javascript" src="chat.js"></script> 
 
 <script type="text/javascript">
+    $(document).ready(function() {
+       chatRoom.init(); 
+    });
 	// Handle keydown events
 	// Sending chat
 	// Receiveing chat
@@ -154,7 +157,7 @@
 				Blah
 			</div>
 			<div id="onlineSelectContainer">
-				<select>
+				<select id="onlineSelect">
 					<option value="*">-- To All --</option>
 					<option value="Etzos">Etzos</option>
 				</select>
@@ -168,8 +171,8 @@
 				Blah indeed
 			</div>
 			<div id="chatMessageContainer">
-				<form onSubmit="sendMessage(); return false;" action="">
-					<input type="text" >
+				<form onSubmit="return false;" action="" id="chatInputForm">
+					<input type="text" id="chatInput" value="">
 				</form>
 			</div>
 		</div>
