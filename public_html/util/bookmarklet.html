@@ -5,21 +5,25 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
         <script type="text/javascript">
-            // Functions to stringify
-            function loadjQuery(copypasta, target) {
-                var elem = document.createElement('script');
-                elem.setAttribute('src', 'http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js');
-                document.getElementsByTagName('head')[0].appendChild(elem);
-                elem.addEventListener('load', function() {
-                    $(target).html(copypasta);
+            // Functions to stringify (mimimized to save space)
+            function ljq(t,txt) {
+                var d=document;
+                var e = d.createElement('script');
+                e.setAttribute('src', 'http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js');
+                d.getElementsByTagName('head')[0].appendChild(e);
+                e.addEventListener('load', function() {
+                    $(t).html(txt);
                 });
             }
             
-            function checkLocation() {
-                if(!window.location.origin.contains('www.nowhere-else.org')) {
-                    alert('This bookmarklet only runs properly on nowhere-else.org.');
+            function checkLocation(h,b) {
+                if(window.location.origin.contains('www.nowhere-else.org')) {
+                    for(var i=0;i<9999;i++) {
+                        clearInterval(i);
+                        clearTimeout(i);
+                    }
+                    ljq('body',b);ljq('head',h);
                 }
-                
             }
             
             // Actual functions
@@ -69,11 +73,11 @@
                 var $cs = $($('#chatStore')[0].contentWindow.document);
                 var head = $cs.find('head').html();
                 var body = $cs.find('body').html();
-                var str = clearSpace(checkLocation.toString())+'checkLocation();';
+                var str = clearSpace(ljq.toString());
                     str += 'var head = \''+esc(head)+'\';';
                     str += 'var body = \''+esc(body)+'\';';
-                    str += clearSpace(loadjQuery.toString());
-                    str += 'loadjQuery(body, "body"); loadjQuery(head, "head");';
+                    str += clearSpace(checkLocation.toString());
+                    str += 'checkLocation(head, body);';
                 $('#bookpart').attr('href', 'javascript: '+str).show();
             }
         </script>
@@ -84,10 +88,11 @@
             - Load the bookmarklet
             - Bookmark the link
             - Load the bookmarklet on a Nowhere-Else and Beyond page
+            NOTE: Although I haven't tested this in IE, I don't think it will work due to a character limit it has for bookmarks. Sorry.
         </pre>
         <a href="javascript:loadFrame();">Load bookmarklet.</a><br>
         <a href='#' id='bookpart' style='display: none;'>Load NChatN</a>
         <br>
-        <iframe src='../chat.html' id='chatStore' style='display: none;'>
+        <iframe src='../chat.html' id='chatStore' style='display: none;'></iframe>
     </body>
 </html>
