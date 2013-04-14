@@ -55,30 +55,55 @@ var chatRoom = (function(window) {
     
     function getMessage() {
         // TODO: PreReceive Hook
-        console.log('Running');
         // Technically, this should be called once per channel, since I'm testing right now, we're just checking the Lodge
         var chan = channels[0];
         
-        $.get(
-            receiveURL,
-            'CHANNEL=0&RND='+_getTime()+'&ID='+chan.lastId,
-            function(result) {
+        $.ajax({
+            url: receiveURL,
+            data: 'CHANNEL=0&RND='+_getTime()+'&ID='+chan.lastId,
+            type: 'GET',
+            context: this, // Check to see what this actually does. You may be better off creating a special object for this
+            success: function(result) {
                 if(result === '')
                     return;
                 
                 // TODO: Determine how to know which channel to update (perhaps give it chan as its environment?)
-                var chan = channels[0];
+                //var chan = channels[0];
+                console.log(chan);
                 
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
                 chan.lastId = last;
                 
                 var msg = result.substring(splitLoc+1, result.length);
-                
+                   
                 $chatContainer.append(msg);
                 $chatContainer[0].scrollTop = $chatContainer[0].scrollHeight;
             }
-        );
+        })
+        .fail(function() {
+            // TODO
+        });
+//        $.get(
+//            receiveURL,
+//            'CHANNEL=0&RND='+_getTime()+'&ID='+chan.lastId,
+//            function(result) {
+//                if(result === '')
+//                    return;
+//                
+//                // TODO: Determine how to know which channel to update (perhaps give it chan as its environment?)
+//                var chan = channels[0];
+//                
+//                var splitLoc = result.indexOf('\n');
+//                var last = parseInt(result.substring(0, splitLoc));
+//                chan.lastId = last;
+//                
+//                var msg = result.substring(splitLoc+1, result.length);
+//                   
+//                $chatContainer.append(msg);
+//                $chatContainer[0].scrollTop = $chatContainer[0].scrollHeight;
+//            }
+//        );
         // TODO: Check for failure, and just about every other possible result
         
         // TODO: PostReceive Hook
