@@ -18,7 +18,7 @@ var chatRoom = (function(window) {
         receiveURL = 'lastchat.php',
         onlineURL = 'online.php';
     
-    var channels = new Array(),     // Contains all of the channels
+    var channels = new Array(),     // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
         instance;                   // 
         
@@ -69,12 +69,14 @@ var chatRoom = (function(window) {
                 
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
-                chan.lastId = last;
+                if(last !== chan.lastId) {
+                    chan.lastId = last;
                 
-                var msg = result.substring(splitLoc+1, result.length);
-                   
-                $chatContainer.append(msg);
-                $chatContainer[0].scrollTop = $chatContainer[0].scrollHeight;
+                    var msg = result.substring(splitLoc+1, result.length);
+
+                    $chatContainer.append(msg);
+                    $chatContainer[0].scrollTop = $chatContainer[0].scrollHeight;
+                }
             }
         })
         .fail(function() {
