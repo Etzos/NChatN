@@ -73,9 +73,16 @@ var chatRoom = (function(window) {
                     chan.lastId = last;
                 
                     var msg = result.substring(splitLoc+1, result.length);
-
-                    $chatContainer.append(msg);
-                    $chatContainer[0].scrollTop = $chatContainer[0].scrollHeight;
+                    
+                    var $cc = $('#chat-window-'+selectedChannel);
+                    var cc = $cc[0];
+                    
+                    if(cc.scrollHeight - $cc.scrollTop() === $cc.outerHeight()) {
+                        $cc.append(msg);
+                        cc.scrollTop = cc.scrollHeight;
+                    } else {
+                        $cc.append(msg);
+                    }
                 }
             }
         })
@@ -87,7 +94,74 @@ var chatRoom = (function(window) {
         // TODO: PostReceive Hook
     }
     
-        function init() {
+    function getOnline() {
+        var chan = channels[0];
+        
+        $.ajax({
+            url: onlineURL,
+            data: 'CHANNEL='+chan.id+'&CMD=REFRESH&LASTCRC='+chan.playerHash+'&RND='+_getTime(),
+            type: 'GET',
+            context: this,
+            success: function(result) {
+                var resParts = result.split('---***---');
+                if(resParts.length !== 3)
+                    return;
+                
+                chan.playerHash = resParts[0];
+                var onlineList = resParts[1];
+                var onlinePayload = resParts[2];
+                
+                // For now, I'm just dumping this in as-is
+                $('#online-window-'+selectedChannel).html(onlinePayload);
+                
+            }
+        });
+    }
+        
+    /**
+     * Creates the various HTML elements for the given channel ID
+     * @param chanID The ID of the channel
+     * @param chanName The name of the channel
+     */
+    function _createChannelElem(chanID, chanName) {
+        // Create chat window
+        $('<div></div>', {
+            'id': 'chat-window-'+chanID,
+            'class': 'chatWindow inactive'
+        }).appendTo($chatContainer);
+        
+        // Create online window
+        $('<div></div>', {
+            'id': 'online-window-'+chanID,
+            'class': 'onlineWindow inactive'
+        }).appendTo($onlineContainer);
+        
+        // Add tab
+        $('<div></div>', {
+            'id': 'chat-tab-'+chanID,
+            'class': 'chatTabDiv'
+        })
+        .appendTo($tabContainer)
+        .append($('<a>'+chanName+'</a>', {
+            href: '#',
+            on: {
+                click: function() {
+                    chatRoom.selectChannel(chanID);
+                    return false;
+                }
+            }
+        }));
+    }
+    
+    function _selectChannelElem(chanID) {
+        $('#chat-window-'+selectedChannel).hide();
+        $('#online-window-'+selectedChannel).hide();
+        
+        $('#chat-window-'+chanID).show();
+        $('#online-window-'+chanID).show();
+    }
+    
+    function init() {
         // Make sure there is only one
         if(instance === this)
             return;
@@ -95,10 +169,11 @@ var chatRoom = (function(window) {
         
         channels.push({
             'id': 0,                // Server ID of the channel
-            'name': 'Lounge',       // User-friendly name of the channel
+            'name': 'Lodge',       // User-friendly name of the channel
             'lastId': 0,            // The ID of the last message sent
             'input': '',            // Contents of the text input (used when switching active channel)
             'players': new Array(), // List of players currently in this channel
+            'playerHash': '',       // Last hash sent by the server for the online players
             'pm': -1,               // The ID of the selected player to pm in this chanel
             'newMessage': false     // Whether there are new unread messages or not
         });
@@ -108,6 +183,9 @@ var chatRoom = (function(window) {
         $onlineContainer = $('#onlineList');
         $chatContainer = $('#chat');
         $pmSelect = $('#onlineSelect');
+        
+        _createChannelElem(selectedChannel, channels[selectedChannel].name);
+        _selectChannelElem(selectedChannel);
         
         // Keybinding
         // Input Enter key pressed
@@ -127,12 +205,24 @@ var chatRoom = (function(window) {
            sendChat(); 
         });
         
+        // Timers (Times are default from NEaB)
         // Start Chat Timer
+        getMessage();
+        getOnline();
         var chatHeartBeat = setInterval(getMessage, 4000);
+        // Start Online Timer
+        var onlineHeartBeat = setInterval(getOnline, 16000);
+        
     }
     
+    /**
+     * Returns the current datetime as a UTC string
+     * 
+     * This is used as the random value in the queries (as far as I can tell)
+     * @returns The escaped time
+     */
     function _getTime() {
-        return escape(new Date().toGMTString());
+        return escape(new Date().toUTCString());
     }
     
     var public = {
@@ -145,15 +235,21 @@ var chatRoom = (function(window) {
         'leaveChannel': function() {
             
         },
-        'selectChannel': function() {
-            
+        'selectChannel': function(id) {
+            _selectChannelElem(id);
+        },
+        'createChan': function(id, name) {
+            _createChannelElem(id, name);
         }
     };
     
     return public;
 })(window);
 
-// Ancillary functions
+// -- Ancillary functions -- //
+/**
+ * Toggles the visibility of the help menu
+ */
 function toggleHelp() {
     $('#chatHelp').toggle();
 }

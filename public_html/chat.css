@@ -30,6 +30,9 @@ body {
 	height: 19px;
 	color: #FFFFFF;
 	text-decoration: none;
+    float: left;
+    margin-left: 2px;
+    padding-left: 2px;
 }
 
 .chatTabDiv a:visited {
@@ -181,4 +184,27 @@ body {
 	bottom: 27px;
 	width: 100%;
 	background-color: white;	
+}
+
+.chatWindow {
+    height: 100%;
+    width: 100%;
+    
+    overflow: auto;
+}
+
+.onlineWindow {
+    height: 100%;
+    width: 100%;
+    
+    overflow: auto;
+}
+
+.inactive {
+    display: none;
+}
+
+/* This is to fix a random problem that occurs when this is loaded using the bookmarklet */
+.quickFix {
+    top: -14px;
 }
