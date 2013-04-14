@@ -5,10 +5,12 @@ This project was started to fill a need for a better chat client on NEaB
 Installing/Running
 ------------------
 Installing and running this client is a bit troublesome at the moment.
-At the time of writing this document I was able to accomplish a
-successful test. However doing so successfully requires some coercion of
-the way browsers are meant to behave. Hopefully the next few commits will
-include a fix.
+I have provided a page called bookmarklet.html in the util/ directory.
+That file needs to be put on a web server and opened in a browser. Be 
+careful that you do that instead of just running it as a file. Otherwise,
+you *will* run into issues! From there, just do what it says on screen.
+You will have to modify chat.html to point to web-accessible version of
+chat.css and chat.js in order for it to run properly.
 
 License
 -------

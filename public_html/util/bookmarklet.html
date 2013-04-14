@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>NChatN Bookmarklet</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            // Functions to stringify
+            function loadjQuery(copypasta, target) {
+                var elem = document.createElement('script');
+                elem.setAttribute('src', 'http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js');
+                document.getElementsByTagName('head')[0].appendChild(elem);
+                elem.addEventListener('load', function() {
+                    $(target).html(copypasta);
+                });
+            }
+            
+            function checkLocation() {
+                if(!window.location.origin.contains('www.nowhere-else.org')) {
+                    alert('This bookmarklet only runs properly on nowhere-else.org.');
+                }
+                
+            }
+            
+            // Actual functions
+            function esc(str) {
+                str = str.replace(/\n/g, '\n');
+                str = str.replace(/\\/g, '\\\\');
+                str = str.replace(/\'/g, '\\\'');
+                str = str.replace(/\"/g, '\\"');
+                return str;
+            }
+            
+            function clearSpace(str) {
+                str = str.replace(/ [ ]+/g, ' ');
+                return str;
+            }
+            
+            function htmlify(str) {
+                return str.replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+            }
+            
+            function load() {
+                $.get('../chat.html', function(result) {
+                    var str = 'var content = \''+esc(result)+'\';' + loadjQuery;
+                    $('#bookpart').attr('href', 'javascript: '+str);
+                }, 'text')
+                .fail(function(first, text, res){
+                    console.log(res);
+                });
+            }
+            
+            function loadN() {
+                $.get('../chat.html', function(result) {
+                    $res = $(result);
+                    var head = $res.find('head').html();
+                    var body = $res.find('body').html();
+                    var str = 'var head = \''+esc(head)+'\';';
+                        str += 'var body = \''+esc(body)+'\';';
+                        str += loadjQuery;
+                    $('#bookpart').attr('href', 'javascript: '+str);
+                }, 'html')
+                .fail(function(first, text, res){
+                    console.log(res);
+                });
+            }
+            
+            function loadFrame() {
+                var $cs = $($('#chatStore')[0].contentWindow.document);
+                var head = $cs.find('head').html();
+                var body = $cs.find('body').html();
+                var str = clearSpace(checkLocation.toString())+'checkLocation();';
+                    str += 'var head = \''+esc(head)+'\';';
+                    str += 'var body = \''+esc(body)+'\';';
+                    str += clearSpace(loadjQuery.toString());
+                    str += 'loadjQuery(body, "body"); loadjQuery(head, "head");';
+                $('#bookpart').attr('href', 'javascript: '+str).show();
+            }
+        </script>
+    </head>
+    <body>
+        <pre>
+            Steps:
+            - Load the bookmarklet
+            - Bookmark the link
+            - Load the bookmarklet on a Nowhere-Else and Beyond page
+        </pre>
+        <a href="javascript:loadFrame();">Load bookmarklet.</a><br>
+        <a href='#' id='bookpart' style='display: none;'>Load NChatN</a>
+        <br>
+        <iframe src='../chat.html' id='chatStore' style='display: none;'>
+    </body>
+</html>
