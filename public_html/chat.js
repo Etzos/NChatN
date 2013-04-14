@@ -67,10 +67,6 @@ var chatRoom = (function(window) {
                 if(result === '')
                     return;
                 
-                // TODO: Determine how to know which channel to update (perhaps give it chan as its environment?)
-                //var chan = channels[0];
-                console.log(chan);
-                
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
                 chan.lastId = last;
@@ -84,26 +80,6 @@ var chatRoom = (function(window) {
         .fail(function() {
             // TODO
         });
-//        $.get(
-//            receiveURL,
-//            'CHANNEL=0&RND='+_getTime()+'&ID='+chan.lastId,
-//            function(result) {
-//                if(result === '')
-//                    return;
-//                
-//                // TODO: Determine how to know which channel to update (perhaps give it chan as its environment?)
-//                var chan = channels[0];
-//                
-//                var splitLoc = result.indexOf('\n');
-//                var last = parseInt(result.substring(0, splitLoc));
-//                chan.lastId = last;
-//                
-//                var msg = result.substring(splitLoc+1, result.length);
-//                   
-//                $chatContainer.append(msg);
-//                $chatContainer[0].scrollTop = $chatContainer[0].scrollHeight;
-//            }
-//        );
         // TODO: Check for failure, and just about every other possible result
         
         // TODO: PostReceive Hook
