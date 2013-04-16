@@ -6,7 +6,6 @@ For Feature Parity
 
 - Add tab name completion
 - Start calculating the chat response speed
-- Add the smiley box
 - Start evaluating the various scripts that can be sent through chat 
   - Despite being a bad idea, we don't want closing a window to fail
 - Check for invasions
