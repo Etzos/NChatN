@@ -223,7 +223,7 @@ img {
     
     border: 1px solid black;
     padding: 2px;
-    
+    background-color: white;
     
     display: none;
 }
@@ -261,6 +261,6 @@ img {
 }
 
 /* This is to fix a random problem that occurs when this is loaded using the bookmarklet */
-.quickFix {
+/*.quickFix {
     top: -14px;
-}
+}*/

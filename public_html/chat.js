@@ -30,7 +30,8 @@ var chatRoom = (function(window) {
         $tabContainer,              // The container for chat tabs
         $onlineContainer,           // The container for online players
         $chatContainer,             // The container for chat
-        $pmSelect;                  // Select for who to chat with (*, or player names)
+        $pmSelect,                  // Select for who to chat with (*, or player names)
+        $channelSelect;             // Select to open new channels
     
     function sendChat() {
         // TODO: PreSend Hook
@@ -57,14 +58,13 @@ var chatRoom = (function(window) {
         // TODO: PostSend Hook
     }
     
-    function getMessage() {
+    function getMessage(chanId) {
         // TODO: PreReceive Hook
-        // Technically, this should be called once per channel, since I'm testing right now, we're just checking the Lodge
-        var chan = channels[0];
+        var chan = channels[chanId];
         
         $.ajax({
             url: URL.receive,
-            data: 'CHANNEL=0&RND='+_getTime()+'&ID='+chan.lastId,
+            data: 'CHANNEL='+chan.id+'&RND='+_getTime()+'&ID='+chan.lastId,
             type: 'GET',
             context: this, // Check to see what this actually does. You may be better off creating a special object for this
             success: function(result) {
@@ -79,7 +79,7 @@ var chatRoom = (function(window) {
                     var msg = result.substring(splitLoc+1, result.length);
                     
                     // TODO: Select the actual channel
-                    _insertMessage(selectedChannel, msg);
+                    _insertMessage(chanId, msg);
                 }
             }
         })
@@ -91,8 +91,8 @@ var chatRoom = (function(window) {
         // TODO: PostReceive Hook
     }
     
-    function getOnline() {
-        var chan = channels[0];
+    function getOnline(chanId) {
+        var chan = channels[chanId];
         
         $.ajax({
             url: URL.online,
@@ -114,12 +114,12 @@ var chatRoom = (function(window) {
                     // new - old = enter
                     var entered = _arrSub(newPlayerList, chan.players);
                     for(var i=0; i<entered.length; i++) {
-                        _insertMessage(selectedChannel, _formatSystemMsg('-- '+entered[i]+' joins --'));
+                        _insertMessage(chanId, _formatSystemMsg('-- '+entered[i]+' joins --'));
                     }
                     // old - new = leave
                     var left = _arrSub(chan.players, newPlayerList);
                     for(var i=0; i<left.length; i++) {
-                        _insertMessage(selectedChannel, _formatSystemMsg('-- '+left[i]+' departs --'));
+                        _insertMessage(chanId, _formatSystemMsg('-- '+left[i]+' departs --'));
                     }
                 
                 }
@@ -127,16 +127,28 @@ var chatRoom = (function(window) {
                 chan.players = newPlayerList;
                 
                 // Update the list only if the current channel is the selected one
-                if(chan.id === channels[selectedChannel].id) { // TODO: Update this
+                if(chan.id === channels[selectedChannel].id) {
                     _updatePlayerDropdown();
                 }
                 
                 // For now, I'm just dumping this in as-is
-                $('#online-window-'+selectedChannel).html(onlinePayload);
+                $('#online-window-'+chanId).html(onlinePayload);
                 
                 chan.playerHash = resParts[0];
             }
         });
+    }
+    
+    function getAllOnline() {
+        for(var i=0; i<channels.length; i++) {
+            getOnline(i);
+        }
+    }
+    
+    function getAllMessages() {
+        for(var i=0; i<channels.length; i++) {
+            getMessage(i);
+        }
     }
     
     function _formatSystemMsg(message) {
@@ -166,6 +178,8 @@ var chatRoom = (function(window) {
         } else {
             $cc.append(message);
         }
+        // TODO: If channel is not the selected one check to see if it *WAS* at the bottom
+        //       This is broken because elements with display: none don't have measurable attributes
     }
     
     function _genOption(id, text) {
@@ -214,7 +228,10 @@ var chatRoom = (function(window) {
                     chatRoom.selectChannel(chanId);
                     return false;
                 })
-            );
+            ).click(function() {
+                    chatRoom.selectChannel(chanId);
+                    return false;
+            });
         }
     }
     
@@ -224,6 +241,7 @@ var chatRoom = (function(window) {
         
         $('#chat-window-'+chanId).show();
         $('#online-window-'+chanId).show();
+        selectedChannel = chanId;
     }
     
     /**
@@ -234,6 +252,79 @@ var chatRoom = (function(window) {
      */
     function _getTime() {
         return escape(new Date().toUTCString());
+    }
+    
+    function _getIdFromServerId(chanServerId) {
+        for(var i=0; i<channels.length; i++) {
+            if(channels[i].id == chanServerId)
+                return i;
+        }
+        return -1;
+    }
+    
+    function _insertNewChannel(chanServerId, name) {
+        channels.push({
+            'id': chanServerId,
+            'name': name,
+            'lastId': 0,
+            'input': '',
+            'players': new Array(),
+            'playerHash': '',
+            'pm': '*',
+            'newMessage': false
+        });
+    }
+    
+    function inChannel(chanServerId) {
+        for(var i=0; i<channels.length; i++) {
+            if(channels[i].id == chanServerId)
+                return true;
+        }
+        return false;
+    }
+    
+    function joinChannel(chanServerId, name) {
+        if(inChannel(chanServerId)) {
+            var localId = _getIdFromServerId(chanServerId);
+            switchChannel(localId);
+            return;
+        }
+        _insertNewChannel(chanServerId, name);
+        var localId = _getIdFromServerId(chanServerId);
+        _createChannelElem(localId, name);
+        getMessage(localId);
+        getOnline(localId);
+        switchChannel(localId);
+    }
+    
+    function switchChannel(chanId) {
+        // Switch the input over
+        var chan = channels[selectedChannel];
+        chan.input = $input.val();
+        chan.pm = $channelSelect.children(':selected').val();
+        
+        _selectChannelElem(chanId);
+        _updatePlayerDropdown();
+        
+        var newChan = channels[chanId];
+        $input.val(newChan.input);
+        // TODO: Change the selection
+    }
+    
+    function removeChannel(chanId) {
+        if(chanId === 0) 
+            return; // No leaving Lodge!
+        
+        var chan = channels[chanId];
+        // If selected channel, move to another open chat
+        if(selectedChannel === chanId) {
+            switchChannel(0);
+        }
+        
+        // Clear it from the array
+        // Clear the chat
+        // Clear the online
+        // Clear the tag
     }
         
     function init() {
@@ -258,6 +349,7 @@ var chatRoom = (function(window) {
         $onlineContainer = $('#onlineList');
         $chatContainer = $('#chat');
         $pmSelect = $('#onlineSelect');
+        $channelSelect = $('#channel');
         
         _createChannelElem(selectedChannel, channels[selectedChannel].name);
         _selectChannelElem(selectedChannel);
@@ -282,14 +374,22 @@ var chatRoom = (function(window) {
         $('#chatInputForm').submit(function() {
            sendChat(); 
         });
+        $channelSelect.change(function() {
+           var $chanSel = $channelSelect.children(':selected');
+           var chanServerId = $chanSel.val();
+           if(chanServerId === '')
+               return;
+           
+           joinChannel(chanServerId, $chanSel.html());
+        });
         
         // Timers (Times are default from NEaB)
         // Start Chat Timer
-        getMessage();
-        getOnline();
-        var chatHeartBeat = setInterval(getMessage, 4000);
+        getAllMessages();
+        getAllOnline();
+        var chatHeartBeat = setInterval(getAllMessages, 4000);
         // Start Online Timer
-        var onlineHeartBeat = setInterval(getOnline, 16000);
+        var onlineHeartBeat = setInterval(getAllOnline, 16000);
         
     }
     
@@ -297,14 +397,14 @@ var chatRoom = (function(window) {
         'init': function() {
             init();
         },
-        'joinChannel': function() {
-            
+        'joinChannel': function(chanServerId, name) {
+            joinChannel(chanServerId, name);
         },
-        'leaveChannel': function() {
-            
+        'leaveChannel': function(chanId) {
+            removeChannel(chanId);
         },
         'selectChannel': function(id) {
-            _selectChannelElem(id);
+            switchChannel(id);
         },
         'insertInputText': function(text) {
             $input.val($input.val() + text);

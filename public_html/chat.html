@@ -10,10 +10,13 @@
 <script type="text/javascript" src="chat.js"></script> 
 
 <script type="text/javascript">
-    $(document).ready(function() {
+    function initAll() {
        chatRoom.init();
        tooltip.init();
-       smileyManager.drawTable('smileyContainer');
+       smileyManager.drawTable('smileyContainer'); 
+    }
+    $(document).ready(function() {
+       //initAll();
        // http://garth.web.nowhere-else.org/web/Uploads/
     });
 </script>
@@ -126,6 +129,7 @@
         <form name="channelAdd" onSubmit="return false;" method="GET" action="">
 			<!-- Yeah, GET probably isn"t the best, but whatever -->
 			<select id="channel">
+                <option value=''>-- Channels --</option>
 				<!-- @TODO: This part needs to be generated on page load -->
 				<option value="4">Big Island</option>
 				<option value="0">Lodge</option>
