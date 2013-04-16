@@ -254,6 +254,24 @@ var chatRoom = (function(window) {
         return escape(new Date().toUTCString());
     }
     
+    function _matchPlayers(fragment) {
+        var players = channels[selectedChannel].players;
+        var matches = new Array();
+        
+        fragment = fragment.toLowerCase();
+        
+        for(var i=0; i<players.length; i++) {
+            var player = players[i];
+            if(player.toLowerCase().indexOf(fragment) === 0)
+                matches.push(player);
+        }
+        
+        if(matches.length === 1)
+            return matches[0];
+        
+        return "";
+    }
+    
     function _getIdFromServerId(chanServerId) {
         for(var i=0; i<channels.length; i++) {
             if(channels[i].id == chanServerId)
@@ -358,16 +376,34 @@ var chatRoom = (function(window) {
         // Input Enter key pressed
         $(window).keypress(function(e) {
             var key = e.keyCode ? e.keyCode : e.which;
-           if(key === 13) { // Enter key
-               // Check focus
-               var $focus = $(this).filter(':focus');
-               if($focus.length >= 1) {
-                   var id = $focus.attr('id');
-                   if($input.attr('id') === id) {
-                       $('#chatInputForm').submit();
-                   }
-               }
-           }
+            if(key === 13) { // Enter key
+                // Check focus
+                var $focus = $(this).filter(':focus');
+                if($focus.length >= 1) {
+                    var id = $focus.attr('id');
+                    if($input.attr('id') === id) {
+                        $('#chatInputForm').submit();
+                    }
+                }
+            } else if(key === 9) { // Tab Key
+                if($input.is(':focus')) {
+                    // Check for content
+                    var content = $input.val().split(' ');
+                    var last = content[content.length-1];
+                    if(last === '') {
+                        return;
+                    }
+                    var match = _matchPlayers(last);
+                    if(match !== '') {
+                        // TODO: Location aware replace (i.e. If it's the first word make it name:, if not add a space)
+                        //       However, base it on if another tab is pressed! :O
+                        $input.val($input.val().replace(/\w+$/, match));
+                        $input.focus();
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
         });
         
         // Event Handlers
