@@ -101,6 +101,8 @@ var chatRoom = (function(window) {
                     return;
                 
                 var newPlayerList = resParts[1].split('\n');
+                // Remove extra empty element added by the extra \n
+                newPlayerList.splice((newPlayerList.length-1), 1);
                 var onlinePayload = resParts[2];
                 
                 if(chan.playerHash !== '') {
