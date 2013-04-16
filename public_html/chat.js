@@ -74,15 +74,8 @@ var chatRoom = (function(window) {
                 
                     var msg = result.substring(splitLoc+1, result.length);
                     
-                    var $cc = $('#chat-window-'+selectedChannel);
-                    var cc = $cc[0];
-                    
-                    if(cc.scrollHeight - $cc.scrollTop() === $cc.outerHeight()) {
-                        $cc.append(msg);
-                        cc.scrollTop = cc.scrollHeight;
-                    } else {
-                        $cc.append(msg);
-                    }
+                    // TODO: Select the actual channel
+                    _insertMessage(selectedChannel, msg);
                 }
             }
         })
@@ -107,58 +100,135 @@ var chatRoom = (function(window) {
                 if(resParts.length !== 3)
                     return;
                 
-                chan.playerHash = resParts[0];
-                var onlineList = resParts[1];
+                var newPlayerList = resParts[1].split('\n');
                 var onlinePayload = resParts[2];
+                
+                if(chan.playerHash !== '') {
+                    // Yeah this is really slow, but it take 16 seconds anyway, what's a few more
+                    // new - old = enter
+                    var entered = _arrSub(newPlayerList, chan.players);
+                    for(var i=0; i<entered.length; i++) {
+                        _insertMessage(selectedChannel, _formatSystemMsg('-- '+entered[i]+' joins --'));
+                    }
+                    // old - new = leave
+                    var left = _arrSub(chan.players, newPlayerList);
+                    for(var i=0; i<left.length; i++) {
+                        _insertMessage(selectedChannel, _formatSystemMsg('-- '+left[i]+' departs --'));
+                    }
+                
+                }
+                
+                chan.players = newPlayerList;
+                
+                // Update the list only if the current channel is the selected one
+                if(chan.id === channels[selectedChannel].id) { // TODO: Update this
+                    _updatePlayerDropdown();
+                }
                 
                 // For now, I'm just dumping this in as-is
                 $('#online-window-'+selectedChannel).html(onlinePayload);
                 
+                chan.playerHash = resParts[0];
             }
         });
     }
-        
-    /**
-     * Creates the various HTML elements for the given channel ID
-     * @param chanID The ID of the channel
-     * @param chanName The name of the channel
-     */
-    function _createChannelElem(chanID, chanName) {
-        // Create chat window
-        $('<div></div>', {
-            'id': 'chat-window-'+chanID,
-            'class': 'chatWindow inactive'
-        }).appendTo($chatContainer);
-        
-        // Create online window
-        $('<div></div>', {
-            'id': 'online-window-'+chanID,
-            'class': 'onlineWindow inactive'
-        }).appendTo($onlineContainer);
-        
-        // Add tab
-        $('<div></div>', {
-            'id': 'chat-tab-'+chanID,
-            'class': 'chatTabDiv'
-        })
-        .appendTo($tabContainer)
-        .append($('<a>'+chanName+'</a>', {
-            href: '#',
-            on: {
-                click: function() {
-                    chatRoom.selectChannel(chanID);
-                    return false;
-                }
-            }
-        }));
+    
+    function _formatSystemMsg(message) {
+        return '<span class="systemMsg">'+message+'</span><br>';
     }
     
-    function _selectChannelElem(chanID) {
+    function _updatePlayerDropdown() {
+        var chan = channels[selectedChannel];
+        
+        var cont = _genOption('*', '-- To All --');
+        
+        for(var i=0; i<chan.players.length; i++) {
+            var safeName = chan.players[i].replace(/ /g, '_');
+            cont += _genOption(safeName, chan.players[i]);
+        }
+        
+        $pmSelect.html(cont);
+    }
+    
+    function _insertMessage(chanId, message) {
+        var $cc = $('#chat-window-'+chanId);
+        var cc = $cc[0];
+
+        if(cc.scrollHeight - $cc.scrollTop() === $cc.outerHeight()) {
+            $cc.append(message);
+            cc.scrollTop = cc.scrollHeight;
+        } else {
+            $cc.append(message);
+        }
+    }
+    
+    function _genOption(id, text) {
+        return '<option value="'+id+'">'+text+'</option>';
+    }
+    
+    function _arrSub(first, second) {
+        return $.grep(first, function(x) {
+            return $.inArray(x, second) < 0;
+        });
+    }
+    
+    /**
+     * Creates the various HTML elements for the given channel ID
+     * @param chanId The ID of the channel
+     * @param chanName The name of the channel
+     */
+    function _createChannelElem(chanId, chanName) {
+        console.log('Running!');
+        // Create chat window
+        if( $('#chat-window-'+chanId).length === 0 ) {
+            $('<div></div>', {
+                'id': 'chat-window-'+chanId,
+                'class': 'chatWindow inactive'
+            }).appendTo($chatContainer);
+        }
+        
+        // Create online window
+        if( $('#online-window-'+chanId).length === 0 ) {
+            $('<div></div>', {
+                'id': 'online-window-'+chanId,
+                'class': 'onlineWindow inactive'
+            }).appendTo($onlineContainer);
+        }
+        
+        // Add tab
+        if( $('#chat-tab-'+chanId).length === 0 ) {
+            $('<div></div>', {
+                'id': 'chat-tab-'+chanId,
+                'class': 'chatTabDiv'
+            })
+            .appendTo($tabContainer)
+            .append(
+                $('<a>'+chanName+'</a>')
+                .attr('href', '#')
+                .click(function() {
+                    chatRoom.selectChannel(chanId);
+                    return false;
+                })
+            );
+        }
+    }
+    
+    function _selectChannelElem(chanId) {
         $('#chat-window-'+selectedChannel).hide();
         $('#online-window-'+selectedChannel).hide();
         
-        $('#chat-window-'+chanID).show();
-        $('#online-window-'+chanID).show();
+        $('#chat-window-'+chanId).show();
+        $('#online-window-'+chanId).show();
+    }
+    
+    /**
+     * Returns the current datetime as a UTC string
+     * 
+     * This is used as the random value in the queries (as far as I can tell)
+     * @returns The escaped time
+     */
+    function _getTime() {
+        return escape(new Date().toUTCString());
     }
     
     function init() {
@@ -174,7 +244,7 @@ var chatRoom = (function(window) {
             'input': '',            // Contents of the text input (used when switching active channel)
             'players': new Array(), // List of players currently in this channel
             'playerHash': '',       // Last hash sent by the server for the online players
-            'pm': -1,               // The ID of the selected player to pm in this chanel
+            'pm': '*',              // The name of the selected player to pm in this chanel
             'newMessage': false     // Whether there are new unread messages or not
         });
         selectedChannel = 0;
@@ -193,9 +263,12 @@ var chatRoom = (function(window) {
             var key = e.keyCode ? e.keyCode : e.which;
            if(key === 13) { // Enter key
                // Check focus
-               var id = $(this).filter(':focus')[0].getAttribute('id');
-               if($input[0].getAttribute('id') === id) {
-                   $('#chatInputForm').submit();
+               var $focus = $(this).filter(':focus');
+               if($focus.length >= 1) {
+                   var id = $focus.attr('id');
+                   if($input.attr('id') === id) {
+                       $('#chatInputForm').submit();
+                   }
                }
            }
         });
@@ -215,16 +288,6 @@ var chatRoom = (function(window) {
         
     }
     
-    /**
-     * Returns the current datetime as a UTC string
-     * 
-     * This is used as the random value in the queries (as far as I can tell)
-     * @returns The escaped time
-     */
-    function _getTime() {
-        return escape(new Date().toUTCString());
-    }
-    
     var public = {
         'init': function() {
             init();
@@ -237,9 +300,6 @@ var chatRoom = (function(window) {
         },
         'selectChannel': function(id) {
             _selectChannelElem(id);
-        },
-        'createChan': function(id, name) {
-            _createChannelElem(id, name);
         }
     };
     

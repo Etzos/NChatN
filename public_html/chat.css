@@ -204,6 +204,11 @@ body {
     display: none;
 }
 
+.systemMsg {
+    color: gray;
+    font-weight: bold;
+}
+
 /* This is to fix a random problem that occurs when this is loaded using the bookmarklet */
 .quickFix {
     top: -14px;
