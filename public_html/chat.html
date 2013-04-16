@@ -11,7 +11,9 @@
 
 <script type="text/javascript">
     $(document).ready(function() {
-       chatRoom.init(); 
+       chatRoom.init();
+       smileyManager.drawTable('smileyContainer');
+       // http://garth.web.nowhere-else.org/web/Uploads/
     });
 </script>
 
@@ -145,7 +147,6 @@
 			<div id="onlineSelectContainer">
 				<select id="onlineSelect">
 					<option value="*">-- To All --</option>
-					<option value="Etzos">Etzos</option>
 				</select>
 			</div>
 		</div>
@@ -160,7 +161,9 @@
 				<form onSubmit="return false;" action="" id="chatInputForm">
 					<input type="text" id="chatInput" value="">
 				</form>
-			</div>
+                <a href='#' onClick='return false;' id='smileyLink'><img src='http://www.nowhere-else.org/smilies/0.gif' alt="Smilies"></a>
+                <div id='smileyContainer'></div>
+            </div>
 		</div>
 		</div>
 	</div>
