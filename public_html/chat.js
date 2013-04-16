@@ -525,7 +525,6 @@ var smileyManager = (function(){
             })
             .hover(function(event) {
                 tooltip.on(smiley.name, event.pageX, event.pageY);
-                console.log('Firing');
             }, function() {
                 tooltip.off(); 
             });
