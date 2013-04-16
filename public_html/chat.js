@@ -18,7 +18,8 @@ var chatRoom = (function(window) {
       'send': 'sendchat.php',
       'receive': 'lastchat.php',
       'online': 'online.php',
-      'invasion': 'check_invasions.php'
+      'invasion': 'check_invasions.php',
+      'player': 'player_info.php'
     };
         
     var channels = new Array(),     // Contains all of the (joined) channels
