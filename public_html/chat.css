@@ -229,7 +229,7 @@ img {
 }
 
 #smileyContainer a {
-    margin-right: 2px;
+    margin-right: 4px;
 }
 
 #chatMessageContainer {
@@ -243,6 +243,16 @@ img {
 #smileyLink {
     position: absolute;
     right: 2px;
+}
+
+#tooltip {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    display: none;
+    background-color: #FFFF99;
+    border: 1px solid black;
+    padding: 2px;
 }
 
 /* This is to fix a random problem that occurs when this is loaded using the bookmarklet */

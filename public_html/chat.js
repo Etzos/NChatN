@@ -383,8 +383,14 @@ var smileyManager = (function(){
         $.each(smilies, function(index, smiley) {
             var $entry = $('<a href="#"><img src="http://www.nowhere-else.org/smilies/'+smiley.id+'.gif" alt="'+smiley.name+'"></a>');
             $entry.click(function() {
-                chatRoom.insertInputText(' '+smileyManager.getSmileyText(smiley.id));
+                chatRoom.insertInputText(' '+smiley.text[0]);
                 return false;
+            })
+            .hover(function(event) {
+                tooltip.on(smiley.name, event.pageX, event.pageY);
+                console.log('Firing');
+            }, function() {
+                tooltip.off(); 
             });
             $container.append($entry);
         });
@@ -411,6 +417,39 @@ var smileyManager = (function(){
         },
         'getSmileyText': function(id) {
             return getSmileyText(id);
+        }
+    };
+})();
+
+var tooltip = (function() {
+    var $div;
+    
+    function init() {
+        $div = $('#tooltip');
+    }
+    
+    function setText(text) {
+        $div.html(text);
+    }
+    
+    function setPosition(posx, posy) {
+        $div.css({
+            'top': (posy-25), // Move above mouse
+            'left': (posx-$div.outerWidth()) // Move the tooltip to the left side
+        });
+    } 
+    
+    return {
+        'init': function() {
+            init();
+        },
+        'on': function(text, posx, posy) {
+            setText(text);
+            setPosition(posx, posy);
+            $div.show();
+        },
+        'off': function() {
+            $div.hide();
         }
     };
 })();
