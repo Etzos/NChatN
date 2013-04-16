@@ -39,7 +39,7 @@ var chatRoom = (function(window) {
             return;
         
         var chan = channels[selectedChannel];
-        var to = '*'; // TODO: Base this on chan.pm
+        var to = $pmSelect.find(':selected').val();
         var rand = _getTime();
         
         // Process text (escape and replace +)
