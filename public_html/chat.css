@@ -255,6 +255,11 @@ img {
     padding: 2px;
 }
 
+#helpLinkContainer {
+    font-weight: normal;
+    float: right;
+}
+
 /* This is to fix a random problem that occurs when this is loaded using the bookmarklet */
 .quickFix {
     top: -14px;
