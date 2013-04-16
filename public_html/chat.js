@@ -14,9 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var chatRoom = (function(window) {
-    var sendURL = 'sendchat.php',
-        receiveURL = 'lastchat.php',
-        onlineURL = 'online.php';
+    var URL = {
+      'send': 'sendchat.php',
+      'receive': 'lastchat.php',
+      'online': 'online.php',
+      'invasion': 'check_invasions.php'
+    };
     
     var channels = new Array(),     // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -46,7 +49,7 @@ var chatRoom = (function(window) {
         $input.val('');
         
         $.get(
-            sendURL,
+            URL.send,
             'CHANNEL='+chan.id+'&TO='+to+'&RND='+rand+'&TEXT='+text
         );
         // TODO: Check for failure. If there is a failure, store the message
@@ -59,7 +62,7 @@ var chatRoom = (function(window) {
         var chan = channels[0];
         
         $.ajax({
-            url: receiveURL,
+            url: URL.receive,
             data: 'CHANNEL=0&RND='+_getTime()+'&ID='+chan.lastId,
             type: 'GET',
             context: this, // Check to see what this actually does. You may be better off creating a special object for this
@@ -91,7 +94,7 @@ var chatRoom = (function(window) {
         var chan = channels[0];
         
         $.ajax({
-            url: onlineURL,
+            url: URL.online,
             data: 'CHANNEL='+chan.id+'&CMD=REFRESH&LASTCRC='+chan.playerHash+'&RND='+_getTime(),
             type: 'GET',
             context: this,
