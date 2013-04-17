@@ -216,6 +216,19 @@ var chatRoom = (function(window) {
         
         // Add tab
         if( $('#chat-tab-'+chanServerId).length === 0 ) {
+            var $del = ''; 
+            if(chanServerId !== 0) { // Only display the close option for channels that aren't Lodge
+                var $del = $('<a href="#">X</a>')
+                .click(function() {
+                    chatRoom.leaveChannel(chanServerId);
+                    return false;
+                })
+                .css({
+                    'float': 'right',
+                    'padding-right': '2px'
+                });
+            }
+            
             $('<div></div>', {
                 'id': 'chat-tab-'+chanServerId,
                 'class': 'chatTabDiv'
@@ -228,6 +241,7 @@ var chatRoom = (function(window) {
                     chatRoom.selectChannel(chanServerId);
                     return false;
                 })
+                .append($del)
             ).click(function() {
                     chatRoom.selectChannel(chanServerId);
                     return false;
@@ -236,11 +250,11 @@ var chatRoom = (function(window) {
     }
     
     function _selectChannelElem(chanServerId) {
-        $('#chat-window-'+selectedChannel).hide();
-        $('#online-window-'+selectedChannel).hide();
+//        $('#chat-window-'+selectedChannel).hide();
+//        $('#online-window-'+selectedChannel).hide();
         
-        $('#chat-window-'+chanServerId).show();
-        $('#online-window-'+chanServerId).show();
+        $('#chat-window-'+chanServerId).show().siblings().hide();
+        $('#online-window-'+chanServerId).show().siblings().hide();
         selectedChannel = _getIdFromServerId(chanServerId);
     }
     
@@ -329,20 +343,25 @@ var chatRoom = (function(window) {
         // TODO: Change the selection
     }
     
-    function removeChannel(chanId) {
-        if(chanId === 0) 
+    function removeChannel(chanServerId) {
+        if(chanServerId === 0) 
             return; // No leaving Lodge!
         
-        var chan = channels[chanId];
-        // If selected channel, move to another open chat
-        if(selectedChannel === chanId) {
+        var localId = _getIdFromServerId(chanServerId);
+        var chan = channels[localId];
+        // If selected channel, move to Lodge
+        if(selectedChannel === localId) {
             switchChannel(0);
         }
         
         // Clear it from the array
+        channels.splice(localId, 1);
         // Clear the chat
+        $('#chat-window-'+chanServerId).remove();
         // Clear the online
+        $('#online-window-'+chanServerId).remove();
         // Clear the tag
+        $('#chat-tab-'+chanServerId).remove();
     }
         
     function init() {
