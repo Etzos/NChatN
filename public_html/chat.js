@@ -436,6 +436,9 @@ var chatRoom = (function(window) {
                return;
            
            joinChannel(chanServerId, $chanSel.html());
+           
+           $channelSelect.children('option:eq(0)').prop('selected', true);
+           $chanSel.prop('selected', false);
         });
         
         // Timers (Times are default from NEaB)
