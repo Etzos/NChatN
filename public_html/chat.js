@@ -79,7 +79,7 @@ var chatRoom = (function(window) {
                     var msg = result.substring(splitLoc+1, result.length);
                     
                     // TODO: Select the actual channel
-                    _insertMessage(chanId, msg);
+                    _insertMessage(chan.id, msg);
                 }
             }
         })
@@ -114,12 +114,12 @@ var chatRoom = (function(window) {
                     // new - old = enter
                     var entered = _arrSub(newPlayerList, chan.players);
                     for(var i=0; i<entered.length; i++) {
-                        _insertMessage(chanId, _formatSystemMsg('-- '+entered[i]+' joins --'));
+                        _insertMessage(chan.id, _formatSystemMsg('-- '+entered[i]+' joins --'));
                     }
                     // old - new = leave
                     var left = _arrSub(chan.players, newPlayerList);
                     for(var i=0; i<left.length; i++) {
-                        _insertMessage(chanId, _formatSystemMsg('-- '+left[i]+' departs --'));
+                        _insertMessage(chan.id, _formatSystemMsg('-- '+left[i]+' departs --'));
                     }
                 
                 }
@@ -168,8 +168,8 @@ var chatRoom = (function(window) {
         $pmSelect.html(cont);
     }
     
-    function _insertMessage(chanId, message) {
-        var $cc = $('#chat-window-'+chanId);
+    function _insertMessage(chanServerId, message) {
+        var $cc = $('#chat-window-'+chanServerId);
         var cc = $cc[0];
 
         if(cc.scrollHeight - $cc.scrollTop() === $cc.outerHeight()) {
@@ -191,33 +191,33 @@ var chatRoom = (function(window) {
             return $.inArray(x, second) < 0;
         });
     }
-    
+        
     /**
      * Creates the various HTML elements for the given channel ID
-     * @param chanId The ID of the channel
+     * @param chanServerId The server id for the channel
      * @param chanName The name of the channel
      */
-    function _createChannelElem(chanId, chanName) {
+    function _createChannelElem(chanServerId, chanName) {
         // Create chat window
-        if( $('#chat-window-'+chanId).length === 0 ) {
+        if( $('#chat-window-'+chanServerId).length === 0 ) {
             $('<div></div>', {
-                'id': 'chat-window-'+chanId,
+                'id': 'chat-window-'+chanServerId,
                 'class': 'chatWindow inactive'
             }).appendTo($chatContainer);
         }
         
         // Create online window
-        if( $('#online-window-'+chanId).length === 0 ) {
+        if( $('#online-window-'+chanServerId).length === 0 ) {
             $('<div></div>', {
-                'id': 'online-window-'+chanId,
+                'id': 'online-window-'+chanServerId,
                 'class': 'onlineWindow inactive'
             }).appendTo($onlineContainer);
         }
         
         // Add tab
-        if( $('#chat-tab-'+chanId).length === 0 ) {
+        if( $('#chat-tab-'+chanServerId).length === 0 ) {
             $('<div></div>', {
-                'id': 'chat-tab-'+chanId,
+                'id': 'chat-tab-'+chanServerId,
                 'class': 'chatTabDiv'
             })
             .appendTo($tabContainer)
@@ -225,23 +225,23 @@ var chatRoom = (function(window) {
                 $('<a>'+chanName+'</a>')
                 .attr('href', '#')
                 .click(function() {
-                    chatRoom.selectChannel(chanId);
+                    chatRoom.selectChannel(chanServerId);
                     return false;
                 })
             ).click(function() {
-                    chatRoom.selectChannel(chanId);
+                    chatRoom.selectChannel(chanServerId);
                     return false;
             });
         }
     }
     
-    function _selectChannelElem(chanId) {
+    function _selectChannelElem(chanServerId) {
         $('#chat-window-'+selectedChannel).hide();
         $('#online-window-'+selectedChannel).hide();
         
-        $('#chat-window-'+chanId).show();
-        $('#online-window-'+chanId).show();
-        selectedChannel = chanId;
+        $('#chat-window-'+chanServerId).show();
+        $('#online-window-'+chanServerId).show();
+        selectedChannel = _getIdFromServerId(chanServerId);
     }
     
     /**
@@ -303,28 +303,28 @@ var chatRoom = (function(window) {
     
     function joinChannel(chanServerId, name) {
         if(inChannel(chanServerId)) {
-            var localId = _getIdFromServerId(chanServerId);
-            switchChannel(localId);
+            switchChannel(chanServerId);
             return;
         }
         _insertNewChannel(chanServerId, name);
         var localId = _getIdFromServerId(chanServerId);
-        _createChannelElem(localId, name);
+        _createChannelElem(chanServerId, name);
         getMessage(localId);
         getOnline(localId);
-        switchChannel(localId);
+        switchChannel(chanServerId);
     }
     
-    function switchChannel(chanId) {
+    function switchChannel(chanServerId) {
         // Switch the input over
         var chan = channels[selectedChannel];
+        
         chan.input = $input.val();
         chan.pm = $channelSelect.children(':selected').val();
         
-        _selectChannelElem(chanId);
+        _selectChannelElem(chanServerId);
         _updatePlayerDropdown();
         
-        var newChan = channels[chanId];
+        var newChan = channels[_getIdFromServerId(chanServerId)];
         $input.val(newChan.input);
         // TODO: Change the selection
     }
@@ -369,7 +369,7 @@ var chatRoom = (function(window) {
         $pmSelect = $('#onlineSelect');
         $channelSelect = $('#channel');
         
-        _createChannelElem(selectedChannel, channels[selectedChannel].name);
+        _createChannelElem(channels[selectedChannel].id, channels[selectedChannel].name);
         _selectChannelElem(selectedChannel);
         
         // Keybinding
