@@ -168,18 +168,19 @@ var chatRoom = (function(window) {
         $pmSelect.html(cont);
     }
     
+    function _isAtBottom($elem) {
+        return ( $elem.prop('scrollHeight') - $elem.scrollTop() === $elem.outerHeight() );
+    }
+    
     function _insertMessage(chanServerId, message) {
         var $cc = $('#chat-window-'+chanServerId);
-        var cc = $cc[0];
 
-        if(cc.scrollHeight - $cc.scrollTop() === $cc.outerHeight()) {
+        if(_isAtBottom($cc)) {
             $cc.append(message);
-            cc.scrollTop = cc.scrollHeight;
+            $cc.scrollTop( $cc.prop('scrollHeight') );
         } else {
             $cc.append(message);
         }
-        // TODO: If channel is not the selected one check to see if it *WAS* at the bottom
-        //       This is broken because elements with display: none don't have measurable attributes
     }
     
     function _genOption(id, text) {
@@ -250,12 +251,18 @@ var chatRoom = (function(window) {
     }
     
     function _selectChannelElem(chanServerId) {
-//        $('#chat-window-'+selectedChannel).hide();
-//        $('#online-window-'+selectedChannel).hide();
+        var localId = _getIdFromServerId(chanServerId);
+        // Get the position of the scroll bar, so it can be restored later
+        channels[selectedChannel].atBottom = _isAtBottom( $('#chat-window-'+selectedChannel) );
         
-        $('#chat-window-'+chanServerId).show().siblings().hide();
+        var $chatWindow = $('#chat-window-'+chanServerId);
+        $chatWindow.show().siblings().hide();
         $('#online-window-'+chanServerId).show().siblings().hide();
-        selectedChannel = _getIdFromServerId(chanServerId);
+        // Restore the position of the scroll bar
+        if(channels[localId].atBottom === true) {
+            $chatWindow.scrollTop( $chatWindow.prop('scrollHeight') );
+        }
+        selectedChannel = localId;
     }
     
     /**
@@ -303,7 +310,8 @@ var chatRoom = (function(window) {
             'players': new Array(),
             'playerHash': '',
             'pm': '*',
-            'newMessage': false
+            'newMessage': false,
+            'atBottom': false
         });
     }
     
@@ -372,13 +380,14 @@ var chatRoom = (function(window) {
         
         channels.push({
             'id': 0,                // Server ID of the channel
-            'name': 'Lodge',       // User-friendly name of the channel
+            'name': 'Lodge',        // User-friendly name of the channel
             'lastId': 0,            // The ID of the last message sent
             'input': '',            // Contents of the text input (used when switching active channel)
             'players': new Array(), // List of players currently in this channel
             'playerHash': '',       // Last hash sent by the server for the online players
             'pm': '*',              // The name of the selected player to pm in this chanel
-            'newMessage': false     // Whether there are new unread messages or not
+            'newMessage': false,    // Whether there are new unread messages or not
+            'atBottom': false       // The last scroll position of the chat (used when in another channel)
         });
         selectedChannel = 0;
         $input = $('#chatInput');
