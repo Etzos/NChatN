@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-var chatRoom = (function(window) {
+var chatRoom = (function(window, $) {
     var URL = {
       'send': 'sendchat.php',
       'receive': 'lastchat.php',
@@ -295,7 +295,7 @@ var chatRoom = (function(window) {
     
     function _getIdFromServerId(chanServerId) {
         for(var i=0; i<channels.length; i++) {
-            if(channels[i].id == chanServerId)
+            if(channels[i].id === chanServerId)
                 return i;
         }
         return -1;
@@ -303,21 +303,21 @@ var chatRoom = (function(window) {
     
     function _insertNewChannel(chanServerId, name) {
         channels.push({
-            'id': chanServerId,
-            'name': name,
-            'lastId': 0,
-            'input': '',
-            'players': new Array(),
-            'playerHash': '',
-            'pm': '*',
-            'newMessage': false,
-            'atBottom': false
+            'id': chanServerId,       // Server ID of the channel
+            'name': name,             // Name of the channel
+            'lastId': 0,              // The ID of the last message sent from the server
+            'input': '',              // The contents of the input bar (Used when switching tabs)
+            'players': new Array(),   // The list of players currently in the channel
+            'playerHash': '',         // The last hash sent with the player list from the server
+            'pm': '*',                // The selected whisper target for this channel
+            'newMessage': false,      // Whether there is a new (unread) message in this channel
+            'atBottom': false         // Whether the chat window was scrolled to the bottom (only used when switching tabs)
         });
     }
     
     function inChannel(chanServerId) {
         for(var i=0; i<channels.length; i++) {
-            if(channels[i].id == chanServerId)
+            if(channels[i].id === chanServerId)
                 return true;
         }
         return false;
@@ -378,18 +378,9 @@ var chatRoom = (function(window) {
             return;
         instance = this;
         
-        channels.push({
-            'id': 0,                // Server ID of the channel
-            'name': 'Lodge',        // User-friendly name of the channel
-            'lastId': 0,            // The ID of the last message sent
-            'input': '',            // Contents of the text input (used when switching active channel)
-            'players': new Array(), // List of players currently in this channel
-            'playerHash': '',       // Last hash sent by the server for the online players
-            'pm': '*',              // The name of the selected player to pm in this chanel
-            'newMessage': false,    // Whether there are new unread messages or not
-            'atBottom': false       // The last scroll position of the chat (used when in another channel)
-        });
+        _insertNewChannel(0, 'Lodge');
         selectedChannel = 0;
+        
         $input = $('#chatInput');
         $tabContainer = $('#tabContainer');
         $onlineContainer = $('#onlineList');
@@ -460,7 +451,7 @@ var chatRoom = (function(window) {
         
     }
     
-    var public = {
+    return {
         'init': function() {
             init();
         },
@@ -477,9 +468,7 @@ var chatRoom = (function(window) {
             $input.val($input.val() + text);
         }
     };
-    
-    return public;
-})(window);
+})(window, jQuery);
 
 var smileyManager = (function(){
     var $container;
@@ -565,7 +554,7 @@ var smileyManager = (function(){
     
     function getId(smileyId) {
         for(var i=0; i<smilies.length; i++) {
-            if(smilies[i].id == smileyId)
+            if(smilies[i].id === smileyId)
                 return smilies[i];
         }
         console.error('Given smiley id is not valid: '+smileyId);
