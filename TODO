@@ -3,22 +3,14 @@ TODO
 
 For Feature Parity
 ------------------
-
-- Add tab name completion
 - Start calculating the chat response speed
-- Start evaluating the various scripts that can be sent through chat 
-  - Despite being a bad idea, we don't want closing a window to fail
 - Check for invasions
 - Initial commands
 - Various command aliases
   - /help
   - /?
   - /who
-- Initial pop message
 - Clickable usernames
-- Joining other channels
-- Changing to other channels
-- Ignore chat history when entering for the first time
 
 Cool Additions
 --------------
