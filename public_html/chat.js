@@ -181,6 +181,12 @@ var chatRoom = (function(window, $) {
         } else {
             $cc.append(message);
         }
+        
+        // Update tabs (if not active tab)
+        var localId = _getIdFromServerId(chanServerId);
+        if(localId !== selectedChannel) {
+            $('#chat-tab-'+chanServerId).addClass('newMessageTab');
+        }
     }
     
     function _genOption(id, text) {
@@ -252,8 +258,9 @@ var chatRoom = (function(window, $) {
     
     function _selectChannelElem(chanServerId) {
         var localId = _getIdFromServerId(chanServerId);
+        var selServerId = channels[selectedChannel].id;
         // Get the position of the scroll bar, so it can be restored later
-        channels[selectedChannel].atBottom = _isAtBottom( $('#chat-window-'+selectedChannel) );
+        channels[selectedChannel].atBottom = _isAtBottom( $('#chat-window-'+selServerId) );
         
         var $chatWindow = $('#chat-window-'+chanServerId);
         $chatWindow.show().siblings().hide();
@@ -262,6 +269,11 @@ var chatRoom = (function(window, $) {
         if(channels[localId].atBottom === true) {
             $chatWindow.scrollTop( $chatWindow.prop('scrollHeight') );
         }
+        
+        // Update the tabs
+        $('#chat-tab-'+chanServerId).addClass('selectedTab').removeClass('newMessageTab');
+        $('#chat-tab-'+selServerId).removeClass('selectedTab');
+        
         selectedChannel = localId;
     }
     
@@ -388,8 +400,10 @@ var chatRoom = (function(window, $) {
         $pmSelect = $('#onlineSelect');
         $channelSelect = $('#channel');
         
-        _createChannelElem(channels[selectedChannel].id, channels[selectedChannel].name);
-        _selectChannelElem(selectedChannel);
+        var chan = channels[selectedChannel];
+        
+        _createChannelElem(chan.id, chan.name);
+        _selectChannelElem(chan.id);
         
         // Keybinding
         // Input Enter key pressed

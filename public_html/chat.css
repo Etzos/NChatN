@@ -26,17 +26,21 @@ img {
 }
 
 .chatTabDiv {
-	visibility: visible;
 	left: 0px;
-	/* 	background: url('images/gray_tab.gif'); /* Replace at your convience */
-	background: black;
-	width: 114px;
-	height: 19px;
-	color: #FFFFFF;
-	text-decoration: none;
+    width: 114px;
+	height: 1.3em;
     float: left;
+    
     margin-left: 2px;
     padding-left: 2px;
+    
+    color: #FFFFFF;
+	text-decoration: none;
+    
+	background: black;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
+    border-bottom: 1px solid black;
 }
 
 .chatTabDiv a:visited {
@@ -46,6 +50,16 @@ img {
 
 .chatTabDiv a:link {
 	text-decoration: none;
+}
+
+.selectedTab {
+    background: gray;
+}
+
+.newMessageTab a {
+    color: gray;
+    font-weight: bold;
+    font-style: italic;
 }
 
 #tabContainer {
