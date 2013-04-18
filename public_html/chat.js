@@ -66,7 +66,7 @@ var chatRoom = (function(window, $) {
             url: URL.receive,
             data: 'CHANNEL='+chan.id+'&RND='+_getTime()+'&ID='+chan.lastId,
             type: 'GET',
-            context: this, // Check to see what this actually does. You may be better off creating a special object for this
+            context: this,
             success: function(result) {
                 if(result === '')
                     return;
@@ -78,8 +78,9 @@ var chatRoom = (function(window, $) {
                 
                     var msg = result.substring(splitLoc+1, result.length);
                     
-                    // TODO: Select the actual channel
-                    _insertMessage(chan.id, msg);
+                    if(msg !== '') {
+                        _insertMessage(chan.id, msg);
+                    }
                 }
             }
         })
