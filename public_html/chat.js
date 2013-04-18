@@ -576,7 +576,7 @@ var smileyManager = (function(){
     }
     
     return {
-        'drawTable': function() {
+        'init': function() {
             drawTable();
         },
         'toggleTable': function() {
