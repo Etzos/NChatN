@@ -74,6 +74,11 @@ var chatRoom = (function(window, $) {
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
                 if(last !== chan.lastId) {
+                    
+                    if(chan.lastId === 0) {
+                        chan.lastId = last;
+                        return;
+                    }
                     chan.lastId = last;
                 
                     var msg = result.substring(splitLoc+1, result.length);
@@ -272,8 +277,8 @@ var chatRoom = (function(window, $) {
         }
         
         // Update the tabs
+        $('#chat-tab-'+selServerId).removeClass('selectedTab'); // This MUST come first for init()
         $('#chat-tab-'+chanServerId).addClass('selectedTab').removeClass('newMessageTab');
-        $('#chat-tab-'+selServerId).removeClass('selectedTab');
         
         selectedChannel = localId;
     }
@@ -307,6 +312,7 @@ var chatRoom = (function(window, $) {
     }
     
     function _getIdFromServerId(chanServerId) {
+        chanServerId = parseInt(chanServerId, 10);
         for(var i=0; i<channels.length; i++) {
             if(channels[i].id === chanServerId)
                 return i;
@@ -316,22 +322,24 @@ var chatRoom = (function(window, $) {
     
     function _insertNewChannel(chanServerId, name) {
         channels.push({
-            'id': chanServerId,       // Server ID of the channel
-            'name': name,             // Name of the channel
-            'lastId': 0,              // The ID of the last message sent from the server
-            'input': '',              // The contents of the input bar (Used when switching tabs)
-            'players': new Array(),   // The list of players currently in the channel
-            'playerHash': '',         // The last hash sent with the player list from the server
-            'pm': '*',                // The selected whisper target for this channel
-            'newMessage': false,      // Whether there is a new (unread) message in this channel
-            'atBottom': false         // Whether the chat window was scrolled to the bottom (only used when switching tabs)
+            'id': parseInt(chanServerId, 10),  // Server ID of the channel
+            'name': name,                      // Name of the channel
+            'lastId': 0,                       // The ID of the last message sent from the server
+            'input': '',                       // The contents of the input bar (Used when switching tabs)
+            'players': new Array(),            // The list of players currently in the channel
+            'playerHash': '',                  // The last hash sent with the player list from the server
+            'pm': '*',                         // The selected whisper target for this channel
+            'newMessage': false,               // Whether there is a new (unread) message in this channel
+            'atBottom': false                  // Whether the chat window was scrolled to the bottom (only used when switching tabs)
         });
     }
     
     function inChannel(chanServerId) {
+        chanServerId = parseInt(chanServerId, 10);
         for(var i=0; i<channels.length; i++) {
-            if(channels[i].id === chanServerId)
+            if(channels[i].id === chanServerId) {
                 return true;
+            }
         }
         return false;
     }
@@ -360,7 +368,7 @@ var chatRoom = (function(window, $) {
         _updatePlayerDropdown();
         
         var newChan = channels[_getIdFromServerId(chanServerId)];
-        $input.val(newChan.input);
+        $input.val(newChan.input).focus();
         // TODO: Change the selection
     }
     
