@@ -132,7 +132,7 @@ var chatRoom = (function(window, $) {
                 }
                 
                 // For now, I'm just dumping this in as-is
-                $('#online-window-'+chanId).html(onlinePayload);
+                $('#online-window-'+chan.id).html(onlinePayload);
                 
                 chan.playerHash = resParts[0];
             }
