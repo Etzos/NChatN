@@ -43,6 +43,10 @@ img {
     border-bottom: 1px solid black;
 }
 
+.chatTabDiv a {
+    color: white;
+}
+
 .chatTabDiv a:visited {
 	color: #FFFFFF;
 	text-decoration: none;
