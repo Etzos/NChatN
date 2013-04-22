@@ -147,7 +147,10 @@ var chatRoom = (function(window, $) {
                 
                 // Update the list only if the current channel is the selected one
                 if(chan.id === channels[selectedChannel].id) {
+                    var prevSelect = $channelSelect.children(':selected').val();
                     _updatePlayerDropdown();
+                    if(prevSelect !== '') // Only an empty string when nothing selected, so ignore
+                        _selectWhisperTarget(prevSelect);
                 }
                 
                 // For now, I'm just dumping this in as-is
@@ -333,6 +336,15 @@ var chatRoom = (function(window, $) {
         return -1;
     }
     
+    function _selectWhisperTarget(name) {
+        var $sel = $pmSelect.children('option[value='+name+']');
+        if($sel.length !== 1) {
+            $sel = $pmSelect.children('option').first();
+        }
+        $pmSelect.children('option').prop('selected', false);
+        $sel.prop('selected', true);
+    }
+    
     function _insertNewChannel(chanServerId, name) {
         var len = channels.push({
             'id': parseInt(chanServerId, 10),  // Server ID of the channel
@@ -347,7 +359,7 @@ var chatRoom = (function(window, $) {
             'buffer': new Array(),             // The last n messages the player has sent to this channel
             'bufferPointer': 0                 // Where in the buffer array the player has last been
         });
-        channels[(len-1)].buffer.push('');              // channels.buffer[0] is used for the current input
+        channels[(len-1)].buffer.push('');     // channels.buffer[0] is used for the current input
     }
     
     function inChannel(chanServerId) {
@@ -378,14 +390,15 @@ var chatRoom = (function(window, $) {
         var chan = channels[selectedChannel];
         
         chan.input = $input.val();
-        chan.pm = $channelSelect.children(':selected').val();
+        chan.pm = $pmSelect.children(':selected').val();
         
         _selectChannelElem(chanServerId);
         _updatePlayerDropdown();
         
         var newChan = channels[_getIdFromServerId(chanServerId)];
         $input.val(newChan.input).focus();
-        // TODO: Change the selection
+        
+        _selectWhisperTarget(newChan.pm);
     }
     
     function removeChannel(chanServerId) {
