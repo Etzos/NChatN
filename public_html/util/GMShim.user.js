@@ -6,7 +6,7 @@
 // @match        http://www.nowhere-else.org/general_chat.php
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @copyright    2013+, Kevin Ott
-// @resource     payload http://garth.web.nowhere-else.org/web/Uploads/chat.html
+// @resource     payload https://raw.github.com/Etzos/NChatN/master/public_html/chat.html
 // ==/UserScript==
 
 $(document).ready(function() {
