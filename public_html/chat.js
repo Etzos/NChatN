@@ -41,6 +41,19 @@ var chatRoom = (function(window, $) {
             return;
         
         var chan = channels[selectedChannel];
+        
+        // If the buffer is too large, trim it (current 5 at a time to reduce the number of times this needs to be done)
+        if(chan.buffer.length > 55) {
+            chan.buffer = chan.buffer.splice(49);
+        }
+        
+        // Stick the input into the buffer
+        chan.buffer.push(text);
+        
+        // Clear out anything in the saved buffer and reset the pointer
+        chan.buffer[0] = '';
+        chan.bufferPointer = 0;
+        
         var to = $pmSelect.find(':selected').val();
         var rand = _getTime();
         
@@ -321,7 +334,7 @@ var chatRoom = (function(window, $) {
     }
     
     function _insertNewChannel(chanServerId, name) {
-        channels.push({
+        var len = channels.push({
             'id': parseInt(chanServerId, 10),  // Server ID of the channel
             'name': name,                      // Name of the channel
             'lastId': 0,                       // The ID of the last message sent from the server
@@ -330,8 +343,11 @@ var chatRoom = (function(window, $) {
             'playerHash': '',                  // The last hash sent with the player list from the server
             'pm': '*',                         // The selected whisper target for this channel
             'newMessage': false,               // Whether there is a new (unread) message in this channel
-            'atBottom': false                  // Whether the chat window was scrolled to the bottom (only used when switching tabs)
+            'atBottom': false,                 // Whether the chat window was scrolled to the bottom (only used when switching tabs)
+            'buffer': new Array(),             // The last n messages the player has sent to this channel
+            'bufferPointer': 0                 // Where in the buffer array the player has last been
         });
+        channels[(len-1)].buffer.push('');              // channels.buffer[0] is used for the current input
     }
     
     function inChannel(chanServerId) {
@@ -417,6 +433,11 @@ var chatRoom = (function(window, $) {
         // Keybinding
         // Input Enter key pressed
         $(window).keypress(function(e) {
+            var isInputFocused = $input.is(':focus');
+            if(!isInputFocused) {
+                return;
+            }
+            
             var key = e.keyCode ? e.keyCode : e.which;
             if(key === 13) { // Enter key
                 // Check focus
@@ -428,23 +449,49 @@ var chatRoom = (function(window, $) {
                     }
                 }
             } else if(key === 9) { // Tab Key
-                if($input.is(':focus')) {
-                    // Check for content
-                    var content = $input.val().split(' ');
-                    var last = content[content.length-1];
-                    if(last === '') {
-                        return;
-                    }
-                    var match = _matchPlayers(last);
-                    if(match !== '') {
-                        // TODO: Location aware replace (i.e. If it's the first word make it name:, if not add a space)
-                        //       However, base it on if another tab is pressed! :O
-                        $input.val($input.val().replace(/\w+$/, match));
-                        $input.focus();
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
+                // Check for content
+                var content = $input.val().split(' ');
+                var last = content[content.length-1];
+                if(last === '') {
+                    return;
                 }
+                var match = _matchPlayers(last);
+                if(match !== '') {
+                    // TODO: Location aware replace (i.e. If it's the first word make it name:, if not add a space)
+                    //       However, base it on if another tab is pressed! :O
+                    $input.val($input.val().replace(/\w+$/, match));
+                    $input.focus();
+                }
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            else if(key === 38) { // Up arrow key
+                var chan = channels[selectedChannel];
+                
+                if(chan.bufferPointer > 1) {
+                    --chan.bufferPointer;
+                } else if(chan.bufferPointer === 0) {
+                    chan.bufferPointer = (chan.buffer.length - 1);
+                    // Store current val
+                    chan.buffer[0] = $input.val();
+                }
+                
+                $input.val(chan.buffer[chan.bufferPointer]);
+            } else if(key === 40) { // Down arrow key
+                var chan = channels[selectedChannel];
+                
+                if(chan.bufferPointer === 0) { // Can only get as low as current
+                    return;
+                }
+                
+                if(chan.bufferPointer < (chan.buffer.length - 1)) {
+                    ++chan.bufferPointer;
+                } else if(chan.bufferPointer === (chan.buffer.length - 1)) {
+                    chan.bufferPointer = 0;
+                    chan.buffer[0] = '';
+                }
+                
+                $input.val(chan.buffer[chan.bufferPointer]);
             }
         });
         
@@ -489,6 +536,10 @@ var chatRoom = (function(window, $) {
         },
         'insertInputText': function(text) {
             $input.val($input.val() + text);
+        },
+        'dumpBuffer': function() {
+            console.log('Currnet pointer: '+channels[selectedChannel].bufferPointer);
+            console.log(channels[selectedChannel].buffer);
         }
     };
 })(window, jQuery);
