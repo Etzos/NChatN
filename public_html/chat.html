@@ -2,8 +2,8 @@
 <html>
 <head>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-<title>Nowhere Else and Beyond - Chat</title>
-<!--<link href="normal.css" rel="stylesheet" type="text/css">-->
+<title>NEaB Chat Next</title>
+<link href="normal.css" rel="stylesheet" type="text/css">
 <link href='chat.css' rel='stylesheet' type='text/css'>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
@@ -13,7 +13,7 @@
     function initAll() {
        chatRoom.init();
        tooltip.init();
-       smileyManager.drawTable('smileyContainer'); 
+       smileyManager.init(); 
     }
     $(document).ready(function() {
        //initAll();
@@ -23,9 +23,12 @@
 
 </head>
 
-<body style="background-color: black;">
-
+<body>
+    
 	<div id="headerContainer">
+        <!-- This is for the shim loader -->
+        <a href="#" onClick="tooltip.init(); smileyManager.init(); chatRoom.init(); $(this).hide(); return false;">Start Chat</a>
+        
 		[<a href="#" onClick="toggleHelp(); return false;">Commands</a>]
 		<div id="chatHelp">
 			To chat with other players, simply enter your message and press
@@ -131,7 +134,7 @@
 			<select id="channel">
                 <option value=''>-- Channels --</option>
 				<!-- @TODO: This part needs to be generated on page load -->
-				<option value="4">Big Island</option>
+				<!--<option value="4">Big Island</option>-->
 				<option value="0">Lodge</option>
 				<option value="1">Newbie</option>
 				<option value="6">Trade channel</option>
