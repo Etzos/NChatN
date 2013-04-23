@@ -225,6 +225,10 @@ img {
     overflow: auto;
 }
 
+.onlineWindow table {
+    position: relative;
+}
+
 .inactive {
     display: none;
 }
