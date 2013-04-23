@@ -1,17 +1,28 @@
 // ==UserScript==
 // @name         NChatN Shim Loader
 // @namespace    http://garth.web.nowhere-else.org/web/
-// @version      1.0
+// @version      1.1
 // @description  Loads NChatN (NEaB Chat Next) instead of the default NEaB chat
 // @match        http://*.nowhere-else.org/general_chat.php
+// @match        http://nowhere-else.org/general_chat.php
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @copyright    2013+, Kevin Ott
 // @resource     payload https://raw.github.com/Etzos/NChatN/master/public_html/chat.html
+// @updateURL    https://github.com/Etzos/NChatN/raw/master/public_html/util/GMShim.user.js
 // ==/UserScript==
 
 $(document).ready(function() {
-    // Start with a nice clean slate
-    $('html').html("All you base are belong to me!");
+    var $if = $('iframe');
+    if($if.length > 0) { 								// If the iframe exists stop /exit
+        var $doc = $($if[0].contentWindow.document);
+        if($doc.length > 0) {
+        	$doc.find('body').html('');					// Try to stop /pop as soon as possible
+        }
+        
+        $if[0].contentWindow.onunload = null;
+    }
+    $('body').html(''); 								// Stop /pop for sure
+    $('html').html('Loading');  						// Clear everything to start with a clean slate
     
     var contents = GM_getResourceText('payload');
     
