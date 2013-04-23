@@ -432,7 +432,7 @@ var chatRoom = (function(window, $) {
         
         // Keybinding
         // Input Enter key pressed
-        $(window).keypress(function(e) {
+        $(window).keydown(function(e) {
             var isInputFocused = $input.is(':focus');
             if(!isInputFocused) {
                 return;
