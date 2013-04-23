@@ -248,8 +248,9 @@ var chatRoom = (function(window, $) {
             var $del = ''; 
             if(chanServerId !== 0) { // Only display the close option for channels that aren't Lodge
                 var $del = $('<a href="#">X</a>')
-                .click(function() {
+                .click(function(e) {
                     chatRoom.leaveChannel(chanServerId);
+                    e.stopImmediatePropagation();
                     return false;
                 })
                 .css({
@@ -337,9 +338,20 @@ var chatRoom = (function(window, $) {
     }
     
     function _selectWhisperTarget(name) {
-        var $sel = $pmSelect.children('option[value='+name+']');
-        if($sel.length !== 1) {
+        var $sel = null;
+        
+        if(name === '*') {
             $sel = $pmSelect.children('option').first();
+        } else {
+            $sel = $pmSelect.children('option[value='+name+']');
+        }
+        
+        if($sel.length !== 1) {
+            var $children = $pmSelect.children('option');
+            if($children.length === 0) {
+                return;
+            }
+            $sel = $children.first();
         }
         $pmSelect.children('option').prop('selected', false);
         $sel.prop('selected', true);
