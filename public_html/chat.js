@@ -513,7 +513,6 @@ var chatRoom = (function(window, $) {
                     ++chan.bufferPointer;
                 } else if(chan.bufferPointer === (chan.buffer.length - 1)) {
                     chan.bufferPointer = 0;
-                    chan.buffer[0] = '';
                 }
                 
                 $input.val(chan.buffer[chan.bufferPointer]);
