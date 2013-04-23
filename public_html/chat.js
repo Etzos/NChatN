@@ -147,7 +147,7 @@ var chatRoom = (function(window, $) {
                 
                 // Update the list only if the current channel is the selected one
                 if(chan.id === channels[selectedChannel].id) {
-                    var prevSelect = $channelSelect.children(':selected').val();
+                    var prevSelect = $pmSelect.children(':selected').val();
                     _updatePlayerDropdown();
                     if(prevSelect !== '') // Only an empty string when nothing selected, so ignore
                         _selectWhisperTarget(prevSelect);
