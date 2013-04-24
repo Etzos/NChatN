@@ -7,9 +7,9 @@
 // @match        http://nowhere-else.org/general_chat.php
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @copyright    2013+, Kevin Ott
-// @resource     payload https://raw.github.com/Etzos/NChatN/master/public_html/chat.html
+// @resource     payload https://rawgithub.com/Etzos/NChatN/master/public_html/chat.html
 // @run-at       document-start
-// @updateURL    https://github.com/Etzos/NChatN/raw/master/public_html/util/GMShim.user.js
+// @updateURL    https://rawgithub.com/Etzos/NChatN/master/public_html/util/GMShim.user.js
 // ==/UserScript==
 
 $(document).ready(function() {
