@@ -214,11 +214,20 @@ img {
 }
 
 #chat {
-	position: absolute;
-	top: 1.5em;
-	bottom: 27px;
-	width: 100%;
-	background-color: white;	
+    /* Technically don't need this, keeping for future font styling */
+}
+
+#chatPadder {
+    position: absolute;
+    bottom: 27px;
+    top: 1.5em;
+    left: 0px;
+    right: 0px;
+    
+    padding: 2px;
+    padding-right: 0px;
+    
+    background-color: white;
 }
 
 .chatWindow {
@@ -226,6 +235,13 @@ img {
     width: 100%;
     
     overflow: auto;
+    
+    font-size: 9pt;
+    line-height: 16px;
+}
+
+.chatWindow img {
+    vertical-align: middle;
 }
 
 .onlineWindow {

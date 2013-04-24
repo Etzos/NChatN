@@ -162,10 +162,15 @@
 		</div>
 		<div id="chatContainer">
 		<div class="relDiv">
-			<div class="channelHeader">Messages <span id='helpLinkContainer'>[<a href="#" onClick="toggleHelp(); return false;">Commands</a>]</span></div>
-			<div id="chat">
+			<div class="channelHeader">
+                Messages 
+                <span id='helpLinkContainer'>[<a href="#" onClick="toggleHelp(); return false;">Commands</a>]</span>
+            </div>
+			<div id="chatPadder">
+            <div id="chat">
             <!-- Chat div's go here -->
 			</div>
+            </div>
 			<div id="chatMessageContainer">
 				<form onSubmit="return false;" action="" id="chatInputForm">
 					<div id="inputContainer"><input type="text" id="chatInput" value=""></div>
