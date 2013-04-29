@@ -512,6 +512,11 @@ var chatRoom = (function(window, $) {
         $pmSelect = $('#onlineSelect');
         $channelSelect = $('#channel');
         
+        // For Firefox users (or browsers that support the spellcheck attribute)
+        if("spellcheck" in document.createElement('input')) {
+            $input.attr('spellcheck', 'true');
+        }
+        
         var chan = channels[selectedChannel];
         
         _createChannelElem(chan.id, chan.name);
