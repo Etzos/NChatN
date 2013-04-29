@@ -24,7 +24,8 @@ var chatRoom = (function(window, $) {
         
     var channels = new Array(),     // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
-        instance;                   // 
+        numTimeouts,                // The number of times the connection has timed out
+        lastConnection;             // The time it took for the last connection to go through
         
     var $input,                     // Input for chat
         $tabContainer,              // The container for chat tabs
@@ -75,6 +76,11 @@ var chatRoom = (function(window, $) {
         // TODO: PreReceive Hook
         var chan = channels[chanId];
         
+        // Check connection speed only for Lodge (for now)
+        if(chanId === 0) {
+            var timeStart = Date.now();
+        }
+        
         $.ajax({
             url: URL.receive,
             data: 'CHANNEL='+chan.id+'&RND='+_getTime()+'&ID='+chan.lastId,
@@ -83,6 +89,13 @@ var chatRoom = (function(window, $) {
             success: function(result) {
                 if(result === '')
                     return;
+                
+                if(chanId === 0) {
+                    // Update last connection
+                    lastConnection = Date.now() - timeStart;
+                    // Clear any timeouts
+                    numTimeouts = 0;
+                }
                 
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
@@ -103,9 +116,14 @@ var chatRoom = (function(window, $) {
             }
         })
         .fail(function() {
-            // TODO
+            if(chanId === 0)
+                numTimeouts++;
+        })
+        .always(function() {
+            if(chanId === 0) {
+                updateTickClock();
+            }
         });
-        // TODO: Check for failure, and just about every other possible result
         
         // TODO: PostReceive Hook
     }
@@ -171,6 +189,30 @@ var chatRoom = (function(window, $) {
         for(var i=0; i<channels.length; i++) {
             getMessage(i);
         }
+    }
+    
+    function updateTickClock() {
+        var lightClass = 'greenLight';
+        var text = 'Delay: '+(lastConnection/1000)+' sec';
+        if(numTimeouts === 1) {
+            lightClass = 'yellowLight';
+            text = 'Timeout: 1';
+        } else if(numTimeouts > 1) {
+            lightClass = 'redLight';
+            text = 'Timeout: '+numTimeouts;
+        } else if(lastConnection > 1000) {
+            lightClass = 'yellowLight';
+            text = 'High Delay ('+(lastConnection/1000)+' sec)';
+        }
+        
+        var $light = $('#mainLight').children().first();
+        $light.removeClass('greenLight yellowLight redLight')
+            .addClass(lightClass)
+            .hover(function(event) {
+                tooltip.on(text, event.pageX+100, event.pageY+50);
+            }, function() {
+                tooltip.off();
+            });
     }
     
     function _formatSystemMsg(message) {
@@ -435,11 +477,6 @@ var chatRoom = (function(window, $) {
     }
         
     function init() {
-        // Make sure there is only one
-        if(instance === this)
-            return;
-        instance = this;
-        
         _insertNewChannel(0, 'Lodge');
         selectedChannel = 0;
         
