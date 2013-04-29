@@ -101,13 +101,35 @@ var chatRoom = (function(window, $) {
                 var last = parseInt(result.substring(0, splitLoc));
                 if(last !== chan.lastId) {
                     
-                    if(chan.lastId === 0) {
-                        chan.lastId = last;
-                        return;
-                    }
-                    chan.lastId = last;
-                
                     var msg = result.substring(splitLoc+1, result.length);
+                    
+                    if(chan.lastId === 0) {
+                        // Clear out the script tags to make sure we don't reclose a window or something
+                        var scriptRegex = /<script>[^]*?<\/script>/gi;
+                        msg = msg.replace(scriptRegex, '');
+                        var msgArr = msg.split('<BR>');
+                        var beginSlice = 0;
+                        // Less one since the last one is going to have a <br> that isn't needed anymore
+                        var endSlice = msgArr.length-1; // Most recent message
+                        if(endSlice > 20) {
+                            beginSlice = endSlice-21;
+                        }
+                        msg = '';
+                        for(var i = beginSlice; i < endSlice; i++) {
+                            var m = msgArr[i];
+                            if(m === '') {
+                                continue;
+                            }
+                            msg += m;
+                            if(i < endSlice-1) {
+                                msg += '<br>';
+                            } else {
+                                msg += '<hr>';
+                            }
+                        }
+                    }
+                    
+                    chan.lastId = last;
                     
                     if(msg !== '') {
                         _insertMessage(chan.id, msg);
@@ -524,7 +546,7 @@ var chatRoom = (function(window, $) {
                 if(match !== '') {
                     // TODO: Location aware replace (i.e. If it's the first word make it name:, if not add a space)
                     //       However, base it on if another tab is pressed! :O
-                    $input.val($input.val().replace(/\w+$/, match));
+                    $input.val($input.val().replace(/[\w\-]+$/gi, match));
                     $input.focus();
                 }
                 e.preventDefault();

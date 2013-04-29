@@ -247,6 +247,14 @@ img {
     vertical-align: middle;
 }
 
+.chatWindow hr {
+    padding: 0px;
+    margin: 0px;
+    
+    border: none;
+    border-top: 1px dashed darkgray;
+}
+
 .onlineWindow {
     height: 100%;
     width: 100%;
