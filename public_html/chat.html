@@ -27,8 +27,9 @@
 <body>
     
 	<div id="headerContainer">
+    <div class="relDiv">
         <!-- This is for the shim loader -->
-        <a href="#" onClick="tooltip.init(); smileyManager.init(); chatRoom.init(); $(this).hide(); return false;">Start Chat</a>
+        <a href="#" onClick="chatRoom.init(); $(this).hide(); return false;">Start Chat</a>
         
         <div id="mainLight" class="colorWraper">
             <div class="colorLight">
@@ -133,11 +134,8 @@
 		</div>
 
 		<div id="invasions"></div> <!-- TODO! -->
-		
-		<div id="speedIndicator"></div> <!-- TODO! -->
 
         <form name="channelAdd" onSubmit="return false;" method="GET" action="">
-			<!-- Yeah, GET probably isn"t the best, but whatever -->
 			<select id="channel">
                 <option value=''>-- Channels --</option>
 				<!-- @TODO: This part needs to be generated on page load -->
@@ -147,8 +145,7 @@
 				<option value="6">Trade channel</option>
 			</select>
 		</form>
-
-		<div id="quickCommands">[Away] [Leave]</div>
+    </div>
 	</div>
 
 	<div id="channelContainer">

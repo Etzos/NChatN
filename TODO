@@ -16,9 +16,6 @@ Cool Additions
 --------------
 - Parse the incoming player list for various tidbits (like if they're
   admins or PHs and away status)
-- Online list change based messages
-  - i.e. -- PlayerName Departs --, -- PlayerName Joins --, PlayerName's
-    Title Changed
 - Support player scripts (see about using the old API, or at least 
   providing compatability with it)
 - Intelligent communication with server
@@ -29,4 +26,3 @@ Cool Additions
 - Channel-based private communication
 - Player filtering (i.e. ignoring a player)
 - Saving chat (or sections of it) to a file
-- Keep an input buffer for each channel

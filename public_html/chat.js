@@ -477,6 +477,9 @@ var chatRoom = (function(window, $) {
     }
         
     function init() {
+        // Start other required tools
+        tooltip.init();
+        smileyManager.init();
         _insertNewChannel(0, 'Lodge');
         selectedChannel = 0;
         
@@ -597,10 +600,6 @@ var chatRoom = (function(window, $) {
         },
         'insertInputText': function(text) {
             $input.val($input.val() + text);
-        },
-        'dumpBuffer': function() {
-            console.log('Currnet pointer: '+channels[selectedChannel].bufferPointer);
-            console.log(channels[selectedChannel].buffer);
         }
     };
 })(window, jQuery);
@@ -612,7 +611,7 @@ var smileyManager = (function(){
         { id:'1',  name: 'Sticking Tongue Out', text: [':P', ':p', ':-P', ':-p'] },
         { id:'2',  name: 'Yell', text: [':O', ':o', ':-O', ':-o'] },
         { id:'3',  name: 'Frown', text: [':(', ':-('] },
-        { id:'4',  name: 'Undecided', text: [':/', ':-/'] },
+        { id:'4',  name: 'Undecided', text: [':-/'] },
         { id:'5',  name: 'Wink', text: [';)', ';-)'] },
         { id:'6',  name: 'Grin', text: [':D', ':-D'] },
         { id:'7',  name: 'Sunglasses', text: ['8)', '8-)'] },

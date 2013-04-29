@@ -102,6 +102,7 @@ img {
 
 #chatHelp td {
 	vertical-align: top;
+    font-size: 8pt;
 }
 
 /* This is part of CSS3, but it's not like the rest of this site is standards-compliant */
