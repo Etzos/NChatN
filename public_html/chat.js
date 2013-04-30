@@ -243,7 +243,7 @@ var chatRoom = (function(window, $) {
     }
     
     function _formatSystemMsg(message) {
-        return '<span class="systemMsg">'+message+'</span>';
+        return '<span class="systemMsg">'+message+'<br></span>';
     }
     
     function _updatePlayerDropdown() {
