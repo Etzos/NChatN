@@ -562,6 +562,7 @@ var chatRoom = (function(window, $) {
             return false;
         });
         _addMenuItem("Toggle System Messages");
+        _addMenuItem("Update Online Players");
         
         // Keybinding
         // Input Enter key pressed
