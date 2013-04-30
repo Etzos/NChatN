@@ -24,14 +24,20 @@ var chatRoom = (function(window, $) {
         
     var channels = new Array(),     // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
-        instance;                   // 
-        
+        numTimeouts,                // The number of times the connection has timed out
+        lastConnection;             // The time it took for the last connection to go through
+    
+    var settings = {
+        showSysMessages: true       // Whether or not to show system messages
+    };
+    
     var $input,                     // Input for chat
         $tabContainer,              // The container for chat tabs
         $onlineContainer,           // The container for online players
         $chatContainer,             // The container for chat
         $pmSelect,                  // Select for who to chat with (*, or player names)
-        $channelSelect;             // Select to open new channels
+        $channelSelect,             // Select to open new channels
+        $menu;                      // The menu container
     
     function sendChat() {
         // TODO: PreSend Hook
@@ -75,6 +81,11 @@ var chatRoom = (function(window, $) {
         // TODO: PreReceive Hook
         var chan = channels[chanId];
         
+        // Check connection speed only for Lodge (for now)
+        if(chanId === 0) {
+            var timeStart = Date.now();
+        }
+        
         $.ajax({
             url: URL.receive,
             data: 'CHANNEL='+chan.id+'&RND='+_getTime()+'&ID='+chan.lastId,
@@ -84,17 +95,46 @@ var chatRoom = (function(window, $) {
                 if(result === '')
                     return;
                 
+                if(chanId === 0) {
+                    // Update last connection
+                    lastConnection = Date.now() - timeStart;
+                    // Clear any timeouts
+                    numTimeouts = 0;
+                }
+                
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
                 if(last !== chan.lastId) {
                     
-                    if(chan.lastId === 0) {
-                        chan.lastId = last;
-                        return;
-                    }
-                    chan.lastId = last;
-                
                     var msg = result.substring(splitLoc+1, result.length);
+                    
+                    if(chan.lastId === 0) {
+                        // Clear out the script tags to make sure we don't reclose a window or something
+                        var scriptRegex = /<script>[^]*?<\/script>/gi;
+                        msg = msg.replace(scriptRegex, '');
+                        var msgArr = msg.split('<BR>');
+                        var beginSlice = 0;
+                        // Less one since the last one is going to have a <br> that isn't needed anymore
+                        var endSlice = msgArr.length-1; // Most recent message
+                        if(endSlice > 20) {
+                            beginSlice = endSlice-21;
+                        }
+                        msg = '';
+                        for(var i = beginSlice; i < endSlice; i++) {
+                            var m = msgArr[i];
+                            if(m === '') {
+                                continue;
+                            }
+                            msg += m;
+                            if(i < endSlice-1) {
+                                msg += '<br>';
+                            } else {
+                                msg += '<hr>';
+                            }
+                        }
+                    }
+                    
+                    chan.lastId = last;
                     
                     if(msg !== '') {
                         _insertMessage(chan.id, msg);
@@ -103,9 +143,14 @@ var chatRoom = (function(window, $) {
             }
         })
         .fail(function() {
-            // TODO
+            if(chanId === 0)
+                numTimeouts++;
+        })
+        .always(function() {
+            if(chanId === 0) {
+                updateTickClock();
+            }
         });
-        // TODO: Check for failure, and just about every other possible result
         
         // TODO: PostReceive Hook
     }
@@ -133,12 +178,12 @@ var chatRoom = (function(window, $) {
                     // new - old = enter
                     var entered = _arrSub(newPlayerList, chan.players);
                     for(var i=0; i<entered.length; i++) {
-                        _insertMessage(chan.id, _formatSystemMsg('-- '+entered[i]+' joins --'));
+                        _insertMessage(chan.id, _formatSystemMsg('-- '+entered[i]+' joins --'), true);
                     }
                     // old - new = leave
                     var left = _arrSub(chan.players, newPlayerList);
                     for(var i=0; i<left.length; i++) {
-                        _insertMessage(chan.id, _formatSystemMsg('-- '+left[i]+' departs --'));
+                        _insertMessage(chan.id, _formatSystemMsg('-- '+left[i]+' departs --'), true);
                     }
                 
                 }
@@ -173,6 +218,30 @@ var chatRoom = (function(window, $) {
         }
     }
     
+    function updateTickClock() {
+        var lightClass = 'greenLight';
+        var text = 'Delay: '+(lastConnection/1000)+' sec';
+        if(numTimeouts === 1) {
+            lightClass = 'yellowLight';
+            text = 'Timeout: 1';
+        } else if(numTimeouts > 1) {
+            lightClass = 'redLight';
+            text = 'Timeout: '+numTimeouts;
+        } else if(lastConnection > 1000) {
+            lightClass = 'yellowLight';
+            text = 'High Delay ('+(lastConnection/1000)+' sec)';
+        }
+        
+        var $light = $('#mainLight').children().first();
+        $light.removeClass('greenLight yellowLight redLight')
+            .addClass(lightClass)
+            .hover(function(event) {
+                tooltip.on(text, event.pageX+100, event.pageY+50);
+            }, function() {
+                tooltip.off();
+            });
+    }
+    
     function _formatSystemMsg(message) {
         return '<span class="systemMsg">'+message+'</span><br>';
     }
@@ -194,19 +263,28 @@ var chatRoom = (function(window, $) {
         return ( $elem.prop('scrollHeight') - $elem.scrollTop() === $elem.outerHeight() );
     }
     
-    function _insertMessage(chanServerId, message) {
+    function _insertMessage(chanServerId, message, isSys) {
+        if(typeof isSys === 'undefined') {
+            isSys = false;
+        }
         var $cc = $('#chat-window-'+chanServerId);
 
         if(_isAtBottom($cc)) {
             $cc.append(message);
+            if(isSys && !settings.showSysMessages) {
+                $('.systemMsg').hide();
+            }
             $cc.scrollTop( $cc.prop('scrollHeight') );
         } else {
             $cc.append(message);
+            if(isSys && !settings.showSysMessages) {
+                $('.systemMsg').hide();
+            }
         }
         
         // Update tabs (if not active tab)
         var localId = _getIdFromServerId(chanServerId);
-        if(localId !== selectedChannel) {
+        if(localId !== selectedChannel && (isSys && settings.showSysMessages)) {
             $('#chat-tab-'+chanServerId).addClass('newMessageTab');
         }
     }
@@ -374,6 +452,26 @@ var chatRoom = (function(window, $) {
         channels[(len-1)].buffer.push('');     // channels.buffer[0] is used for the current input
     }
     
+    function _addMenuItem(text, stopHide) {
+        if(typeof stopHide === 'undefined') {
+            stopHide = false;
+        }
+        var $container = $('<li></li>');
+        var $link = $('<a></a>');
+        $link.attr('href', '#')
+            .html(text)
+            .appendTo($container);
+        $container.appendTo($menu);
+        if(!stopHide) {
+            $link.click(function() {
+               $menu.hide();
+               return false;
+            });
+        }
+        
+        return $link;
+    }
+    
     function inChannel(chanServerId) {
         chanServerId = parseInt(chanServerId, 10);
         for(var i=0; i<channels.length; i++) {
@@ -433,13 +531,20 @@ var chatRoom = (function(window, $) {
         // Clear the tag
         $('#chat-tab-'+chanServerId).remove();
     }
+    
+    function toggleSysMsgVisibility() {
+        if(settings.showSysMessages) {
+            $('.systemMsg').hide();
+        } else {
+            $('.systemMsg').show();
+        }
+        settings.showSysMessages = !settings.showSysMessages;
+    }
         
     function init() {
-        // Make sure there is only one
-        if(instance === this)
-            return;
-        instance = this;
-        
+        // Start other required tools
+        tooltip.init();
+        smileyManager.init();
         _insertNewChannel(0, 'Lodge');
         selectedChannel = 0;
         
@@ -449,11 +554,45 @@ var chatRoom = (function(window, $) {
         $chatContainer = $('#chat');
         $pmSelect = $('#onlineSelect');
         $channelSelect = $('#channel');
+        $menu = $('#mainMenu');
+        
+        // For Firefox users (or browsers that support the spellcheck attribute)
+        if("spellcheck" in document.createElement('input')) {
+            $input.attr('spellcheck', 'true');
+        }
         
         var chan = channels[selectedChannel];
         
         _createChannelElem(chan.id, chan.name);
         _selectChannelElem(chan.id);
+        
+        // Fill in the Menu
+        $('#menuLink').click(function() {
+            $(document).one('click', function() {
+                $menu.hide();
+            });
+            $menu.toggle();
+            
+            $(this).blur();
+            return false;
+        });
+        $menu.html('');
+        _addMenuItem("Select All").click(function() {
+            var id = channels[selectedChannel].id;
+            selectElement( $('#chat-window-'+id)[0] );
+            
+            return false;
+        });
+        _addMenuItem("Toggle Sys Messages").click(function() {
+            toggleSysMsgVisibility();
+            
+            return false;
+        });
+        _addMenuItem("Update Online Players").click(function() {
+            getOnline(selectedChannel);
+            // TODO: Prevent spamming this
+            return false;
+        });
         
         // Keybinding
         // Input Enter key pressed
@@ -484,7 +623,7 @@ var chatRoom = (function(window, $) {
                 if(match !== '') {
                     // TODO: Location aware replace (i.e. If it's the first word make it name:, if not add a space)
                     //       However, base it on if another tab is pressed! :O
-                    $input.val($input.val().replace(/\w+$/, match));
+                    $input.val($input.val().replace(/[\w\-]+$/gi, match));
                     $input.focus();
                 }
                 e.preventDefault();
@@ -560,10 +699,6 @@ var chatRoom = (function(window, $) {
         },
         'insertInputText': function(text) {
             $input.val($input.val() + text);
-        },
-        'dumpBuffer': function() {
-            console.log('Currnet pointer: '+channels[selectedChannel].bufferPointer);
-            console.log(channels[selectedChannel].buffer);
         }
     };
 })(window, jQuery);
@@ -575,7 +710,7 @@ var smileyManager = (function(){
         { id:'1',  name: 'Sticking Tongue Out', text: [':P', ':p', ':-P', ':-p'] },
         { id:'2',  name: 'Yell', text: [':O', ':o', ':-O', ':-o'] },
         { id:'3',  name: 'Frown', text: [':(', ':-('] },
-        { id:'4',  name: 'Undecided', text: [':/', ':-/'] },
+        { id:'4',  name: 'Undecided', text: [':-/'] },
         { id:'5',  name: 'Wink', text: [';)', ';-)'] },
         { id:'6',  name: 'Grin', text: [':D', ':-D'] },
         { id:'7',  name: 'Sunglasses', text: ['8)', '8-)'] },
@@ -714,4 +849,19 @@ var tooltip = (function() {
  */
 function toggleHelp() {
     $('#chatHelp').toggle();
+}
+
+function selectElement(elem) {
+    // Heavily influenced by http://stackoverflow.com/a/2838358
+    if (window.getSelection && document.createRange) {
+        var sel = window.getSelection();
+        var range = document.createRange();
+        range.selectNodeContents(elem);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else if (documnet.body.createTextRange) {
+        var range = document.body.createTextRange();
+        range.moveToElementText(elem);
+        range.select();
+    }
 }

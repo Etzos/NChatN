@@ -27,10 +27,17 @@
 <body>
     
 	<div id="headerContainer">
+    <div class="relDiv">
         <!-- This is for the shim loader -->
-        <a href="#" onClick="tooltip.init(); smileyManager.init(); chatRoom.init(); $(this).hide(); return false;">Start Chat</a>
+        <a href="#" onClick="chatRoom.init(); $(this).hide(); return false;">Start Chat</a>
         
-		[<a href="#" onClick="toggleHelp(); return false;">Commands</a>]
+        <div id="mainLight" class="colorWraper">
+            <div class="colorLight">
+                <div class="lightGloss"></div>
+                <div class="lightShadow"></div>
+            </div>
+        </div>
+        
 		<div id="chatHelp">
 			To chat with other players, simply enter your message and press
 			enter! <br>
@@ -49,7 +56,7 @@
 				<tr>
 					<td class="bolden">/who</td>
 					<td>&lt;username&gt;</td>
-					<td>See the player"s stat card.</td>
+					<td>See the player's stat card.</td>
 				</tr>
 				<tr>
 					<td class="bolden">/me</td>
@@ -127,11 +134,8 @@
 		</div>
 
 		<div id="invasions"></div> <!-- TODO! -->
-		
-		<div id="speedIndicator"></div> <!-- TODO! -->
 
         <form name="channelAdd" onSubmit="return false;" method="GET" action="">
-			<!-- Yeah, GET probably isn"t the best, but whatever -->
 			<select id="channel">
                 <option value=''>-- Channels --</option>
 				<!-- @TODO: This part needs to be generated on page load -->
@@ -141,8 +145,7 @@
 				<option value="6">Trade channel</option>
 			</select>
 		</form>
-
-		<div id="quickCommands">[Away] [Leave]</div>
+    </div>
 	</div>
 
 	<div id="channelContainer">
@@ -162,13 +165,24 @@
 		</div>
 		<div id="chatContainer">
 		<div class="relDiv">
-			<div class="channelHeader">Messages <span id='helpLinkContainer'>[<a href="#" onClick="toggleHelp(); return false;">Commands</a>]</span></div>
-			<div id="chat">
+			<div class="channelHeader">
+                Messages 
+                <div class='headerLinkContainer'>
+                    <a href="#" class="headerItem" id="menuLink">Menu</a>
+                    <a href="#" class="headerItem" onClick="toggleHelp(); $(this).blur(); return false;">Commands</a>
+                    <ul class='headerMenu' id='mainMenu'>
+                        <li>Loading menu...</li>
+                    </ul>
+                </div>
+            </div>
+			<div id="chatPadder">
+            <div id="chat">
             <!-- Chat div's go here -->
 			</div>
+            </div>
 			<div id="chatMessageContainer">
 				<form onSubmit="return false;" action="" id="chatInputForm">
-					<div id="inputContainer"><input type="text" id="chatInput" value=""></div>
+					<div id="inputContainer"><input type="text" id="chatInput" lang="en" value=""></div>
 				</form>
                 <a href='#' onClick='return false;' id='smileyLink'><img src='http://www.nowhere-else.org/smilies/0.gif' alt="Smilies"></a>
                 <div id='smileyContainer'></div>
