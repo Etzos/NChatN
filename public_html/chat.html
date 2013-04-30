@@ -167,8 +167,13 @@
 		<div class="relDiv">
 			<div class="channelHeader">
                 Messages 
-                <span class='headerLinkContainer'>[<a href="#" onClick="toggleHelp(); return false;">Commands</a>]</span>
-                <span class='headerLinkContainer'>[<a href="#" onClick="return false;">Menu</a>]</span>
+                <div class='headerLinkContainer'>
+                    <a href="#" class="headerItem" id="menuLink">Menu</a>
+                    <a href="#" class="headerItem" onClick="toggleHelp(); $(this).blur(); return false;">Commands</a>
+                    <ul class='headerMenu' id='mainMenu'>
+                        <li>Loading menu...</li>
+                    </ul>
+                </div>
             </div>
 			<div id="chatPadder">
             <div id="chat">

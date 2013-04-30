@@ -32,7 +32,8 @@ var chatRoom = (function(window, $) {
         $onlineContainer,           // The container for online players
         $chatContainer,             // The container for chat
         $pmSelect,                  // Select for who to chat with (*, or player names)
-        $channelSelect;             // Select to open new channels
+        $channelSelect,             // Select to open new channels
+        $menu;                      // The menu container
     
     function sendChat() {
         // TODO: PreSend Hook
@@ -438,6 +439,26 @@ var chatRoom = (function(window, $) {
         channels[(len-1)].buffer.push('');     // channels.buffer[0] is used for the current input
     }
     
+    function _addMenuItem(text, stopHide) {
+        if(typeof stopHide === 'undefined') {
+            stopHide = false;
+        }
+        var $container = $('<li></li>');
+        var $link = $('<a></a>');
+        $link.attr('href', '#')
+            .html(text)
+            .appendTo($container);
+        $container.appendTo($menu);
+        if(!stopHide) {
+            $link.click(function() {
+               $menu.hide();
+               return false;
+            });
+        }
+        
+        return $link;
+    }
+    
     function inChannel(chanServerId) {
         chanServerId = parseInt(chanServerId, 10);
         for(var i=0; i<channels.length; i++) {
@@ -511,6 +532,7 @@ var chatRoom = (function(window, $) {
         $chatContainer = $('#chat');
         $pmSelect = $('#onlineSelect');
         $channelSelect = $('#channel');
+        $menu = $('#mainMenu');
         
         // For Firefox users (or browsers that support the spellcheck attribute)
         if("spellcheck" in document.createElement('input')) {
@@ -521,6 +543,25 @@ var chatRoom = (function(window, $) {
         
         _createChannelElem(chan.id, chan.name);
         _selectChannelElem(chan.id);
+        
+        // Fill in the Menu
+        $('#menuLink').click(function() {
+            $(document).one('click', function() {
+                $menu.hide();
+            });
+            $menu.toggle();
+            
+            $(this).blur();
+            return false;
+        });
+        $menu.html('');
+        _addMenuItem("Select All").click(function() {
+            var id = channels[selectedChannel].id;
+            $('#chat-window-'+id).select();
+            
+            return false;
+        });
+        _addMenuItem("Toggle System Messages");
         
         // Keybinding
         // Input Enter key pressed
