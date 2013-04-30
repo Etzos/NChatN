@@ -318,8 +318,12 @@ img {
 /** Header Additions **/
 .headerLinkContainer {
     font-weight: normal;
-    float: right;
     height: 100%;
+    
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 500px; /* Not Terribly Important */
 }
 
 .headerItem {
