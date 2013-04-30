@@ -246,8 +246,6 @@ img {
 .systemMsg {
     color: gray;
     font-weight: bold;
-
-    display: none; /* Temp fix since the server is crazy */
 }
 
 #smileyContainer {
