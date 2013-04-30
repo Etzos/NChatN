@@ -26,7 +26,7 @@ var chatRoom = (function(window, $) {
         selectedChannel,            // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
         lastConnection;             // The time it took for the last connection to go through
-        
+            
     var $input,                     // Input for chat
         $tabContainer,              // The container for chat tabs
         $onlineContainer,           // The container for online players
@@ -557,12 +557,17 @@ var chatRoom = (function(window, $) {
         $menu.html('');
         _addMenuItem("Select All").click(function() {
             var id = channels[selectedChannel].id;
-            $('#chat-window-'+id).select();
+            selectElement( $('#chat-window-'+id)[0] );
             
             return false;
         });
-        _addMenuItem("Toggle System Messages");
-        _addMenuItem("Update Online Players");
+        _addMenuItem("Toggle Sys Messages").click(function() {
+            
+        });
+        _addMenuItem("Update Online Players").click(function() {
+            getOnline(selectedChannel);
+            // TODO: Prevent spamming this
+        });
         
         // Keybinding
         // Input Enter key pressed
@@ -819,4 +824,19 @@ var tooltip = (function() {
  */
 function toggleHelp() {
     $('#chatHelp').toggle();
+}
+
+function selectElement(elem) {
+    // Heavily influenced by http://stackoverflow.com/a/2838358
+    if (window.getSelection && document.createRange) {
+        var sel = window.getSelection();
+        var range = document.createRange();
+        range.selectNodeContents(elem);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else if (documnet.body.createTextRange) {
+        var range = document.body.createTextRange();
+        range.moveToElementText(elem);
+        range.select();
+    }
 }
