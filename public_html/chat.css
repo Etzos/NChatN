@@ -341,7 +341,7 @@ img {
     background-color: #777777;
 }
 
-.headerItem a:hover {
+.headerItem:hover {
     background-color: #333333;
 }
 
