@@ -26,7 +26,11 @@ var chatRoom = (function(window, $) {
         selectedChannel,            // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
         lastConnection;             // The time it took for the last connection to go through
-            
+    
+    var settings = {
+        showSysMessages: true       // Whether or not to show system messages
+    };
+    
     var $input,                     // Input for chat
         $tabContainer,              // The container for chat tabs
         $onlineContainer,           // The container for online players
@@ -174,12 +178,12 @@ var chatRoom = (function(window, $) {
                     // new - old = enter
                     var entered = _arrSub(newPlayerList, chan.players);
                     for(var i=0; i<entered.length; i++) {
-                        _insertMessage(chan.id, _formatSystemMsg('-- '+entered[i]+' joins --'));
+                        _insertMessage(chan.id, _formatSystemMsg('-- '+entered[i]+' joins --'), true);
                     }
                     // old - new = leave
                     var left = _arrSub(chan.players, newPlayerList);
                     for(var i=0; i<left.length; i++) {
-                        _insertMessage(chan.id, _formatSystemMsg('-- '+left[i]+' departs --'));
+                        _insertMessage(chan.id, _formatSystemMsg('-- '+left[i]+' departs --'), true);
                     }
                 
                 }
@@ -259,19 +263,28 @@ var chatRoom = (function(window, $) {
         return ( $elem.prop('scrollHeight') - $elem.scrollTop() === $elem.outerHeight() );
     }
     
-    function _insertMessage(chanServerId, message) {
+    function _insertMessage(chanServerId, message, isSys) {
+        if(typeof isSys === 'undefined') {
+            isSys = false;
+        }
         var $cc = $('#chat-window-'+chanServerId);
 
         if(_isAtBottom($cc)) {
             $cc.append(message);
+            if(isSys && !settings.showSysMessages) {
+                $('.systemMsg').hide();
+            }
             $cc.scrollTop( $cc.prop('scrollHeight') );
         } else {
             $cc.append(message);
+            if(isSys && !settings.showSysMessages) {
+                $('.systemMsg').hide();
+            }
         }
         
         // Update tabs (if not active tab)
         var localId = _getIdFromServerId(chanServerId);
-        if(localId !== selectedChannel) {
+        if(localId !== selectedChannel && (isSys && settings.showSysMessages)) {
             $('#chat-tab-'+chanServerId).addClass('newMessageTab');
         }
     }
@@ -518,6 +531,15 @@ var chatRoom = (function(window, $) {
         // Clear the tag
         $('#chat-tab-'+chanServerId).remove();
     }
+    
+    function toggleSysMsgVisibility() {
+        if(settings.showSysMessages) {
+            $('.systemMsg').hide();
+        } else {
+            $('.systemMsg').show();
+        }
+        settings.showSysMessages = !settings.showSysMessages;
+    }
         
     function init() {
         // Start other required tools
@@ -562,11 +584,14 @@ var chatRoom = (function(window, $) {
             return false;
         });
         _addMenuItem("Toggle Sys Messages").click(function() {
+            toggleSysMsgVisibility();
             
+            return false;
         });
         _addMenuItem("Update Online Players").click(function() {
             getOnline(selectedChannel);
             // TODO: Prevent spamming this
+            return false;
         });
         
         // Keybinding
