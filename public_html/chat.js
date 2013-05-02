@@ -46,6 +46,13 @@ var chatRoom = (function(window, $) {
         if(text === '')
             return;
         
+        // This should probably be in a hook
+        if(text.indexOf('/who ') == 0 || text.indexOf('/whois ') == 0) {
+            var textPiece = text.split(' ').splice(1).join('_');
+            $input.val('');
+            return whoCommand(textPiece);
+        }
+        
         var chan = channels[selectedChannel];
         
         // If the buffer is too large, trim it (current 5 at a time to reduce the number of times this needs to be done)
@@ -539,6 +546,11 @@ var chatRoom = (function(window, $) {
             $('.systemMsg').show();
         }
         settings.showSysMessages = !settings.showSysMessages;
+    }
+    
+    function whoCommand(username) {
+        window.open(URL.player+'?SEARCH='+escape(username), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+        return false;
     }
         
     function init() {
