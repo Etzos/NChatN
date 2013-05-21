@@ -47,7 +47,7 @@ var chatRoom = (function(window, $) {
             return;
         
         // This should probably be in a hook
-        if(text.indexOf('/who ') == 0 || text.indexOf('/whois ') == 0) {
+        if(text.indexOf('/who ') === 0 || text.indexOf('/whois ') === 0) {
             var textPiece = text.split(' ').splice(1).join('_');
             $input.val('');
             return whoCommand(textPiece);
