@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         NChatN Shim Loader
 // @namespace    http://garth.web.nowhere-else.org/web/
-// @version      1.4
+// @version      1.5
 // @description  Loads NChatN (NEaB Chat Next) instead of the default NEaB chat
-// @match        http://www.nowhere-else.org/general_chat.php
-// @match        http://nowhere-else.org/general_chat.php
-// @match        http://*.nowhere-else.org/general_chat.php
+// @match        http://www.nowhere-else.org/general_chat.php*
+// @match        http://nowhere-else.org/general_chat.php*
+// @match        http://*.nowhere-else.org/general_chat.php*
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @copyright    2013+, Kevin Ott
 // @resource     payload https://rawgithub.com/Etzos/NChatN/master/public_html/chat.html
