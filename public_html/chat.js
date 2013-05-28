@@ -21,6 +21,14 @@ var chatRoom = (function(window, $) {
       'invasion': 'check_invasions.php',
       'player': 'player_info.php'
     };
+    
+    var INVASION_STATUS = {
+        // I'm guessing for these, since there seems to be some duplication
+        '1': {'msg': 'Previous Invasion', 'color': 'greenText'},      // Invasion state, when there is an active invasion
+        '2': {'msg': 'Invasion!', 'color': 'redText'}, // After-invasion state
+        '3': {'msg': 'No Invasion', 'color': 'greenText'}, 
+        '4': {'msg': 'No Invasion', 'color': 'greenText'}  // Default state, no invasion has happened yet today
+    };
         
     var channels = new Array(),     // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -37,7 +45,8 @@ var chatRoom = (function(window, $) {
         $chatContainer,             // The container for chat
         $pmSelect,                  // Select for who to chat with (*, or player names)
         $channelSelect,             // Select to open new channels
-        $menu;                      // The menu container
+        $menu,                      // The menu container
+        $invasion;                  // Invasion message container
     
     function sendChat() {
         // TODO: PreSend Hook
@@ -213,6 +222,20 @@ var chatRoom = (function(window, $) {
         });
     }
     
+    function getInvasionStatus() {
+        $.ajax({
+            url: URL.invasion,
+            data: 'RND='+_getTime(),
+            type: 'GET',
+            context: this,
+            success: function(result) {
+                var imageId = result.charAt(0);
+                var message = result.substring(1);
+                _updateInvasionMessage(imageId, message);
+            }
+        });
+    }
+    
     function getAllOnline() {
         for(var i=0; i<channels.length; i++) {
             getOnline(i);
@@ -247,6 +270,27 @@ var chatRoom = (function(window, $) {
             }, function() {
                 tooltip.off();
             });
+    }
+    
+    function _updateInvasionMessage(status, message) {
+        if(!INVASION_STATUS.hasOwnProperty(status)) {
+            // TODO: Throw some kind of error here!
+            alert('Unknown status: '+status);
+            return;
+        }
+        var invStatus = INVASION_STATUS[status];
+        // Create the new elements
+        var $span = $('<span></span>')
+            .addClass(invStatus.color)
+            .html(invStatus.msg)
+            .hover(function(event) {
+                tooltip.on(message, event.pageX+100, event.pageY+40);
+            }, function() {
+                tooltip.off();
+            });
+
+        // Clear old invasion
+        $invasion.html($span);
     }
     
     function _formatSystemMsg(message) {
@@ -567,6 +611,7 @@ var chatRoom = (function(window, $) {
         $pmSelect = $('#onlineSelect');
         $channelSelect = $('#channel');
         $menu = $('#mainMenu');
+        $invasion = $('#invasionStatus');
         
         // For Firefox users (or browsers that support the spellcheck attribute)
         if("spellcheck" in document.createElement('input')) {
@@ -690,9 +735,12 @@ var chatRoom = (function(window, $) {
         // Start Chat Timer
         getAllMessages();
         getAllOnline();
+        getInvasionStatus();
         var chatHeartBeat = setInterval(getAllMessages, 4000);
         // Start Online Timer
         var onlineHeartBeat = setInterval(getAllOnline, 16000);
+        // Start Checking for Invasions
+        var invasionHeartBeat = setInterval(getInvasionStatus, 20000);
         
     }
     

@@ -379,6 +379,28 @@ img {
     display: block;
 }
 
+#channelAddForm {
+    display: inline-block;
+}
+
+/** Invasion Message **/
+#invasions {
+    display: block;
+    
+}
+
+.greenText {
+    color: lightgreen;
+}
+
+.yellowText {
+    color: orange;
+}
+
+.redText {
+    color: red;
+}
+
 /** Status Light **/
 .colorWraper {
     height: 17px;
@@ -427,4 +449,9 @@ img {
 .yellowLight {
     background-color: orange;
     border: 1px solid brown;
+}
+#mainLight {
+    display: inline;
+    margin-top: 3px;
+    margin-left: 3px;
 }
