@@ -715,6 +715,15 @@ var chatRoom = (function(window, $) {
             
             return false;
         });
+        _addMenuItem("About").click(function() {
+            // TODO: This is a horrible way to display the information
+            window.alert('NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott\n'+
+                'NChatN is licensed under the GNU Public License version 3.\n'+
+                'A copy of the license is available at <http://www.gnu.org/licenses/>.'
+            ); 
+            
+            return false;
+        });
         
         // Keybinding
         // Input Enter key pressed
