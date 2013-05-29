@@ -757,8 +757,11 @@ var chatRoom = (function(window, $) {
         'selectChannel': function(id) {
             switchChannel(id);
         },
-        'insertInputText': function(text) {
+        'insertInputText': function(text, focus) {
             $input.val($input.val() + text);
+            if(typeof focus === 'undefined' || focus !== false) {
+                $input.focus();
+            } 
         }
     };
 })(window, jQuery);
@@ -834,6 +837,7 @@ var smileyManager = (function(){
             var $entry = $('<a href="#"><img src="http://www.nowhere-else.org/smilies/'+smiley.id+'.gif" alt="'+smiley.name+'"></a>');
             $entry.click(function() {
                 chatRoom.insertInputText(' '+smiley.text[0]);
+                $('#smileyContainer').toggle();
                 return false;
             })
             .hover(function(event) {
