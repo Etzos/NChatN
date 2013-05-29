@@ -24,9 +24,9 @@ var chatRoom = (function(window, $) {
     
     var INVASION_STATUS = {
         // I'm guessing for these, since there seems to be some duplication
-        '1': {'msg': 'Previous Invasion', 'color': 'greenText'},      // Invasion state, when there is an active invasion
+        '1': {'msg': 'No Invasion', 'color': 'greenText'},      // Invasion state, when there is an active invasion
         '2': {'msg': 'Invasion!', 'color': 'redText'}, // After-invasion state
-        '3': {'msg': 'No Invasion', 'color': 'greenText'}, 
+        '3': {'msg': 'Previous Invasion', 'color': 'greenText'}, 
         '4': {'msg': 'No Invasion', 'color': 'greenText'}  // Default state, no invasion has happened yet today
     };
     
@@ -1009,3 +1009,5 @@ function selectElement(elem) {
         range.select();
     }
 }
+
+// box-shadow: inset 0em -4em 3em -3em lightblue
