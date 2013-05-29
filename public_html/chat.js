@@ -29,6 +29,8 @@ var chatRoom = (function(window, $) {
         '3': {'msg': 'No Invasion', 'color': 'greenText'}, 
         '4': {'msg': 'No Invasion', 'color': 'greenText'}  // Default state, no invasion has happened yet today
     };
+    
+    var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
         
     var channels = new Array(),     // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -526,6 +528,44 @@ var chatRoom = (function(window, $) {
         return $link;
     }
     
+    function _loadSettings() {
+        if(!localStorageSupport) {
+            return;
+        }
+        
+        var savedSettings = localStorage.getItem("NChatN-settings");
+        
+        try {
+            savedSettings = JSON.parse(savedSettings);
+
+            for(var prop in savedSettings) {
+                settings[prop] = savedSettings[prop];
+            }
+        } catch(e) {
+            // Faulty data. Not really a problem
+        }
+    }
+    
+    function _saveSettings() {
+        if(!localStorageSupport) {
+            return;
+        }
+        
+        localStorage.setItem("NChatN-settings", JSON.stringify(settings));
+    }
+    
+    function changeSetting(setting, newValue) {
+        if(!settings.hasOwnProperty(setting)) {
+            return;
+        }
+        if(settings[setting] === newValue) {
+            return;
+        }
+        
+        settings[setting] = newValue;
+        _saveSettings();
+    }
+    
     function inChannel(chanServerId) {
         chanServerId = parseInt(chanServerId, 10);
         for(var i=0; i<channels.length; i++) {
@@ -592,7 +632,7 @@ var chatRoom = (function(window, $) {
         } else {
             $('.systemMsg').show();
         }
-        settings.showSysMessages = !settings.showSysMessages;
+        changeSetting('showSysMessages', !settings.showSysMessages);
     }
     
     function whoCommand(username) {
@@ -625,6 +665,9 @@ var chatRoom = (function(window, $) {
         
         _createChannelElem(chan.id, chan.name);
         _selectChannelElem(chan.id);
+        
+        // Load settings
+        _loadSettings();
         
         // Fill in the Menu
         $('#menuLink').click(function() {
