@@ -36,7 +36,10 @@ var chatRoom = (function(window, $) {
         lastConnection;             // The time it took for the last connection to go through
     
     var settings = {
-        showSysMessages: true       // Whether or not to show system messages
+        showSysMessages: true,      // Whether or not to show system messages
+        chatHistoryLogin: 20,       // The number of history lines shown on entry
+        maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
+        detectChannels: false       // Attempt to guess which channels (other than the defaults) can be joined
     };
     
     var $input,                     // Input for chat
