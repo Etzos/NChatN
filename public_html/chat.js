@@ -137,8 +137,8 @@ var chatRoom = (function(window, $) {
                         var beginSlice = 0;
                         // Less one since the last one is going to have a <br> that isn't needed anymore
                         var endSlice = msgArr.length-1; // Most recent message
-                        if(endSlice > 20) {
-                            beginSlice = endSlice-21;
+                        if(endSlice > (settings.chatHistoryLogin-1)) {
+                            beginSlice = endSlice-settings.chatHistoryLogin;
                         }
                         msg = '';
                         for(var i = beginSlice; i < endSlice; i++) {
@@ -635,6 +635,20 @@ var chatRoom = (function(window, $) {
         changeSetting('showSysMessages', !settings.showSysMessages);
     }
     
+    function changeLoginHistory() {
+        var result = window.prompt('How many lines of chat history should show on entry?\n(Enter a number less than 0 to reset to default)', settings.chatHistoryLogin);
+        // If empty, assume they want to leave it the same
+        if(!result || result === "") {
+            return;
+        }
+        
+        if(result < 0) {
+            result = 20;
+        }
+        
+        changeSetting("chatHistoryLogin", result);
+    }
+    
     function whoCommand(username) {
         window.open(URL.player+'?SEARCH='+escape(username), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
         return false;
@@ -694,6 +708,11 @@ var chatRoom = (function(window, $) {
         _addMenuItem("Update Online Players").click(function() {
             getOnline(selectedChannel);
             // TODO: Prevent spamming this
+            return false;
+        });
+        _addMenuItem("Change Login History").click(function() {
+            changeLoginHistory();
+            
             return false;
         });
         
