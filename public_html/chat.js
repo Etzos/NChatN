@@ -882,9 +882,15 @@ var tooltip = (function() {
     }
     
     function setPosition(posx, posy) {
+        var newTop = (posy-25);
+        var newLeft = (posx-$div.outerWidth());
+        // Adjust to make sure it can't go off screen
+        newTop = newTop < 0 ? 0 : newTop;
+        newLeft = newLeft < 0 ? 0 : newLeft;
+        // Plave the div
         $div.css({
-            'top': (posy-25), // Move above mouse
-            'left': (posx-$div.outerWidth()) // Move the tooltip to the left side
+            'top': newTop, // Move above mouse
+            'left': newLeft // Move the tooltip to the left side
         });
     } 
     
