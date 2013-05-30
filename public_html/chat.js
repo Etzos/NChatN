@@ -52,22 +52,39 @@ var chatRoom = (function(window, $) {
         $channelSelect,             // Select to open new channels
         $menu,                      // The menu container
         $invasion;                  // Invasion message container
+        
+    var hooks = {
+        'selfJoin': [],             // When the player enters a channel
+        'join': [],                 // When someone enters a channel (currently based on changes in the online list)
+        'selfDepart': [],           // When the player leaves a channel
+        'depart': [],               // When someone leaves a channel (same as join)
+        'presend': [],              // Before sending a message
+        'send': [],                 // After sending a message
+        'receive': [],              // When a message is received (called for each chat line added individually!)
+        'changeTab': []             // When a player changes tabs
+    };
     
     function sendChat() {
-        // TODO: PreSend Hook
         
         var text = $input.val();
         if(text === '')
             return;
         
-        // This should probably be in a hook
-        if(text.indexOf('/who ') === 0 || text.indexOf('/whois ') === 0) {
-            var textPiece = text.split(' ').splice(1).join('_');
-            $input.val('');
-            return whoCommand(textPiece);
-        }
-        
         var chan = channels[selectedChannel];
+        
+        // PreSend Hook
+        var ctx = {
+            'currentChannel': chan.id,
+            'text': text
+        };
+        var res = callHook('presend', ctx);
+        text = res.text;
+        if(res.stopEvent === true) {
+            // Set the input to the value of res.text for good measure
+            $input.val(res.text);
+            return;
+        }
+        // End PreSend Hook
         
         // If the buffer is too large, trim it (current 5 at a time to reduce the number of times this needs to be done)
         if(chan.buffer.length > 55) {
@@ -554,6 +571,45 @@ var chatRoom = (function(window, $) {
         localStorage.setItem("NChatN-settings", JSON.stringify(settings));
     }
     
+    function registerHook(event, fn) {
+        if(!hooks.hasOwnProperty(event)) {
+            alert('"'+event+'" is not a possible hook');
+            return;
+        }
+        
+        hooks[event].push( fn );
+    }
+    
+    function callHook(event, context) {
+        if(!hooks.hasOwnProperty(event)) {
+            console.error("Attempting to call nonexistant hook '"+event+"'!");
+            return; // Something has gone terribly wrong
+        }
+        var ctx = {
+            'self': '', // TODO: Get player's name
+            'stopEvent': false,              // Stops the event from happening at all (i.e. if set to true for the presend hook, will not send message)
+            'stopEventImmediate': false      // Stops the event and all other hooks from firing (implies stopEvent = true)
+        };
+        // Merge contexts
+        for(var prop in context) {
+            ctx[prop] = context[prop];
+        }
+        
+        // NOTE: Modifications are made to the ctx object, and then returned so the next hook can modify it
+        //       If one of the hooks messes it up, there will be a serious problem!
+        for(var i = 0; i < hooks[event].length; i++) {
+            // NOTE: Apply passes in a reference to ctx, so modifications are live!
+            hooks[event][i].apply(ctx);
+            
+            if(ctx.stopEventImmediate === true) {
+                ctx.stopEvent = true;
+                return ctx;
+            }
+        }
+        
+        return ctx;
+    }
+    
     function changeSetting(setting, newValue) {
         if(!settings.hasOwnProperty(setting)) {
             return;
@@ -647,11 +703,6 @@ var chatRoom = (function(window, $) {
         }
         
         changeSetting("chatHistoryLogin", result);
-    }
-    
-    function whoCommand(username) {
-        window.open(URL.player+'?SEARCH='+escape(username), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
-        return false;
     }
         
     function init() {
@@ -836,6 +887,9 @@ var chatRoom = (function(window, $) {
             if(typeof focus === 'undefined' || focus !== false) {
                 $input.focus();
             } 
+        },
+        'registerHook': function(hook, fn) {
+            registerHook(hook, fn);
         }
     };
 })(window, jQuery);
@@ -1011,3 +1065,14 @@ function selectElement(elem) {
 }
 
 // box-shadow: inset 0em -4em 3em -3em lightblue
+
+// -- Built in Hooks -- //
+chatRoom.registerHook('presend', function() {
+    if(this.text.indexOf('/who ') === 0 || this.text.indexOf('/whois ') === 0) {
+        var textPiece = this.text.split(' ').splice(1).join('_');
+        window.open('player_info.php?SEARCH='+escape(textPiece), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+        this.text = '';
+        // There is no need for any other handler to try to evaluate this
+        this.stopEventImmediate = true;
+    }
+});
