@@ -31,6 +31,7 @@ var chatRoom = (function(window, $) {
     };
     
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
+    var scriptRegex = /<script>[^]*?<\/script>/gi;
         
     var channels = new Array(),     // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -63,6 +64,39 @@ var chatRoom = (function(window, $) {
         'receive': [],              // When a message is received (called for each chat line added individually!)
         'changeTab': []             // When a player changes tabs
     };
+    
+    function HookEvent(publicContext) {
+        var stopImmediate = false,
+            stop = false;
+
+        var pub = {
+            'stopEventImmediate': function() {
+                stopImmediate = true;
+                stop = true;
+            },
+            'stopEvent': function() {
+                stop = true;
+            },
+            'isStopped': function() {
+                return stop;
+            },
+            'isStoppedImmediate': function() {
+                return stopImmediate;
+            }
+        };
+
+        // Merge public variables into return
+        for(var prop in publicContext) {
+            // Prevent overwriting existing values (like the utility functions)
+            if(!pub.hasOwnProperty(publicContext[prop])) {
+                pub[prop] = publicContext[prop];
+            } else {
+                console.warn('Unable to merge! Duplicate property. ('+prop.toString()+')');
+            }
+        }
+
+        return pub;
+    }
     
     function sendChat() {
         
@@ -141,42 +175,55 @@ var chatRoom = (function(window, $) {
                 
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
+                
                 if(last !== chan.lastId) {
+                    var msgArr = result.substring(splitLoc+1, result.length).split('<BR>');
                     
-                    var msg = result.substring(splitLoc+1, result.length);
+                    var isInit = (chan.lastId === 0);
+                    // Init has an extra <BR> tag that should be avoided
+                    var end = (isInit) ? msgArr.length-1 : msgArr.length;
+                    // Only reset the begining if it's needed (init and the sent messages are too long)
+                    var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
+                    //console.log('Running with init: '+isInit+' end: '+ end + ' begin: '+begin);
                     
-                    if(chan.lastId === 0) {
-                        // Clear out the script tags to make sure we don't reclose a window or something
-                        var scriptRegex = /<script>[^]*?<\/script>/gi;
-                        msg = msg.replace(scriptRegex, '');
-                        var msgArr = msg.split('<BR>');
-                        var beginSlice = 0;
-                        // Less one since the last one is going to have a <br> that isn't needed anymore
-                        var endSlice = msgArr.length-1; // Most recent message
-                        if(endSlice > (settings.chatHistoryLogin-1)) {
-                            beginSlice = endSlice-settings.chatHistoryLogin;
+                    // Insert each message in order
+                    for(var i = begin; i < end; i++) {
+                        var msg = msgArr[i];
+                        var isScript = scriptRegex.test(msg);
+                        if(msg === '') {
+                            continue;
                         }
-                        msg = '';
-                        for(var i = beginSlice; i < endSlice; i++) {
-                            var m = msgArr[i];
-                            if(m === '') {
+                        msg += '<br>';
+
+                        if(isInit) {
+                            // Ignore old scripts
+                            if(isScript) {
                                 continue;
                             }
-                            msg += m;
-                            if(i < endSlice-1) {
-                                msg += '<br>';
-                            } else {
-                                msg += '<hr>';
+                            if(i === (end-1)) {
+                                // Expensive operation, thankfully only done once
+                                msg = msg.slice(0, msg.length-4) + "<hr>";
                             }
+                        }
+                        
+                        // No one is allowed to circumvent scripts running
+                        if(!isScript) {
+                            var receiveEvent = callHook('receiveEvt', new HookEvent({
+                                'isInit': isInit,
+                                'message': msg,
+                                'channel': chan
+                            }));
+                            
+                            if(receiveEvent.isStopped()) {
+                                continue;
+                            }
+                            _insertMessage(chan.id, receiveEvent.msg);
+                        } else {
+                            _insertMessage(chan.id, msg);
                         }
                     }
                     
                     chan.lastId = last;
-                    
-                    if(msg !== '') {
-                        // TODO: Receive hook
-                        _insertMessage(chan.id, msg);
-                    }
                 }
             }
         })
