@@ -24,10 +24,10 @@ var chatRoom = (function(window, $) {
     
     var INVASION_STATUS = {
         // I'm guessing for these, since there seems to be some duplication
-        '1': {'msg': 'No Invasion', 'color': 'greenText'},      // Invasion state, when there is an active invasion
-        '2': {'msg': 'Invasion!', 'color': 'redText'}, // After-invasion state
-        '3': {'msg': 'Previous Invasion', 'color': 'greenText'}, 
-        '4': {'msg': 'No Invasion', 'color': 'greenText'}  // Default state, no invasion has happened yet today
+        '1': {'msg': 'No Invasion', 'color': 'greenText'},          // No invasion. Not sure where this is used
+        '2': {'msg': 'Invasion!', 'color': 'redText'},              // An active invasion
+        '3': {'msg': 'Previous Invasion', 'color': 'greenText'},    // An invasion happened earlier in the day
+        '4': {'msg': 'No Invasion', 'color': 'greenText'}           // Default state, no invasion has happened yet today
     };
     
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
@@ -1094,9 +1094,8 @@ chatRoom.registerHook('presend', function() {
 
 /*
 // Should also allow for the addition of private variables and immutable methods
-function GenericEvent(type, publicContext) {
-    var eventType = type,
-        stopImmediate = false,
+function HookEvent(type, publicContext) {
+    var stopImmediate = false,
         stop = false;
         
     var pub = {
@@ -1117,6 +1116,7 @@ function GenericEvent(type, publicContext) {
     
     // Merge public variables into return
     for(var prop in publicContext) {
+        // Prevent overwriting existing values (like the utility functions)
         if(!pub.hasOwnProperty(publicContext[prop])) {
             pub[prop] = publicContext[prop];
         } else {
