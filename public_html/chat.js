@@ -74,7 +74,7 @@ var chatRoom = (function(window, $) {
         
         // PreSend Hook
         var ctx = {
-            'currentChannel': chan.id,
+            'channel': chan.id,
             'text': text
         };
         var res = callHook('presend', ctx);
@@ -116,7 +116,6 @@ var chatRoom = (function(window, $) {
     }
     
     function getMessage(chanId) {
-        // TODO: PreReceive Hook
         var chan = channels[chanId];
         
         // Check connection speed only for Lodge (for now)
@@ -175,6 +174,7 @@ var chatRoom = (function(window, $) {
                     chan.lastId = last;
                     
                     if(msg !== '') {
+                        // TODO: Receive hook
                         _insertMessage(chan.id, msg);
                     }
                 }
@@ -189,8 +189,6 @@ var chatRoom = (function(window, $) {
                 updateTickClock();
             }
         });
-        
-        // TODO: PostReceive Hook
     }
     
     function getOnline(chanId) {
@@ -637,6 +635,12 @@ var chatRoom = (function(window, $) {
             switchChannel(chanServerId);
             return;
         }
+        // selfJoin Hook
+        // TODO: This!
+        var ctx = {
+            'channel': chanServerId
+        };
+        // End selfJoin Hook
         _insertNewChannel(chanServerId, name);
         var localId = _getIdFromServerId(chanServerId);
         _createChannelElem(chanServerId, name);
@@ -648,6 +652,17 @@ var chatRoom = (function(window, $) {
     function switchChannel(chanServerId) {
         // Switch the input over
         var chan = channels[selectedChannel];
+        
+        // changeTab Hook
+        var ctx = {
+            'channel': chanServerId,
+            'previousChannel': chan.id
+        };
+        var res = callHook('changeTab', ctx);
+        if(res.stopEvent === true) {
+            return;
+        }
+        // End changeTab Hook
         
         chan.input = $input.val();
         chan.pm = $pmSelect.children(':selected').val();
@@ -1076,3 +1091,43 @@ chatRoom.registerHook('presend', function() {
         this.stopEventImmediate = true;
     }
 });
+
+/*
+// Should also allow for the addition of private variables and immutable methods
+function GenericEvent(type, publicContext) {
+    var eventType = type,
+        stopImmediate = false,
+        stop = false;
+        
+    var pub = {
+        'stopEventImmediate': function() {
+            stopImmediate = true;
+            stop = true;
+        },
+        'stopEvent': function() {
+            stop = true;
+        },
+        'isStopped': function() {
+            return stop;
+        },
+        'isStoppedImmediate': function() {
+            return stopImmediate;
+        }
+    };
+    
+    // Merge public variables into return
+    for(var prop in publicContext) {
+        if(!pub.hasOwnProperty(publicContext[prop])) {
+            pub[prop] = publicContext[prop];
+        } else {
+            console.warn('Attempting to merge duplicate property!');
+        }
+    }
+    
+    return pub;
+}
+
+var ev = new GenericEvent('testEvent', {'pubVal':'I\'m public!'});
+var nev = new GenericEvent('newTest');
+
+ */
