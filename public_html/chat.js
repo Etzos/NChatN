@@ -108,12 +108,12 @@ var chatRoom = (function(window, $) {
         
         // PreSend Hook
         var ctx = {
-            'channel': chan.id,
+            'channel': chan,
             'text': text
         };
         var res = callHook('presend', ctx);
         text = res.text;
-        if(res.stopEvent === true) {
+        if(res.isStopped()) {
             // Set the input to the value of res.text for good measure
             $input.val(res.text);
             return;
@@ -208,16 +208,16 @@ var chatRoom = (function(window, $) {
                         
                         // No one is allowed to circumvent scripts running
                         if(!isScript) {
-                            var receiveEvent = callHook('receiveEvt', new HookEvent({
+                            var receiveEvent = callHook('receive', {
                                 'isInit': isInit,
                                 'message': msg,
                                 'channel': chan
-                            }));
+                            });
                             
                             if(receiveEvent.isStopped()) {
                                 continue;
                             }
-                            _insertMessage(chan.id, receiveEvent.msg);
+                            _insertMessage(chan.id, receiveEvent.message);
                         } else {
                             _insertMessage(chan.id, msg);
                         }
@@ -625,34 +625,26 @@ var chatRoom = (function(window, $) {
         hooks[event].push( fn );
     }
     
-    function callHook(event, context) {
-        if(!hooks.hasOwnProperty(event)) {
-            console.error("Attempting to call nonexistant hook '"+event+"'!");
+    function callHook(hook, properties) {
+        if(!hooks.hasOwnProperty(hook)) {
+            console.error("Attempting to call nonexistant hook '"+hook+"'!");
             return; // Something has gone terribly wrong
         }
-        var ctx = {
-            'self': '', // TODO: Get player's name
-            'stopEvent': false,              // Stops the event from happening at all (i.e. if set to true for the presend hook, will not send message)
-            'stopEventImmediate': false      // Stops the event and all other hooks from firing (implies stopEvent = true)
-        };
-        // Merge contexts
-        for(var prop in context) {
-            ctx[prop] = context[prop];
-        }
         
-        // NOTE: Modifications are made to the ctx object, and then returned so the next hook can modify it
-        //       If one of the hooks messes it up, there will be a serious problem!
-        for(var i = 0; i < hooks[event].length; i++) {
+        
+        var event = new HookEvent(properties);
+        
+        for(var i = 0; i < hooks[hook].length; i++) {
             // NOTE: Apply passes in a reference to ctx, so modifications are live!
-            hooks[event][i].apply(ctx);
+            hooks[hook][i](event);
             
-            if(ctx.stopEventImmediate === true) {
-                ctx.stopEvent = true;
-                return ctx;
+            if(event.isStoppedImmediate()) {
+                event.stopEvent();
+                break;
             }
         }
         
-        return ctx;
+        return event;
     }
     
     function changeSetting(setting, newValue) {
@@ -1129,52 +1121,12 @@ function selectElement(elem) {
 // box-shadow: inset 0em -4em 3em -3em lightblue
 
 // -- Built in Hooks -- //
-chatRoom.registerHook('presend', function() {
-    if(this.text.indexOf('/who ') === 0 || this.text.indexOf('/whois ') === 0) {
-        var textPiece = this.text.split(' ').splice(1).join('_');
+chatRoom.registerHook('presend', function(e) {
+    if(e.text.indexOf('/who ') === 0 || e.text.indexOf('/whois ') === 0) {
+        var textPiece = e.text.split(' ').splice(1).join('_');
         window.open('player_info.php?SEARCH='+escape(textPiece), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
-        this.text = '';
+        e.text = '';
         // There is no need for any other handler to try to evaluate this
-        this.stopEventImmediate = true;
+        e.stopEventImmediate();
     }
 });
-
-/*
-// Should also allow for the addition of private variables and immutable methods
-function HookEvent(type, publicContext) {
-    var stopImmediate = false,
-        stop = false;
-        
-    var pub = {
-        'stopEventImmediate': function() {
-            stopImmediate = true;
-            stop = true;
-        },
-        'stopEvent': function() {
-            stop = true;
-        },
-        'isStopped': function() {
-            return stop;
-        },
-        'isStoppedImmediate': function() {
-            return stopImmediate;
-        }
-    };
-    
-    // Merge public variables into return
-    for(var prop in publicContext) {
-        // Prevent overwriting existing values (like the utility functions)
-        if(!pub.hasOwnProperty(publicContext[prop])) {
-            pub[prop] = publicContext[prop];
-        } else {
-            console.warn('Attempting to merge duplicate property!');
-        }
-    }
-    
-    return pub;
-}
-
-var ev = new GenericEvent('testEvent', {'pubVal':'I\'m public!'});
-var nev = new GenericEvent('newTest');
-
- */
