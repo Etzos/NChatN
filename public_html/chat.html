@@ -31,12 +31,25 @@
         <!-- This is for the shim loader -->
         <a href="#" onClick="chatRoom.init(); $(this).hide(); return false;">Start Chat</a>
         
+        <form name="channelAdd" onSubmit="return false;" method="GET" action="" id="channelAddForm">
+			<select id="channel">
+                <option value=''>-- Channels --</option>
+				<!-- @TODO: This part needs to be generated on page load -->
+				<!--<option value="4">Big Island</option>-->
+				<option value="0">Lodge</option>
+				<option value="1">Newbie</option>
+				<option value="6">Trade channel</option>
+			</select>
+		</form>
+        
         <div id="mainLight" class="colorWraper">
             <div class="colorLight">
                 <div class="lightGloss"></div>
                 <div class="lightShadow"></div>
             </div>
         </div>
+        
+        <div id="invasions">Invasion Status: <span id="invasionStatus" class="bolden">Unknown</span></div>
         
 		<div id="chatHelp">
 			To chat with other players, simply enter your message and press
@@ -75,7 +88,7 @@
 				</tr>
 				<tr>
 					<td class="bolden">/online</td>
-					<td>&lt;username&gt;</td>
+                    <td><td>
 					<td>List online players.</td>
 				</tr>
 				<tr>
@@ -132,19 +145,6 @@
 				[<a href="#" onClick="toggleHelp(); return false;">Close</a>]
 			</div>
 		</div>
-
-		<div id="invasions"></div> <!-- TODO! -->
-
-        <form name="channelAdd" onSubmit="return false;" method="GET" action="">
-			<select id="channel">
-                <option value=''>-- Channels --</option>
-				<!-- @TODO: This part needs to be generated on page load -->
-				<!--<option value="4">Big Island</option>-->
-				<option value="0">Lodge</option>
-				<option value="1">Newbie</option>
-				<option value="6">Trade channel</option>
-			</select>
-		</form>
     </div>
 	</div>
 

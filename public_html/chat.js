@@ -21,6 +21,17 @@ var chatRoom = (function(window, $) {
       'invasion': 'check_invasions.php',
       'player': 'player_info.php'
     };
+    
+    var INVASION_STATUS = {
+        // I'm guessing for these, since there seems to be some duplication
+        '1': {'msg': 'No Invasion', 'color': 'greenText'},          // No invasion. Not sure where this is used
+        '2': {'msg': 'Invasion!', 'color': 'redText'},              // An active invasion
+        '3': {'msg': 'Previous Invasion', 'color': 'greenText'},    // An invasion happened earlier in the day
+        '4': {'msg': 'No Invasion', 'color': 'greenText'}           // Default state, no invasion has happened yet today
+    };
+    
+    var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
+    var scriptRegex = /<script>[^]*?<\/script>/gi;
         
     var channels = new Array(),     // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -28,7 +39,10 @@ var chatRoom = (function(window, $) {
         lastConnection;             // The time it took for the last connection to go through
     
     var settings = {
-        showSysMessages: true       // Whether or not to show system messages
+        showSysMessages: true,      // Whether or not to show system messages
+        chatHistoryLogin: 20,       // The number of history lines shown on entry
+        maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
+        detectChannels: false       // Attempt to guess which channels (other than the defaults) can be joined
     };
     
     var $input,                     // Input for chat
@@ -37,23 +51,74 @@ var chatRoom = (function(window, $) {
         $chatContainer,             // The container for chat
         $pmSelect,                  // Select for who to chat with (*, or player names)
         $channelSelect,             // Select to open new channels
-        $menu;                      // The menu container
+        $menu,                      // The menu container
+        $invasion;                  // Invasion message container
+        
+    var hooks = {
+        'selfJoin': [],             // When the player enters a channel
+        'join': [],                 // When someone enters a channel (currently based on changes in the online list)
+        'selfDepart': [],           // When the player leaves a channel
+        'depart': [],               // When someone leaves a channel (same as join)
+        'presend': [],              // Before sending a message
+        'send': [],                 // After sending a message
+        'receive': [],              // When a message is received (called for each chat line added individually!)
+        'changeTab': []             // When a player changes tabs
+    };
+    
+    function HookEvent(publicContext) {
+        var stopImmediate = false,
+            stop = false;
+
+        var pub = {
+            'stopEventImmediate': function() {
+                stopImmediate = true;
+                stop = true;
+            },
+            'stopEvent': function() {
+                stop = true;
+            },
+            'isStopped': function() {
+                return stop;
+            },
+            'isStoppedImmediate': function() {
+                return stopImmediate;
+            }
+        };
+
+        // Merge public variables into return
+        for(var prop in publicContext) {
+            // Prevent overwriting existing values (like the utility functions)
+            if(!pub.hasOwnProperty(publicContext[prop])) {
+                pub[prop] = publicContext[prop];
+            } else {
+                console.warn('Unable to merge! Duplicate property. ('+prop.toString()+')');
+            }
+        }
+
+        return pub;
+    }
     
     function sendChat() {
-        // TODO: PreSend Hook
         
         var text = $input.val();
         if(text === '')
             return;
         
-        // This should probably be in a hook
-        if(text.indexOf('/who ') === 0 || text.indexOf('/whois ') === 0) {
-            var textPiece = text.split(' ').splice(1).join('_');
-            $input.val('');
-            return whoCommand(textPiece);
-        }
-        
         var chan = channels[selectedChannel];
+        
+        // PreSend Hook
+        var ctx = {
+            'channel': chan,
+            'text': text
+        };
+        var res = callHook('presend', ctx);
+        text = res.text;
+        if(res.isStopped()) {
+            // Set the input to the value of res.text for good measure
+            $input.val(res.text);
+            return;
+        }
+        // End PreSend Hook
         
         // If the buffer is too large, trim it (current 5 at a time to reduce the number of times this needs to be done)
         if(chan.buffer.length > 55) {
@@ -85,7 +150,6 @@ var chatRoom = (function(window, $) {
     }
     
     function getMessage(chanId) {
-        // TODO: PreReceive Hook
         var chan = channels[chanId];
         
         // Check connection speed only for Lodge (for now)
@@ -111,41 +175,55 @@ var chatRoom = (function(window, $) {
                 
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
+                
                 if(last !== chan.lastId) {
+                    var msgArr = result.substring(splitLoc+1, result.length).split('<BR>');
                     
-                    var msg = result.substring(splitLoc+1, result.length);
+                    var isInit = (chan.lastId === 0);
+                    // Init has an extra <BR> tag that should be avoided
+                    var end = (isInit) ? msgArr.length-1 : msgArr.length;
+                    // Only reset the begining if it's needed (init and the sent messages are too long)
+                    var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
+                    //console.log('Running with init: '+isInit+' end: '+ end + ' begin: '+begin);
                     
-                    if(chan.lastId === 0) {
-                        // Clear out the script tags to make sure we don't reclose a window or something
-                        var scriptRegex = /<script>[^]*?<\/script>/gi;
-                        msg = msg.replace(scriptRegex, '');
-                        var msgArr = msg.split('<BR>');
-                        var beginSlice = 0;
-                        // Less one since the last one is going to have a <br> that isn't needed anymore
-                        var endSlice = msgArr.length-1; // Most recent message
-                        if(endSlice > 20) {
-                            beginSlice = endSlice-21;
+                    // Insert each message in order
+                    for(var i = begin; i < end; i++) {
+                        var msg = msgArr[i];
+                        var isScript = scriptRegex.test(msg);
+                        if(msg === '') {
+                            continue;
                         }
-                        msg = '';
-                        for(var i = beginSlice; i < endSlice; i++) {
-                            var m = msgArr[i];
-                            if(m === '') {
+                        msg += '<br>';
+
+                        if(isInit) {
+                            // Ignore old scripts
+                            if(isScript) {
                                 continue;
                             }
-                            msg += m;
-                            if(i < endSlice-1) {
-                                msg += '<br>';
-                            } else {
-                                msg += '<hr>';
+                            if(i === (end-1)) {
+                                // Expensive operation, thankfully only done once
+                                msg = msg.slice(0, msg.length-4) + "<hr>";
                             }
+                        }
+                        
+                        // No one is allowed to circumvent scripts running
+                        if(!isScript) {
+                            var receiveEvent = callHook('receive', {
+                                'isInit': isInit,
+                                'message': msg,
+                                'channel': chan
+                            });
+                            
+                            if(receiveEvent.isStopped()) {
+                                continue;
+                            }
+                            _insertMessage(chan.id, receiveEvent.message);
+                        } else {
+                            _insertMessage(chan.id, msg);
                         }
                     }
                     
                     chan.lastId = last;
-                    
-                    if(msg !== '') {
-                        _insertMessage(chan.id, msg);
-                    }
                 }
             }
         })
@@ -158,8 +236,6 @@ var chatRoom = (function(window, $) {
                 updateTickClock();
             }
         });
-        
-        // TODO: PostReceive Hook
     }
     
     function getOnline(chanId) {
@@ -213,6 +289,20 @@ var chatRoom = (function(window, $) {
         });
     }
     
+    function getInvasionStatus() {
+        $.ajax({
+            url: URL.invasion,
+            data: 'RND='+_getTime(),
+            type: 'GET',
+            context: this,
+            success: function(result) {
+                var imageId = result.charAt(0);
+                var message = result.substring(1);
+                _updateInvasionMessage(imageId, message);
+            }
+        });
+    }
+    
     function getAllOnline() {
         for(var i=0; i<channels.length; i++) {
             getOnline(i);
@@ -247,6 +337,27 @@ var chatRoom = (function(window, $) {
             }, function() {
                 tooltip.off();
             });
+    }
+    
+    function _updateInvasionMessage(status, message) {
+        if(!INVASION_STATUS.hasOwnProperty(status)) {
+            // TODO: Throw some kind of error here!
+            alert('Unknown status: '+status);
+            return;
+        }
+        var invStatus = INVASION_STATUS[status];
+        // Create the new elements
+        var $span = $('<span></span>')
+            .addClass(invStatus.color)
+            .html(invStatus.msg)
+            .hover(function(event) {
+                tooltip.on(message, event.pageX+100, event.pageY+40);
+            }, function() {
+                tooltip.off();
+            });
+
+        // Clear old invasion
+        $invasion.html($span);
     }
     
     function _formatSystemMsg(message) {
@@ -479,6 +590,75 @@ var chatRoom = (function(window, $) {
         return $link;
     }
     
+    function _loadSettings() {
+        if(!localStorageSupport) {
+            return;
+        }
+        
+        var savedSettings = localStorage.getItem("NChatN-settings");
+        
+        try {
+            savedSettings = JSON.parse(savedSettings);
+
+            for(var prop in savedSettings) {
+                settings[prop] = savedSettings[prop];
+            }
+        } catch(e) {
+            // Faulty data. Not really a problem
+        }
+    }
+    
+    function _saveSettings() {
+        if(!localStorageSupport) {
+            return;
+        }
+        
+        localStorage.setItem("NChatN-settings", JSON.stringify(settings));
+    }
+    
+    function registerHook(event, fn) {
+        if(!hooks.hasOwnProperty(event)) {
+            alert('"'+event+'" is not a possible hook');
+            return;
+        }
+        
+        hooks[event].push( fn );
+    }
+    
+    function callHook(hook, properties) {
+        if(!hooks.hasOwnProperty(hook)) {
+            console.error("Attempting to call nonexistant hook '"+hook+"'!");
+            return; // Something has gone terribly wrong
+        }
+        
+        
+        var event = new HookEvent(properties);
+        
+        for(var i = 0; i < hooks[hook].length; i++) {
+            // NOTE: Apply passes in a reference to ctx, so modifications are live!
+            hooks[hook][i](event);
+            
+            if(event.isStoppedImmediate()) {
+                event.stopEvent();
+                break;
+            }
+        }
+        
+        return event;
+    }
+    
+    function changeSetting(setting, newValue) {
+        if(!settings.hasOwnProperty(setting)) {
+            return;
+        }
+        if(settings[setting] === newValue) {
+            return;
+        }
+        
+        settings[setting] = newValue;
+        _saveSettings();
+    }
+    
     function inChannel(chanServerId) {
         chanServerId = parseInt(chanServerId, 10);
         for(var i=0; i<channels.length; i++) {
@@ -494,6 +674,12 @@ var chatRoom = (function(window, $) {
             switchChannel(chanServerId);
             return;
         }
+        // selfJoin Hook
+        // TODO: This!
+        var ctx = {
+            'channel': chanServerId
+        };
+        // End selfJoin Hook
         _insertNewChannel(chanServerId, name);
         var localId = _getIdFromServerId(chanServerId);
         _createChannelElem(chanServerId, name);
@@ -505,6 +691,17 @@ var chatRoom = (function(window, $) {
     function switchChannel(chanServerId) {
         // Switch the input over
         var chan = channels[selectedChannel];
+        
+        // changeTab Hook
+        var ctx = {
+            'channel': chanServerId,
+            'previousChannel': chan.id
+        };
+        var res = callHook('changeTab', ctx);
+        if(res.stopEvent === true) {
+            return;
+        }
+        // End changeTab Hook
         
         chan.input = $input.val();
         chan.pm = $pmSelect.children(':selected').val();
@@ -545,12 +742,21 @@ var chatRoom = (function(window, $) {
         } else {
             $('.systemMsg').show();
         }
-        settings.showSysMessages = !settings.showSysMessages;
+        changeSetting('showSysMessages', !settings.showSysMessages);
     }
     
-    function whoCommand(username) {
-        window.open(URL.player+'?SEARCH='+escape(username), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
-        return false;
+    function changeLoginHistory() {
+        var result = window.prompt('How many lines of chat history should show on entry?\n(Enter a number less than 0 to reset to default)', settings.chatHistoryLogin);
+        // If empty, assume they want to leave it the same
+        if(!result || result === "") {
+            return;
+        }
+        
+        if(result < 0) {
+            result = 20;
+        }
+        
+        changeSetting("chatHistoryLogin", result);
     }
         
     function init() {
@@ -567,6 +773,7 @@ var chatRoom = (function(window, $) {
         $pmSelect = $('#onlineSelect');
         $channelSelect = $('#channel');
         $menu = $('#mainMenu');
+        $invasion = $('#invasionStatus');
         
         // For Firefox users (or browsers that support the spellcheck attribute)
         if("spellcheck" in document.createElement('input')) {
@@ -577,6 +784,9 @@ var chatRoom = (function(window, $) {
         
         _createChannelElem(chan.id, chan.name);
         _selectChannelElem(chan.id);
+        
+        // Load settings
+        _loadSettings();
         
         // Fill in the Menu
         $('#menuLink').click(function() {
@@ -603,6 +813,20 @@ var chatRoom = (function(window, $) {
         _addMenuItem("Update Online Players").click(function() {
             getOnline(selectedChannel);
             // TODO: Prevent spamming this
+            return false;
+        });
+        _addMenuItem("Change Login History").click(function() {
+            changeLoginHistory();
+            
+            return false;
+        });
+        _addMenuItem("About").click(function() {
+            // TODO: This is a horrible way to display the information
+            window.alert('NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott\n'+
+                'NChatN is licensed under the GNU Public License version 3.\n'+
+                'A copy of the license is available at <http://www.gnu.org/licenses/>.'
+            ); 
+            
             return false;
         });
         
@@ -690,9 +914,12 @@ var chatRoom = (function(window, $) {
         // Start Chat Timer
         getAllMessages();
         getAllOnline();
+        getInvasionStatus();
         var chatHeartBeat = setInterval(getAllMessages, 4000);
         // Start Online Timer
         var onlineHeartBeat = setInterval(getAllOnline, 16000);
+        // Start Checking for Invasions
+        var invasionHeartBeat = setInterval(getInvasionStatus, 20000);
         
     }
     
@@ -709,8 +936,14 @@ var chatRoom = (function(window, $) {
         'selectChannel': function(id) {
             switchChannel(id);
         },
-        'insertInputText': function(text) {
+        'insertInputText': function(text, focus) {
             $input.val($input.val() + text);
+            if(typeof focus === 'undefined' || focus !== false) {
+                $input.focus();
+            } 
+        },
+        'registerHook': function(hook, fn) {
+            registerHook(hook, fn);
         }
     };
 })(window, jQuery);
@@ -786,6 +1019,7 @@ var smileyManager = (function(){
             var $entry = $('<a href="#"><img src="http://www.nowhere-else.org/smilies/'+smiley.id+'.gif" alt="'+smiley.name+'"></a>');
             $entry.click(function() {
                 chatRoom.insertInputText(' '+smiley.text[0]);
+                $('#smileyContainer').toggle();
                 return false;
             })
             .hover(function(event) {
@@ -834,9 +1068,15 @@ var tooltip = (function() {
     }
     
     function setPosition(posx, posy) {
+        var newTop = (posy-25);
+        var newLeft = (posx-$div.outerWidth());
+        // Adjust to make sure it can't go off screen
+        newTop = newTop < 0 ? 0 : newTop;
+        newLeft = newLeft < 0 ? 0 : newLeft;
+        // Plave the div
         $div.css({
-            'top': (posy-25), // Move above mouse
-            'left': (posx-$div.outerWidth()) // Move the tooltip to the left side
+            'top': newTop, // Move above mouse
+            'left': newLeft // Move the tooltip to the left side
         });
     } 
     
@@ -877,3 +1117,16 @@ function selectElement(elem) {
         range.select();
     }
 }
+
+// box-shadow: inset 0em -4em 3em -3em lightblue
+
+// -- Built in Hooks -- //
+chatRoom.registerHook('presend', function(e) {
+    if(e.text.indexOf('/who ') === 0 || e.text.indexOf('/whois ') === 0) {
+        var textPiece = e.text.split(' ').splice(1).join('_');
+        window.open('player_info.php?SEARCH='+escape(textPiece), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+        e.text = '';
+        // There is no need for any other handler to try to evaluate this
+        e.stopEventImmediate();
+    }
+});
