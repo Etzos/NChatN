@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>NChatN by Etzos</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>NChatN</h1>
+        <p>Drop-in replacement for the NEaB chat client</p>
+
+        <p class="view"><a href="https://github.com/Etzos/NChatN">View the Project on GitHub <small>Etzos/NChatN</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/Etzos/NChatN/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/Etzos/NChatN/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/Etzos/NChatN">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h3>
+<a name="neab-chat-next-nchatn" class="anchor" href="#neab-chat-next-nchatn"><span class="octicon octicon-link"></span></a>NEaB Chat Next (NChatN)</h3>
+
+<p>This is the home for NChatN. If you haven't played <a href="http://nowhere-else.org/">Nowhere-Else and Beyond</a> then you probably won't really care much about this little project. If you do play NEaB then you may want to take a quick look at this chat client, because it offers some cool improvements over the standard chat client.</p>
+
+<h3>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h3>
+
+<p>NChatN should have fewer bugs (at least fewer visible bugs), be more efficient, and should be able to emulate most features of the regular NEaB chat. There are currently a few missing features that I may add in the future, but if they're something you rely on, you may be better off with the old chat. They are:</p>
+
+<ul>
+<li>No tab completion box is shown (tab completion for usernames works, however the box that says "Tab for: " doesn't show up)</li>
+<li>Usernames aren't made "clickable" in the chat window (however, you're free to use the <code>/who &lt;username&gt;</code> and <code>/whois &lt;username&gt;</code> commands)</li>
+<li>There is no "Away" button (you can use the <code>/away</code> or <code>/afk</code> commands though`)</li>
+<li>Tab completion of usernames and adding smileys through the smiley box have a different way of spacing compared to the old chat (this is my preference, however I may add a configuration option for it later)</li>
+</ul><h3>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
+
+<p>Installation has become much easier since the switch to a GreaseMonkey/TamperMonkey script. However, it still has a few steps you have to go through.
+Please note that this chat is only tested in the latest versions of Firefox and Chrome! If you would like to help make it work in another browser, jump down to the "Contributing" section. </p>
+
+<h2>
+<a name="firefox" class="anchor" href="#firefox"><span class="octicon octicon-link"></span></a>Firefox</h2>
+
+<ol>
+<li>Install <a href="https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/">GreaseMonkey</a>
+</li>
+<li>After you have GreaseMonkey installed simply click on the link right <a href="https://rawgithub.com/Etzos/NChatN/master/public_html/util/GMShim.user.js">here</a> and install the script</li>
+<li>Load (or reload) NEaB's chat window</li>
+</ol><h2>
+<a name="chrome" class="anchor" href="#chrome"><span class="octicon octicon-link"></span></a>Chrome</h2>
+
+<ol>
+<li>Install <a href="https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en">TamperMonkey</a>
+</li>
+<li>After you have TamperMonkey installed click on the link right <a href="https://rawgithub.com/Etzos/NChatN/master/public_html/util/GMShim.user.js">here</a> and select the option to install it as a TamperMonkey script (important step!)</li>
+<li>Load (or reload) NEaB's chat window</li>
+</ol><h3>
+<a name="updating" class="anchor" href="#updating"><span class="octicon octicon-link"></span></a>Updating</h3>
+
+<p>There should be no need to update anything. The script is setup to update all on its own when a new release is available!</p>
+
+<h3>
+<a name="rules" class="anchor" href="#rules"><span class="octicon octicon-link"></span></a>Rules</h3>
+
+<p>I have spent quite a bit of time trying to make sure that NChatN follows the rules and guidelines of NEaB, as well as preventing an easy vector for abuse or other rule-breaking action. If you find a bug that allows for such a thing to take place, please file a bug report here about it immediately or let me know in chat! </p>
+
+<p>Similarly, I will not accept any code contributions that exploit game bugs or are contrary to the game's spirit.</p>
+
+<h3>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h3>
+
+<p>Want to contribute to this project? Here are a few things you should know first.
+(Sorry, this section is currently under construction)</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/Etzos">Etzos</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
