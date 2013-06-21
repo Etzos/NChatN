@@ -33,16 +33,21 @@ var chatRoom = (function(window, $) {
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
         
-    var channels = new Array(),     // Contains all of the (joined) channels
+    var channels = [],              // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
-        lastConnection;             // The time it took for the last connection to go through
+        lastConnection,             // The time it took for the last connection to go through
+        availChannels = [           // The list of available channels
+            {"id": 0, "name": "Lodge"},
+            {"id": 1, "name": "Newbie"},
+            {"id": 6, "name": "Trade Channel"}
+        ];         
     
     var settings = {
         showSysMessages: true,      // Whether or not to show system messages
         chatHistoryLogin: 20,       // The number of history lines shown on entry
         maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
-        detectChannels: false       // Attempt to guess which channels (other than the defaults) can be joined
+        detectChannels: true        // Attempt to guess which channels (other than the defaults) can be joined
     };
     
     var $input,                     // Input for chat
@@ -758,6 +763,15 @@ var chatRoom = (function(window, $) {
         
         changeSetting("chatHistoryLogin", result);
     }
+    
+    function renderChannelList() {
+        $channelSelect.empty();
+        $channelSelect.append("<option value=''>-- Channels --</option>\n");
+        for(var i = 0; i < availChannels.length; i++) {
+            var c = availChannels[i];
+            $channelSelect.append("<option value='"+c.id+"'>"+c.name+"</option>\n");
+        }
+    }
         
     function init() {
         // Start other required tools
@@ -921,6 +935,32 @@ var chatRoom = (function(window, $) {
         // Start Checking for Invasions
         var invasionHeartBeat = setInterval(getInvasionStatus, 20000);
         
+        renderChannelList();
+        if(settings.detectChannels === true) {
+            $.ajax({
+                url: 'general_chat.php',
+                data: 'CHANNEL=0&TAB=0',
+                type: 'GET',
+                context: this,
+                success: function(result) {
+                    var r = /\<option[ selected]* value=(\d+)\>([A-Za-z0-9 ]+)\n/gi;
+                    var tmp = result.split(r);
+                    tmp.shift();
+                    tmp.pop();
+                    if(tmp.length < 2) {
+                        return;
+                    }
+                    // This yields a strange array, something like:
+                    // ["<room id>", "<room name>", "", "<next room id>", ...]
+                    // So that's why we're skipping 3 instead of the usual 1
+                    availChannels = [];
+                    for(var i = 0; i < tmp.length; i+=3) {
+                        availChannels.push({"id": parseInt(tmp[i]), "name": tmp[i+1]});
+                    }
+                    renderChannelList();
+                }
+            });
+        }
     }
     
     return {
