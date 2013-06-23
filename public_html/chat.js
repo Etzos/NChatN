@@ -1204,7 +1204,7 @@ function selectElement(elem) {
         range.selectNodeContents(elem);
         sel.removeAllRanges();
         sel.addRange(range);
-    } else if (documnet.body.createTextRange) {
+    } else if (document.body.createTextRange) {
         var range = document.body.createTextRange();
         range.moveToElementText(elem);
         range.select();
