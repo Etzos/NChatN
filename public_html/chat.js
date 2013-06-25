@@ -773,7 +773,148 @@ var chatRoom = (function(window, $) {
             $channelSelect.append("<option value='"+c.id+"'>"+c.name+"</option>\n");
         }
     }
+    
+    var MenuEntry = function(options) {
+        var config = {
+            "text": "Default",
+            "description": "",
+            "action": null,
+            "preventHide": false
+        };
+        var children = [];
+
+        for(var prop in options || {}) {
+            if(config.hasOwnProperty(prop)) {
+                config[prop] = options[prop];
+            }
+        }
         
+        var $elem = {
+            container: null,
+            link: null,
+            childMenu: null
+        };
+        
+        construct();
+        
+        function construct() {
+            $elem.container = $('<li></li>');
+            $elem.link = $('<a></a>');
+            $elem.link.attr('href', '#')
+                .html(config.text)
+                .appendTo($elem.container);
+        
+            attachAction();
+        }
+        
+        function attachAction() {
+            // Clear all old actions
+            $elem.link.off("click mouseover mouseout");
+            
+            if(config.action !== null) {
+                $elem.link.on("click", config.action);
+                if(!config.preventHide) {
+                    $elem.link.click(function() {
+                       // TODO: Get reference to parent so that this can be done
+                       $menu.hide();
+                       return false;
+                    });
+                }
+            }
+            if(children.length > 0) {
+                // Check to make sure the child menu exists, if not build it
+                if($elem.childMenu === null) {
+                    buildChildMenu();
+                }
+                $elem.link.on("mouseover", function() {
+                    // TODO: Position based on the parent's position!
+                    $elem.childMenu.show();
+                    
+                    // Hide when moving to another element in the menu
+                    $elem.container.siblings().one("mouseover", function() {
+                        $elem.childMenu.hide();
+                    });
+                });
+            }
+        }
+        
+        function buildChildMenu() {
+            var cLen = children.length;
+            if(cLen < 1) {
+                return;
+            }
+            
+            // If menu doesn't exist, build it
+            if($elem.childMenu === null) {
+                //var par = $elem.container.parent();
+                //console.log(par);
+                
+                //var pos = par.css("right")+par.outerWidth();
+                //console.log("Position: "+pos);
+                var pos = 10.5;
+                
+                $elem.childMenu = $("<ul></ul>")
+                    .addClass("headerMenu")
+                    .css("right", pos+"em");
+                
+                // Insert the element into the DOM
+                $menu.parent().append($elem.childMenu);
+                
+                
+            }
+            
+            $elem.childMenu.empty();
+            for(var i = 0; i < cLen; i++) {
+                children[i].addTo($elem.childMenu);
+            }
+        }
+
+        // Public
+        return {
+            child: function(index) {
+                return children[index] || null;
+            },
+            addSubMenu: function(menu) {
+                children.push(menu);
+                attachAction();
+                buildChildMenu();
+                
+                return this;
+            },
+            setText: function(text) {
+                config.text = text;
+                $elem.link.html(config.text);
+                return this;
+            },
+            setDescription: function(description) {
+                config.description = description;
+                return this;
+            },
+            setAction: function(action) {
+                if(typeof action !== "function") {
+                    return this;
+                }
+                config.action = action;
+                //updateAction();
+                attachAction();
+                return this;
+            },
+            addTo: function(target) {
+                $elem.container.appendTo(target);
+            },
+            hideChildren: function() {
+                console.log("Hiding menu");
+                if($elem.childMenu !== null) {
+                    $elem.childMenu.hide();
+                }
+                
+                for(var i = 0; i < children.length; i++) {
+                    children[i].hideChildren();
+                }
+            }
+        };
+    };
+      
     function init() {
         // Start other required tools
         tooltip.init();
@@ -807,17 +948,41 @@ var chatRoom = (function(window, $) {
         playerName = Util.Cookies.neabGet("RPG", 1);
         
         // Fill in the Menu
+        $menu.html('');
+        
+        var SubMenu = new MenuEntry({
+            text: "This is a sub menu"
+        });
+        var SubMenu2 = new MenuEntry({
+            text: "Another menu entry"
+        });
+        var mainMenu = new MenuEntry({
+            "text": "Select All",
+            "action": function() {
+                var id = channels[selectedChannel].id;
+                selectElement( $('#chat-window-'+id)[0] );
+
+                return false;
+            }
+        }).addSubMenu(SubMenu).addSubMenu(SubMenu2);
+        var mainMenu2 = new MenuEntry({
+            text: "Toggle Sys Visibility"
+        });
+        mainMenu.addTo($menu);
+        mainMenu2.addTo($menu);
+        
         $('#menuLink').click(function() {
             $(document).one('click', function() {
                 $menu.hide();
+                mainMenu.hideChildren();
+                mainMenu2.hideChildren();
             });
             $menu.toggle();
             
             $(this).blur();
             return false;
         });
-        $menu.html('');
-        _addMenuItem("Select All").click(function() {
+        /*_addMenuItem("Select All").click(function() {
             var id = channels[selectedChannel].id;
             selectElement( $('#chat-window-'+id)[0] );
             
@@ -846,7 +1011,7 @@ var chatRoom = (function(window, $) {
             ); 
             
             return false;
-        });
+        });*/
         
         // Keybinding
         // Input Enter key pressed
@@ -991,8 +1156,6 @@ var chatRoom = (function(window, $) {
         }
     };
 })(window, jQuery);
-
-    var t= unescape(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
 
 var smileyManager = (function(){
     var $container;
