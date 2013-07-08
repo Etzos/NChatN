@@ -774,147 +774,20 @@ var chatRoom = (function(window, $) {
         }
     }
     
-    var MenuEntry = function(options) {
-        var config = {
-            "text": "Default",
-            "description": "",
-            "action": null,
-            "preventHide": false
-        };
-        var children = [];
-
-        for(var prop in options || {}) {
-            if(config.hasOwnProperty(prop)) {
-                config[prop] = options[prop];
-            }
-        }
-        
-        var $elem = {
-            container: null,
-            link: null,
-            childMenu: null
-        };
-        
-        construct();
-        
-        function construct() {
-            $elem.container = $('<li></li>');
-            $elem.link = $('<a></a>');
-            $elem.link.attr('href', '#')
-                .html(config.text)
-                .appendTo($elem.container);
-        
-            attachAction();
-        }
-        
-        function attachAction() {
-            // Clear all old actions
-            $elem.link.off("click mouseover mouseout");
+    function addMenu(menu) {
+        $menu.removeClass("headerMenu");
+        $menu.append(menu.getRoot());
+        $('#menuLink').click(function() {
+            $(document).one('click', function() {
+                menu.close();
+            });
             
-            if(config.action !== null) {
-                $elem.link.on("click", config.action);
-                if(!config.preventHide) {
-                    $elem.link.click(function() {
-                       // TODO: Get reference to parent so that this can be done
-                       $menu.hide();
-                       return false;
-                    });
-                }
-            }
-            if(children.length > 0) {
-                // Check to make sure the child menu exists, if not build it
-                if($elem.childMenu === null) {
-                    buildChildMenu();
-                }
-                $elem.link.on("mouseover", function() {
-                    // TODO: Position based on the parent's position!
-                    $elem.childMenu.show();
-                    
-                    // Hide when moving to another element in the menu
-                    $elem.container.siblings().one("mouseover", function() {
-                        $elem.childMenu.hide();
-                    });
-                });
-            }
-        }
-        
-        function buildChildMenu() {
-            var cLen = children.length;
-            if(cLen < 1) {
-                return;
-            }
-            
-            // If menu doesn't exist, build it
-            if($elem.childMenu === null) {
-                //var par = $elem.container.parent();
-                //console.log(par);
-                
-                //var pos = par.css("right")+par.outerWidth();
-                //console.log("Position: "+pos);
-                var pos = 10.5;
-                
-                $elem.childMenu = $("<ul></ul>")
-                    .addClass("headerMenu")
-                    .css("right", pos+"em");
-                
-                // Insert the element into the DOM
-                $menu.parent().append($elem.childMenu);
-                
-                
-            }
-            
-            $elem.childMenu.empty();
-            for(var i = 0; i < cLen; i++) {
-                children[i].addTo($elem.childMenu);
-            }
-        }
-
-        // Public
-        return {
-            child: function(index) {
-                return children[index] || null;
-            },
-            addSubMenu: function(menu) {
-                children.push(menu);
-                attachAction();
-                buildChildMenu();
-                
-                return this;
-            },
-            setText: function(text) {
-                config.text = text;
-                $elem.link.html(config.text);
-                return this;
-            },
-            setDescription: function(description) {
-                config.description = description;
-                return this;
-            },
-            setAction: function(action) {
-                if(typeof action !== "function") {
-                    return this;
-                }
-                config.action = action;
-                //updateAction();
-                attachAction();
-                return this;
-            },
-            addTo: function(target) {
-                $elem.container.appendTo(target);
-            },
-            hideChildren: function() {
-                console.log("Hiding menu");
-                if($elem.childMenu !== null) {
-                    $elem.childMenu.hide();
-                }
-                
-                for(var i = 0; i < children.length; i++) {
-                    children[i].hideChildren();
-                }
-            }
-        };
-    };
-      
+            menu.toggle();
+            this.blur();
+            return false;
+        });
+    }
+    
     function init() {
         // Start other required tools
         tooltip.init();
@@ -950,68 +823,79 @@ var chatRoom = (function(window, $) {
         // Fill in the Menu
         $menu.html('');
         
-        var SubMenu = new MenuEntry({
-            text: "This is a sub menu"
-        });
-        var SubMenu2 = new MenuEntry({
-            text: "Another menu entry"
-        });
-        var mainMenu = new MenuEntry({
-            "text": "Select All",
-            "action": function() {
-                var id = channels[selectedChannel].id;
-                selectElement( $('#chat-window-'+id)[0] );
 
-                return false;
+        var mainMenu = new MenuList({
+            select: {
+                text: "Select Text",
+                action: function() {
+                    var id = channels[selectedChannel].id;
+                    selectElement( $('#chat-window-'+id)[0] );
+
+                    return false;
+                }
+            },
+            toggleSys: {
+                text: "Toggle Sys Messages",
+                description: "Toggles the visibility of system messages",
+                action: function() {
+                    toggleSysMsgVisibility();
+                    return false;
+                }
+            },
+            updateOnline: {
+                text: "Update Online Players",
+                description: "Manually refreshes the online player list",
+                action: function() {
+                    getOnline(selectedChannel);
+                    // TODO: Prevent spamming this
+                    return false;
+                }
+            },
+            loginHistory: {
+                text: "Change Login History",
+                description: "Change the amount of chat history shown upon entering",
+                action: function() {
+                    changeLoginHistory();
+                    return false;
+                }
+            },
+            about: {
+                text: "About",
+                action: function() {
+                    // TODO: This is a horrible way to display the information
+                    window.alert('NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott\n'+
+                        'NChatN is licensed under the GNU Public License version 3.\n'+
+                        'A copy of the license is available at <http://www.gnu.org/licenses/>.'
+                    );
+                    return false;
+                }
             }
-        }).addSubMenu(SubMenu).addSubMenu(SubMenu2);
-        var mainMenu2 = new MenuEntry({
-            text: "Toggle Sys Visibility"
         });
-        mainMenu.addTo($menu);
-        mainMenu2.addTo($menu);
         
-        $('#menuLink').click(function() {
-            $(document).one('click', function() {
-                $menu.hide();
-                mainMenu.hideChildren();
-                mainMenu2.hideChildren();
-            });
-            $menu.toggle();
-            
-            $(this).blur();
-            return false;
+        /*var subMenu = new MenuList({
+            first: {
+                text: "First sub-menu",
+                action: function() {
+                    alert("You don't know what you're doing");
+                    return false;
+                }
+            }
         });
-        /*_addMenuItem("Select All").click(function() {
-            var id = channels[selectedChannel].id;
-            selectElement( $('#chat-window-'+id)[0] );
-            
-            return false;
-        });
-        _addMenuItem("Toggle Sys Messages").click(function() {
-            toggleSysMsgVisibility();
-            
-            return false;
-        });
-        _addMenuItem("Update Online Players").click(function() {
-            getOnline(selectedChannel);
-            // TODO: Prevent spamming this
-            return false;
-        });
-        _addMenuItem("Change Login History").click(function() {
-            changeLoginHistory();
-            
-            return false;
-        });
-        _addMenuItem("About").click(function() {
-            // TODO: This is a horrible way to display the information
-            window.alert('NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott\n'+
-                'NChatN is licensed under the GNU Public License version 3.\n'+
-                'A copy of the license is available at <http://www.gnu.org/licenses/>.'
-            ); 
-            
-            return false;
+        
+        var ssub = new MenuList({
+            sub: {
+                text: "Another sub-menu",
+                action: function() {
+                    
+                },
+                description: 'Does nothing'
+            }
         });*/
+        
+        addMenu(mainMenu);
+        
+        //mainMenu.addMenu("test", subMenu);
+        //subMenu.addMenu("first", ssub);
         
         // Keybinding
         // Input Enter key pressed
@@ -1386,3 +1270,138 @@ chatRoom.registerHook('presend', function(e) {
         e.stopEventImmediate();
     }
 });
+
+var MenuList = function(entryList) {
+    var entries = {};
+    var $menu = $('<ul class="headerMenu"></ul>');
+    
+    
+    // Merge and check entries
+    for(var prop in entryList) {
+        if(entries.hasOwnProperty(prop)) {
+            console.error("Unable to add menu '" + prop + "'! Entry already exists.");
+            continue;
+        }
+        var entry = entryList[prop];
+        
+        if(!isValidEntry(entry)) {
+            console.error("Invalid entry '" + prop + "'.");
+            continue;
+        }
+        
+        // Create entry elments
+        var $entry = $("<li></li>");
+        var $entryLink = $('<a href="#">'+entry.text+'</a>').attr("id", "menuList-"+prop);
+        
+        $entryLink.click(entry.action).click(function() {
+            // Find a way to close the uppermost menu
+            // TODO: This only closes the current menu (and sub menus) *NOT* parent menus!
+            close();
+        }).appendTo($entry);
+        
+        if(entry.description) {
+            $entryLink.attr("title", entry.description);
+        }
+        // Save important part
+        entry['$link'] = $entryLink;
+        
+        $menu.append($entry);
+        
+        entries[prop] = entry;
+    }
+    
+    function isValidEntry(entry) {
+        if(!entry.hasOwnProperty("text")) {
+            console.error("Entry must contain a 'text' property.");
+            return false;
+        }
+        if(entry.hasOwnProperty("action") && typeof entry.action !== "function") {
+            console.error("The 'action' property must be a function.");
+            return false;
+        }
+        return true;
+    }
+    
+    function addMenu(entryId, menu) {
+        if(!entries.hasOwnProperty(entryId)) {
+            console.error("Entry '" + entryId + "' does not exist.");
+            return false;
+        } else if(typeof menu !== "object") {
+            console.error("Menu must be a MenuList object.");
+            return false;
+        }
+        
+        var entry = entries[entryId];
+        
+        var $e = entry.$link;
+
+        $e.on("mouseover", function() {
+            // TODO: Position based on the parent's position!
+            var loc = $e.parent().position();
+            
+            //var first = parseInt($menu.css('right'));
+            var second = $menu.width();
+            
+            //console.log("First part (css right): "+first+" Second part (width): "+second);
+            
+            entry.child.pos(loc.top, second+4); // The 4 is from the headerMenu class (should be fixed eventually)
+            
+            entry.child.open();
+            
+            // Hide when moving to another element in the menu
+            $e.parent().siblings('li').children().one("mouseover", function() {
+                entry.child.close();
+            });
+        });
+        
+        entry['child'] = menu;
+        $menu.append(menu.getRoot());
+        return true;
+    }
+    
+    function position(top, right) {
+        $menu.css({
+            'top': top,
+            'right': right
+        });
+    }
+    
+    function closeChildren() {
+        for(var e in entries) {
+            var entry = entries[e];
+            if(entry.child) {
+                entry.child.close();
+            }
+        }
+    }
+    
+    function close() {
+        closeChildren();
+        $menu.hide();
+    }
+    
+    return {
+        addMenu: function(entryId, menu) {
+            return addMenu(entryId, menu);
+        },
+        getRoot: function() {
+            return $menu;
+        },
+        open: function() {
+            $menu.show();
+        },
+        close: function() {
+            close();
+        },
+        toggle: function() {
+            if($menu.css("display") === "none") {
+                this.open();
+            } else {
+                this.close();
+            }
+        },
+        pos: function(top, right) {
+            position(top, right);
+        }
+    };
+};
