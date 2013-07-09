@@ -894,30 +894,7 @@ var chatRoom = (function(window, $) {
             }
         });
         
-        /*var subMenu = new MenuList({
-            first: {
-                text: "First sub-menu",
-                action: function() {
-                    alert("You don't know what you're doing");
-                    return false;
-                }
-            }
-        });
-        
-        var ssub = new MenuList({
-            sub: {
-                text: "Another sub-menu",
-                action: function() {
-                    
-                },
-                description: 'Does nothing'
-            }
-        });*/
-        
         addMenu(mainMenu);
-        
-        //mainMenu.addMenu("test", subMenu);
-        //subMenu.addMenu("first", ssub);
         
         // Keybinding
         // Input Enter key pressed

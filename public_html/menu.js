@@ -39,6 +39,7 @@ var MenuList = function(entryList) {
         $entryLink.click(entry.action).click(function() {
             // Find a way to close the uppermost menu
             // TODO: This only closes the current menu (and sub menus) *NOT* parent menus!
+            // Actually the one-off click() event in chat.js handles this for now
             close();
         }).appendTo($entry);
         
@@ -79,15 +80,9 @@ var MenuList = function(entryList) {
         var $e = entry.$link;
 
         $e.on("mouseover", function() {
-            // TODO: Position based on the parent's position!
             var loc = $e.parent().position();
-            
-            //var first = parseInt($menu.css('right'));
-            var second = $menu.width();
-            
-            //console.log("First part (css right): "+first+" Second part (width): "+second);
-            
-            entry.child.pos(loc.top, second+4); // The 4 is from the headerMenu class (should be fixed eventually)
+            var menuWidth = $menu.width();
+            entry.child.pos(loc.top, menuWidth-1); // Move it back 1 pixel to cover the border
             
             entry.child.open();
             
