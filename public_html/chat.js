@@ -427,8 +427,10 @@ var chatRoom = (function(window, $) {
             }
         }
         
-        // Update tabs (if not active tab)
         var localId = _getIdFromServerId(chanServerId);
+        // Check scroll
+        doScrollCheck(localId);
+        // Update tabs (if not active tab)
         if(localId !== selectedChannel && (isSys && settings.showSysMessages)) {
             $('#chat-tab-'+chanServerId).addClass('newMessageTab');
         }
