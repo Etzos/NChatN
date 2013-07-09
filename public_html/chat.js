@@ -902,6 +902,21 @@ var chatRoom = (function(window, $) {
                     return false;
                 }
             },
+            detectChannel: {
+                text: "Auto-detect Channels",
+                description: "Automatically detect the available channels",
+                action: function() {
+                    var result = window.prompt('Wheter or not to automatically detect channels.\n(Enter either true or false, non-falsy values will be treated as true)', settings.detectChannels);
+                    // If empty, assume they want to leave it the same
+                    if(!result || result === "") {
+                        return;
+                    }
+                    result = Boolean(result).valueOf();
+
+                    changeSetting("detectChannels", result);
+                    return false;
+                }
+            },
             about: {
                 text: "About",
                 action: function() {
