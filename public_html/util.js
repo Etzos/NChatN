@@ -15,9 +15,6 @@
  */
 
 var Util = {
-    /**
-     * Provides methods for dealing with cookies
-     */
     Cookies : {
         /**
          * Get a particular cookie key
