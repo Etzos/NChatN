@@ -463,3 +463,8 @@ img {
     margin-top: 3px;
     margin-left: 3px;
 }
+
+/** Chat History Coloring **/
+.historyShade {
+    box-shadow: inset 0em -4em 3em -3em lightblue;
+}

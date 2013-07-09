@@ -443,6 +443,21 @@ var chatRoom = (function(window, $) {
             return $.inArray(x, second) < 0;
         });
     }
+    
+    /**
+     * Checks to see if the given chat is at the bottom or not and handles all modifiers
+     * @param {number} localId The local id for the channel
+     */
+    function doScrollCheck(localId) {
+        var $cWin = $('#chat-window-'+channels[localId].id);
+        var bot = _isAtBottom( $cWin );
+        channels[localId].atBottom = bot;
+        if(bot) {
+            $cWin.removeClass('historyShade');
+        } else {
+            $cWin.addClass('historyShade');
+        }
+    }
         
     /**
      * Creates the various HTML elements for the given channel ID
@@ -455,6 +470,10 @@ var chatRoom = (function(window, $) {
             $('<div></div>', {
                 'id': 'chat-window-'+chanServerId,
                 'class': 'chatWindow inactive'
+            }).scroll(function() {
+                // Check to see if it's at the bottom
+                var localId = _getIdFromServerId(chanServerId);
+                doScrollCheck(localId);
             }).appendTo($chatContainer);
         }
         
@@ -974,6 +993,19 @@ var chatRoom = (function(window, $) {
            
            $channelSelect.children('option:eq(0)').prop('selected', true);
            $chanSel.prop('selected', false);
+        });
+        // Track page resizing for scroll
+        $(window).resize(function() {
+            var curChan = channels[selectedChannel];
+            // Maintain bottom-ness if at bottom
+            var $cWin = $('#chat-window-'+curChan.id);
+
+            if(curChan.atBottom) {
+                $cWin.scrollTop( $cWin.prop('scrollHeight') );
+            } else {
+                $cWin.addClass('historyShade');
+            }
+
         });
         
         // Timers (Times are default from NEaB)
