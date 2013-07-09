@@ -848,6 +848,7 @@ var chatRoom = (function(window, $) {
         var mainMenu = new MenuList({
             select: {
                 text: "Select Text",
+                description: "Select all text in the current channel",
                 action: function() {
                     var id = channels[selectedChannel].id;
                     selectElement( $('#chat-window-'+id)[0] );
