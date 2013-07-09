@@ -18,23 +18,42 @@ var MenuList = function(entryList) {
     var entries = {};
     var $menu = $('<ul class="headerMenu"></ul>');
     
-    
     // Merge and check entries
-    for(var prop in entryList) {
-        if(entries.hasOwnProperty(prop)) {
-            console.error("Unable to add menu '" + prop + "'! Entry already exists.");
-            continue;
+    addEntries(entryList);
+    
+    // -- Private Functions -- //
+    function isValidEntry(entry) {
+        if(!entry.hasOwnProperty("text")) {
+            console.error("Entry must contain a 'text' property.");
+            return false;
         }
-        var entry = entryList[prop];
-        
+        if(entry.hasOwnProperty("action") && typeof entry.action !== "function") {
+            console.error("The 'action' property must be a function.");
+            return false;
+        }
+        return true;
+    }
+    
+    function addEntries(entryList) {
+        var entry;
+        for(entry in entryList) {
+            if(entries.hasOwnProperty(entry)) {
+                console.error("Unable to add menu '" + entry + "'! Entry already exists.");
+                continue;
+            }
+            addEntry(entry, entryList[entry]);
+        }
+    }
+    
+    function addEntry(entryID, entry) {
         if(!isValidEntry(entry)) {
-            console.error("Invalid entry '" + prop + "'.");
-            continue;
+            console.error("Invalid entry '" + entryID + "'.");
+            return false;
         }
         
         // Create entry elments
         var $entry = $("<li></li>");
-        var $entryLink = $('<a href="#">'+entry.text+'</a>').attr("id", "menuList-"+prop);
+        var $entryLink = $('<a href="#">'+entry.text+'</a>');
         
         $entryLink.click(entry.action).click(function() {
             // Find a way to close the uppermost menu
@@ -51,18 +70,8 @@ var MenuList = function(entryList) {
         
         $menu.append($entry);
         
-        entries[prop] = entry;
-    }
-    
-    function isValidEntry(entry) {
-        if(!entry.hasOwnProperty("text")) {
-            console.error("Entry must contain a 'text' property.");
-            return false;
-        }
-        if(entry.hasOwnProperty("action") && typeof entry.action !== "function") {
-            console.error("The 'action' property must be a function.");
-            return false;
-        }
+        entries[entryID] = entry;
+        
         return true;
     }
     
@@ -99,8 +108,8 @@ var MenuList = function(entryList) {
     
     function position(top, right) {
         $menu.css({
-            'top': top,
-            'right': right
+            'top': top+'px',
+            'right': right+'px'
         });
     }
     
@@ -140,6 +149,9 @@ var MenuList = function(entryList) {
         },
         pos: function(top, right) {
             position(top, right);
+        },
+        addEntries: function(entryList) {
+            addEntries(entryList);
         }
     };
 };
