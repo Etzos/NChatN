@@ -13,6 +13,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+function importScripts(scripts) {
+    if(!Array.isArray(scripts)) {
+        scripts = [scripts];
+    }
+
+    for(var i = 0; i < scripts.length; i++) {
+        var s = scripts[i];
+        var scriptElem = document.createElement('script');
+
+        scriptElem.type = 'text/javascript';
+        // This should block execution until the script is loaded
+        scriptElem.async = true;
+        scriptElem.src = baseUrl+scripts[i];
+
+        document.getElementsByTagName('head')[0].appendChild(scriptElem);
+    }
+}
+var baseUrl = 'http://garth.web.nowhere-else.org/web/Uploads/';
+
+importScripts(['util.js', 'tooltip.js', 'smilies.js', 'menu.js']);
+
 var chatRoom = (function(window, $) {
     var URL = {
       'send': 'sendchat.php',
@@ -1041,200 +1062,6 @@ var chatRoom = (function(window, $) {
     };
 })(window, jQuery);
 
-var smileyManager = (function(){
-    var $container;
-    var smilies = [
-        { id:'0',  name: 'Smile', text: [':)', ':-)'] },
-        { id:'1',  name: 'Sticking Tongue Out', text: [':P', ':p', ':-P', ':-p'] },
-        { id:'2',  name: 'Yell', text: [':O', ':o', ':-O', ':-o'] },
-        { id:'3',  name: 'Frown', text: [':(', ':-('] },
-        { id:'4',  name: 'Undecided', text: [':-/'] },
-        { id:'5',  name: 'Wink', text: [';)', ';-)'] },
-        { id:'6',  name: 'Grin', text: [':D', ':-D'] },
-        { id:'7',  name: 'Sunglasses', text: ['8)', '8-)'] },
-        { id:'8',  name: 'Masked', text: ['B)', 'B-)'] },
-        { id:'9',  name: 'Laughing', text: ['XD'] },
-        { id:'10', name: 'Crying', text: ['T.T'] },
-        { id:'11', name: 'Sweat Drop', text: ['^^\''] },
-        { id:'12', name: 'Happy', text: ['^.^', '^^'] },
-        { id:'13', name: 'Surprised', text: ['O.O', 'o.o'] },
-        { id:'14', name: 'Scowl', text: ['8|', '8-|'] },
-        { id:'15', name: 'Rock On', text: ['\\M/'] },
-        { id:'16', name: 'D\'oh', text: ['>.<'] },
-        { id:'17', name: 'Excited Laughing', text: ['XP'] },
-        { id:'18', name: 'Shocked', text: ['o.O', 'oO'] },
-        { id:'19', name: 'Tired', text: ['-.-'] },
-        { id:'20', name: 'Evil Grin', text: ['(:<'] },
-        { id:'21', name: 'Facepalm', text: ['f/'] },
-        { id:'22', name: 'Unsure', text: [':S', ':s'] },
-        { id:'23', name: 'Evil', text: ['*.*'] },
-        { id:'24', name: 'Sealed Lips', text: [':X'] },
-        { id:'25', name: 'Dead', text: ['X.X', 'x.x'] },
-        { id:'26', name: 'Money Eyes', text: ['$.$'] },
-        { id:'27', name: 'Embarrased', text: ['o@@o'] },
-        { id:'28', name: 'Eye Roll', text: ['9.9'] },
-        { id:'29', name: 'Angry Yell', text: ['O:<'] },
-        { id:'30', name: 'Straight Face', text: ['B|'] },
-        { id:'31', name: 'Puppy Eyes', text: ['B('] },
-        { id:'32', name: 'Firey Eyes', text: ['B0'] },
-        { id:'33', name: 'Confused', text: ['@.@'] },
-        { id:'34', name: 'Evil Horns', text: ['^**^'] },
-        { id:'35', name: 'Eyes Spinning', text: ['9.6'] },
-        { id:'36', name: 'Pirate', text: ['/.O'] },
-        { id:'37', name: 'Frustrated', text: ['d.b'] },
-        { id:'38', name: 'Annoyed', text: ['>.>'] },
-        { id:'39', name: 'Kitty', text: ['=^_^='] }
-    ];
-    
-    function isSmiley(text) {
-        $.each(smilies, function(index, smiley) {
-            if($.inArray(text, smiley.text)) {
-                return index;
-            }
-        });
-        return false;
-    }
-    
-    function drawTable() {
-        // Get the container
-        $container = $('#smileyContainer');
-        // Bind to the link
-        $('#smileyLink').click(function(event) {
-            $(document).one('click', function() {
-                $('#smileyContainer').hide();
-            });
-            $('#smileyContainer').toggle();
-            
-            event.stopPropagation();
-            return false;
-        });
-        $.each(smilies, function(index, smiley) {
-            var $entry = $('<a href="#"><img src="http://www.nowhere-else.org/smilies/'+smiley.id+'.gif" alt="'+smiley.name+'"></a>');
-            $entry.click(function() {
-                chatRoom.insertInputText(' '+smiley.text[0]);
-                $('#smileyContainer').toggle();
-                return false;
-            })
-            .hover(function(event) {
-                tooltip.on(smiley.name, event.pageX, event.pageY);
-            }, function() {
-                tooltip.off(); 
-            });
-            $container.append($entry);
-        });
-    }
-    
-    function getId(smileyId) {
-        for(var i=0; i<smilies.length; i++) {
-            if(smilies[i].id === smileyId)
-                return smilies[i];
-        }
-        console.error('Given smiley id is not valid: '+smileyId);
-    }
-    
-    function getSmileyText(id) {
-        return getId(id).text[0];
-    }
-    
-    return {
-        'init': function() {
-            drawTable();
-        },
-        'toggleTable': function() {
-            $container.toggle();
-        },
-        'getSmileyText': function(id) {
-            return getSmileyText(id);
-        }
-    };
-})();
-
-var tooltip = (function() {
-    var $div;
-    
-    function init() {
-        $div = $('#tooltip');
-    }
-    
-    function setText(text) {
-        $div.html(text);
-    }
-    
-    function setPosition(posx, posy) {
-        var newTop = (posy-25);
-        var newLeft = (posx-$div.outerWidth());
-        // Adjust to make sure it can't go off screen
-        newTop = newTop < 0 ? 0 : newTop;
-        newLeft = newLeft < 0 ? 0 : newLeft;
-        // Plave the div
-        $div.css({
-            'top': newTop, // Move above mouse
-            'left': newLeft // Move the tooltip to the left side
-        });
-    } 
-    
-    return {
-        'init': function() {
-            init();
-        },
-        'on': function(text, posx, posy) {
-            setText(text);
-            setPosition(posx, posy);
-            $div.show();
-        },
-        'off': function() {
-            $div.hide();
-        }
-    };
-})();
-
-/**
- * Provides general utilities for various things
- */
-var Util = {
-    /**
-     * Provides methods for dealing with cookies
-     */
-    Cookies : {
-        /**
-         * Get a particular cookie key
-         * 
-         * @param {String} key The cookie key to return
-         * @returns {String} Cookie key value
-         */
-        getValue: function(key) {
-            // This is taken from MDN and the cookie.js framework ( https://developer.mozilla.org/en-US/docs/DOM/document.cookie )
-            return unescape(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + escape(key).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
-        },
-        /**
-         * Get a value from a cookie NEaB-style
-         * 
-         * NEaB seperates values inside of cookies further using the slash (/) character.
-         * This method just makes access a bit easier.
-         * 
-         * @param {String} key The cookie key
-         * @param {Number} index The NEaB cookie value index
-         * @returns {String} The value specified by the key and index, or an empty string
-         */
-        neabGet: function(key, index) {
-            var cookie = this.getValue(key);
-            if(cookie === null) {
-                return "";
-            }
-            return this.neabSplit(cookie)[index] || "";
-        },
-        /**
-         * Returns a string split by the slash (/) character
-         * 
-         * @param {String} str A string to split by slashes
-         * @returns {Array[String]} The array of results
-         */
-        neabSplit: function(str) {
-            return str.split("/");
-        }
-    }
-};
-
 // -- Ancillary functions -- //
 /**
  * Toggles the visibility of the help menu
@@ -1270,138 +1097,3 @@ chatRoom.registerHook('presend', function(e) {
         e.stopEventImmediate();
     }
 });
-
-var MenuList = function(entryList) {
-    var entries = {};
-    var $menu = $('<ul class="headerMenu"></ul>');
-    
-    
-    // Merge and check entries
-    for(var prop in entryList) {
-        if(entries.hasOwnProperty(prop)) {
-            console.error("Unable to add menu '" + prop + "'! Entry already exists.");
-            continue;
-        }
-        var entry = entryList[prop];
-        
-        if(!isValidEntry(entry)) {
-            console.error("Invalid entry '" + prop + "'.");
-            continue;
-        }
-        
-        // Create entry elments
-        var $entry = $("<li></li>");
-        var $entryLink = $('<a href="#">'+entry.text+'</a>').attr("id", "menuList-"+prop);
-        
-        $entryLink.click(entry.action).click(function() {
-            // Find a way to close the uppermost menu
-            // TODO: This only closes the current menu (and sub menus) *NOT* parent menus!
-            close();
-        }).appendTo($entry);
-        
-        if(entry.description) {
-            $entryLink.attr("title", entry.description);
-        }
-        // Save important part
-        entry['$link'] = $entryLink;
-        
-        $menu.append($entry);
-        
-        entries[prop] = entry;
-    }
-    
-    function isValidEntry(entry) {
-        if(!entry.hasOwnProperty("text")) {
-            console.error("Entry must contain a 'text' property.");
-            return false;
-        }
-        if(entry.hasOwnProperty("action") && typeof entry.action !== "function") {
-            console.error("The 'action' property must be a function.");
-            return false;
-        }
-        return true;
-    }
-    
-    function addMenu(entryId, menu) {
-        if(!entries.hasOwnProperty(entryId)) {
-            console.error("Entry '" + entryId + "' does not exist.");
-            return false;
-        } else if(typeof menu !== "object") {
-            console.error("Menu must be a MenuList object.");
-            return false;
-        }
-        
-        var entry = entries[entryId];
-        
-        var $e = entry.$link;
-
-        $e.on("mouseover", function() {
-            // TODO: Position based on the parent's position!
-            var loc = $e.parent().position();
-            
-            //var first = parseInt($menu.css('right'));
-            var second = $menu.width();
-            
-            //console.log("First part (css right): "+first+" Second part (width): "+second);
-            
-            entry.child.pos(loc.top, second+4); // The 4 is from the headerMenu class (should be fixed eventually)
-            
-            entry.child.open();
-            
-            // Hide when moving to another element in the menu
-            $e.parent().siblings('li').children().one("mouseover", function() {
-                entry.child.close();
-            });
-        });
-        
-        entry['child'] = menu;
-        $menu.append(menu.getRoot());
-        return true;
-    }
-    
-    function position(top, right) {
-        $menu.css({
-            'top': top,
-            'right': right
-        });
-    }
-    
-    function closeChildren() {
-        for(var e in entries) {
-            var entry = entries[e];
-            if(entry.child) {
-                entry.child.close();
-            }
-        }
-    }
-    
-    function close() {
-        closeChildren();
-        $menu.hide();
-    }
-    
-    return {
-        addMenu: function(entryId, menu) {
-            return addMenu(entryId, menu);
-        },
-        getRoot: function() {
-            return $menu;
-        },
-        open: function() {
-            $menu.show();
-        },
-        close: function() {
-            close();
-        },
-        toggle: function() {
-            if($menu.css("display") === "none") {
-                this.open();
-            } else {
-                this.close();
-            }
-        },
-        pos: function(top, right) {
-            position(top, right);
-        }
-    };
-};
