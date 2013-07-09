@@ -87,6 +87,8 @@ var MenuList = function(entryList) {
         var entry = entries[entryId];
         
         var $e = entry.$link;
+        
+        $e.prepend("&lt; ");
 
         $e.on("mouseover", function() {
             var loc = $e.parent().position();
