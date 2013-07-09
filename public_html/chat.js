@@ -877,14 +877,6 @@ var chatRoom = (function(window, $) {
                     return false;
                 }
             },
-            toggleSys: {
-                text: "Toggle Sys Messages",
-                description: "Toggles the visibility of system messages",
-                action: function() {
-                    toggleSysMsgVisibility();
-                    return false;
-                }
-            },
             updateOnline: {
                 text: "Update Online Players",
                 description: "Manually refreshes the online player list",
@@ -894,26 +886,9 @@ var chatRoom = (function(window, $) {
                     return false;
                 }
             },
-            loginHistory: {
-                text: "Change Login History",
-                description: "Change the amount of chat history shown upon entering",
+            settings: {
+                text: "Settings",
                 action: function() {
-                    changeLoginHistory();
-                    return false;
-                }
-            },
-            detectChannel: {
-                text: "Auto-detect Channels",
-                description: "Automatically detect the available channels",
-                action: function() {
-                    var result = window.prompt('Wheter or not to automatically detect channels.\n(Enter either true or false, non-falsy values will be treated as true)', settings.detectChannels);
-                    // If empty, assume they want to leave it the same
-                    if(!result || result === "") {
-                        return;
-                    }
-                    result = Boolean(result).valueOf();
-
-                    changeSetting("detectChannels", result);
                     return false;
                 }
             },
@@ -929,6 +904,41 @@ var chatRoom = (function(window, $) {
                 }
             }
         });
+        
+        var settingMenu = new MenuList({
+            toggleSys: {
+                text: "Toggle Sys Messages",
+                description: "Toggles the visibility of system messages",
+                action: function() {
+                    toggleSysMsgVisibility();
+                    return true;
+                }
+            },
+            loginHistory: {
+                text: "Change Login History",
+                description: "Change the amount of chat history shown upon entering",
+                action: function() {
+                    changeLoginHistory();
+                    return true;
+                }
+            },
+            detectChannel: {
+                text: "Auto-detect Channels",
+                description: "Automatically detect the available channels",
+                action: function() {
+                    var result = window.prompt('Wheter or not to automatically detect channels.\n(Enter either true or false, non-falsy values will be treated as true)', settings.detectChannels);
+                    // If empty, assume they want to leave it the same
+                    if(result === "" || (result !== 'true' && result !== 'false') ) {
+                        return;
+                    }
+                    result = (result === 'true') ? true : false;
+
+                    changeSetting("detectChannels", result);
+                    return true;
+                }
+            }
+        });
+        mainMenu.addMenu("settings", settingMenu);
         
         addMenu(mainMenu);
         
