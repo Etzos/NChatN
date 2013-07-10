@@ -350,11 +350,15 @@ img {
     position: absolute;
     top: 4px;
     right: 4px;
-    width: 10em;
+    width: 160px;
     list-style-type: none;
     text-align: left;
     font-size: 10pt;
     display: none;
+}
+
+.headerMenu li:first-child {
+    border-top: 1px solid black;
 }
 
 .headerMenu li {
@@ -367,12 +371,16 @@ img {
     cursor: pointer;
 
     padding: 0.1em;
+    padding-left: 0.2em;
+    transition: padding 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+        background 800ms cubic-bezier(0.23, 1, 0.32, 1);
 
-    width: 100%;
+    width: auto;
 }
 
 .headerMenu li:hover {
     background-color: #333333;
+    padding-left: 0.5em;
 }
 
 .headerMenu a {
@@ -454,4 +462,9 @@ img {
     display: inline;
     margin-top: 3px;
     margin-left: 3px;
+}
+
+/** Chat History Coloring **/
+.historyShade {
+    box-shadow: inset 0em -4em 3em -3em lightblue;
 }

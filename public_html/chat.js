@@ -13,6 +13,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+function importScripts(scripts) {
+    if(!Array.isArray(scripts)) {
+        scripts = [scripts];
+    }
+
+    for(var i = 0; i < scripts.length; i++) {
+        var s = scripts[i];
+        var scriptElem = document.createElement('script');
+
+        scriptElem.type = 'text/javascript';
+        // This should block execution until the script is loaded
+        scriptElem.async = true;
+        scriptElem.src = baseUrl+scripts[i];
+
+        document.getElementsByTagName('head')[0].appendChild(scriptElem);
+    }
+}
+var baseUrl = 'http://garth.web.nowhere-else.org/web/Uploads/';
+
+importScripts(['util.js', 'tooltip.js', 'smilies.js', 'menu.js']);
+
 var chatRoom = (function(window, $) {
     var URL = {
       'send': 'sendchat.php',
@@ -33,16 +54,22 @@ var chatRoom = (function(window, $) {
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
         
-    var channels = new Array(),     // Contains all of the (joined) channels
+    var channels = [],              // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
-        lastConnection;             // The time it took for the last connection to go through
+        lastConnection,             // The time it took for the last connection to go through
+        playerName,                 // The player's name
+        availChannels = [           // The list of available channels
+            {"id": 0, "name": "Lodge"},
+            {"id": 1, "name": "Newbie"},
+            {"id": 6, "name": "Trade Channel"}
+        ];         
     
     var settings = {
         showSysMessages: true,      // Whether or not to show system messages
         chatHistoryLogin: 20,       // The number of history lines shown on entry
         maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
-        detectChannels: false       // Attempt to guess which channels (other than the defaults) can be joined
+        detectChannels: true        // Attempt to guess which channels (other than the defaults) can be joined
     };
     
     var $input,                     // Input for chat
@@ -400,8 +427,10 @@ var chatRoom = (function(window, $) {
             }
         }
         
-        // Update tabs (if not active tab)
         var localId = _getIdFromServerId(chanServerId);
+        // Check scroll
+        doScrollCheck(localId);
+        // Update tabs (if not active tab)
         if(localId !== selectedChannel && (isSys && settings.showSysMessages)) {
             $('#chat-tab-'+chanServerId).addClass('newMessageTab');
         }
@@ -416,6 +445,21 @@ var chatRoom = (function(window, $) {
             return $.inArray(x, second) < 0;
         });
     }
+    
+    /**
+     * Checks to see if the given chat is at the bottom or not and handles all modifiers
+     * @param {number} localId The local id for the channel
+     */
+    function doScrollCheck(localId) {
+        var $cWin = $('#chat-window-'+channels[localId].id);
+        var bot = _isAtBottom( $cWin );
+        channels[localId].atBottom = bot;
+        if(bot) {
+            $cWin.removeClass('historyShade');
+        } else {
+            $cWin.addClass('historyShade');
+        }
+    }
         
     /**
      * Creates the various HTML elements for the given channel ID
@@ -428,6 +472,10 @@ var chatRoom = (function(window, $) {
             $('<div></div>', {
                 'id': 'chat-window-'+chanServerId,
                 'class': 'chatWindow inactive'
+            }).scroll(function() {
+                // Check to see if it's at the bottom
+                var localId = _getIdFromServerId(chanServerId);
+                doScrollCheck(localId);
             }).appendTo($chatContainer);
         }
         
@@ -758,7 +806,30 @@ var chatRoom = (function(window, $) {
         
         changeSetting("chatHistoryLogin", result);
     }
-        
+    
+    function renderChannelList() {
+        $channelSelect.empty();
+        $channelSelect.append("<option value=''>-- Channels --</option>\n");
+        for(var i = 0; i < availChannels.length; i++) {
+            var c = availChannels[i];
+            $channelSelect.append("<option value='"+c.id+"'>"+c.name+"</option>\n");
+        }
+    }
+    
+    function addMenu(menu) {
+        $menu.removeClass("headerMenu");
+        $menu.append(menu.getRoot());
+        $('#menuLink').click(function() {
+            $(document).one('click', function() {
+                menu.closeMenu();
+            });
+            
+            menu.toggle();
+            this.blur();
+            return false;
+        });
+    }
+    
     function init() {
         // Start other required tools
         tooltip.init();
@@ -788,47 +859,88 @@ var chatRoom = (function(window, $) {
         // Load settings
         _loadSettings();
         
+        // Get value from cookie
+        playerName = Util.Cookies.neabGet("RPG", 1);
+        
         // Fill in the Menu
-        $('#menuLink').click(function() {
-            $(document).one('click', function() {
-                $menu.hide();
-            });
-            $menu.toggle();
-            
-            $(this).blur();
-            return false;
-        });
         $menu.html('');
-        _addMenuItem("Select All").click(function() {
-            var id = channels[selectedChannel].id;
-            selectElement( $('#chat-window-'+id)[0] );
-            
-            return false;
+        
+
+        var mainMenu = new MenuList({
+            select: {
+                text: "Select Text",
+                description: "Select all text in the current channel",
+                action: function() {
+                    var id = channels[selectedChannel].id;
+                    selectElement( $('#chat-window-'+id)[0] );
+
+                    return false;
+                }
+            },
+            updateOnline: {
+                text: "Update Online Players",
+                description: "Manually refreshes the online player list",
+                action: function() {
+                    getOnline(selectedChannel);
+                    // TODO: Prevent spamming this
+                    return false;
+                }
+            },
+            settings: {
+                text: "Settings",
+                action: function() {
+                    return false;
+                }
+            },
+            about: {
+                text: "About",
+                action: function() {
+                    // TODO: This is a horrible way to display the information
+                    window.alert('NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott\n'+
+                        'NChatN is licensed under the GNU Public License version 3.\n'+
+                        'A copy of the license is available at <http://www.gnu.org/licenses/>.'
+                    );
+                    return false;
+                }
+            }
         });
-        _addMenuItem("Toggle Sys Messages").click(function() {
-            toggleSysMsgVisibility();
-            
-            return false;
+        
+        var settingMenu = new MenuList({
+            toggleSys: {
+                text: "System Messages ["+ (settings.showSysMessages ? "on" : "off") +"]",
+                description: "Toggles the visibility of system messages",
+                action: function() {
+                    toggleSysMsgVisibility();
+                    var stat = settings.showSysMessages ? "on" : "off";
+                    settingMenu.modifyEntry("toggleSys", "System Messages ["+stat+"]");
+                    return false;
+                }
+            },
+            loginHistory: {
+                text: "Change Login History",
+                description: "Change the amount of chat history shown upon entering",
+                action: function() {
+                    changeLoginHistory();
+                    return false;
+                }
+            },
+            detectChannel: {
+                text: "Detect Channels ["+ (settings.detectChannels ? "on" : "off") +"]",
+                description: "Automatically detect the available channels",
+                action: function() {
+                    var newVal = !settings.detectChannels;
+                    
+                    settingMenu.modifyEntry("detectChannel", "Detect Channels ["+ (newVal ? "on" : "off") +"]");
+                    
+                    changeSetting("detectChannels", newVal);
+                    // TODO: If changed to true, attempt to load the channels
+                    return false;
+                }
+            }
         });
-        _addMenuItem("Update Online Players").click(function() {
-            getOnline(selectedChannel);
-            // TODO: Prevent spamming this
-            return false;
-        });
-        _addMenuItem("Change Login History").click(function() {
-            changeLoginHistory();
-            
-            return false;
-        });
-        _addMenuItem("About").click(function() {
-            // TODO: This is a horrible way to display the information
-            window.alert('NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott\n'+
-                'NChatN is licensed under the GNU Public License version 3.\n'+
-                'A copy of the license is available at <http://www.gnu.org/licenses/>.'
-            ); 
-            
-            return false;
-        });
+        mainMenu.addMenu("settings", settingMenu);
+        
+        addMenu(mainMenu);
         
         // Keybinding
         // Input Enter key pressed
@@ -909,6 +1021,19 @@ var chatRoom = (function(window, $) {
            $channelSelect.children('option:eq(0)').prop('selected', true);
            $chanSel.prop('selected', false);
         });
+        // Track page resizing for scroll
+        $(window).resize(function() {
+            var curChan = channels[selectedChannel];
+            // Maintain bottom-ness if at bottom
+            var $cWin = $('#chat-window-'+curChan.id);
+
+            if(curChan.atBottom) {
+                $cWin.scrollTop( $cWin.prop('scrollHeight') );
+            } else {
+                $cWin.addClass('historyShade');
+            }
+
+        });
         
         // Timers (Times are default from NEaB)
         // Start Chat Timer
@@ -921,6 +1046,32 @@ var chatRoom = (function(window, $) {
         // Start Checking for Invasions
         var invasionHeartBeat = setInterval(getInvasionStatus, 20000);
         
+        renderChannelList();
+        if(settings.detectChannels === true) {
+            $.ajax({
+                url: 'general_chat.php',
+                data: 'CHANNEL=0&TAB=0',
+                type: 'GET',
+                context: this,
+                success: function(result) {
+                    var r = /\<option[ selected]* value=(\d+)\>([A-Za-z0-9 ]+)\n/gi;
+                    var tmp = result.split(r);
+                    tmp.shift();
+                    tmp.pop();
+                    if(tmp.length < 2) {
+                        return;
+                    }
+                    // This yields a strange array, something like:
+                    // ["<room id>", "<room name>", "", "<next room id>", ...]
+                    // So that's why we're skipping 3 instead of the usual 1
+                    availChannels = [];
+                    for(var i = 0; i < tmp.length; i+=3) {
+                        availChannels.push({"id": parseInt(tmp[i]), "name": tmp[i+1]});
+                    }
+                    renderChannelList();
+                }
+            });
+        }
     }
     
     return {
@@ -948,153 +1099,6 @@ var chatRoom = (function(window, $) {
     };
 })(window, jQuery);
 
-var smileyManager = (function(){
-    var $container;
-    var smilies = [
-        { id:'0',  name: 'Smile', text: [':)', ':-)'] },
-        { id:'1',  name: 'Sticking Tongue Out', text: [':P', ':p', ':-P', ':-p'] },
-        { id:'2',  name: 'Yell', text: [':O', ':o', ':-O', ':-o'] },
-        { id:'3',  name: 'Frown', text: [':(', ':-('] },
-        { id:'4',  name: 'Undecided', text: [':-/'] },
-        { id:'5',  name: 'Wink', text: [';)', ';-)'] },
-        { id:'6',  name: 'Grin', text: [':D', ':-D'] },
-        { id:'7',  name: 'Sunglasses', text: ['8)', '8-)'] },
-        { id:'8',  name: 'Masked', text: ['B)', 'B-)'] },
-        { id:'9',  name: 'Laughing', text: ['XD'] },
-        { id:'10', name: 'Crying', text: ['T.T'] },
-        { id:'11', name: 'Sweat Drop', text: ['^^\''] },
-        { id:'12', name: 'Happy', text: ['^.^', '^^'] },
-        { id:'13', name: 'Surprised', text: ['O.O', 'o.o'] },
-        { id:'14', name: 'Scowl', text: ['8|', '8-|'] },
-        { id:'15', name: 'Rock On', text: ['\\M/'] },
-        { id:'16', name: 'D\'oh', text: ['>.<'] },
-        { id:'17', name: 'Excited Laughing', text: ['XP'] },
-        { id:'18', name: 'Shocked', text: ['o.O', 'oO'] },
-        { id:'19', name: 'Tired', text: ['-.-'] },
-        { id:'20', name: 'Evil Grin', text: ['(:<'] },
-        { id:'21', name: 'Facepalm', text: ['f/'] },
-        { id:'22', name: 'Unsure', text: [':S', ':s'] },
-        { id:'23', name: 'Evil', text: ['*.*'] },
-        { id:'24', name: 'Sealed Lips', text: [':X'] },
-        { id:'25', name: 'Dead', text: ['X.X', 'x.x'] },
-        { id:'26', name: 'Money Eyes', text: ['$.$'] },
-        { id:'27', name: 'Embarrased', text: ['o@@o'] },
-        { id:'28', name: 'Eye Roll', text: ['9.9'] },
-        { id:'29', name: 'Angry Yell', text: ['O:<'] },
-        { id:'30', name: 'Straight Face', text: ['B|'] },
-        { id:'31', name: 'Puppy Eyes', text: ['B('] },
-        { id:'32', name: 'Firey Eyes', text: ['B0'] },
-        { id:'33', name: 'Confused', text: ['@.@'] },
-        { id:'34', name: 'Evil Horns', text: ['^**^'] },
-        { id:'35', name: 'Eyes Spinning', text: ['9.6'] },
-        { id:'36', name: 'Pirate', text: ['/.O'] },
-        { id:'37', name: 'Frustrated', text: ['d.b'] },
-        { id:'38', name: 'Annoyed', text: ['>.>'] },
-        { id:'39', name: 'Kitty', text: ['=^_^='] }
-    ];
-    
-    function isSmiley(text) {
-        $.each(smilies, function(index, smiley) {
-            if($.inArray(text, smiley.text)) {
-                return index;
-            }
-        });
-        return false;
-    }
-    
-    function drawTable() {
-        // Get the container
-        $container = $('#smileyContainer');
-        // Bind to the link
-        $('#smileyLink').click(function(event) {
-            $(document).one('click', function() {
-                $('#smileyContainer').hide();
-            });
-            $('#smileyContainer').toggle();
-            
-            event.stopPropagation();
-            return false;
-        });
-        $.each(smilies, function(index, smiley) {
-            var $entry = $('<a href="#"><img src="http://www.nowhere-else.org/smilies/'+smiley.id+'.gif" alt="'+smiley.name+'"></a>');
-            $entry.click(function() {
-                chatRoom.insertInputText(' '+smiley.text[0]);
-                $('#smileyContainer').toggle();
-                return false;
-            })
-            .hover(function(event) {
-                tooltip.on(smiley.name, event.pageX, event.pageY);
-            }, function() {
-                tooltip.off(); 
-            });
-            $container.append($entry);
-        });
-    }
-    
-    function getId(smileyId) {
-        for(var i=0; i<smilies.length; i++) {
-            if(smilies[i].id === smileyId)
-                return smilies[i];
-        }
-        console.error('Given smiley id is not valid: '+smileyId);
-    }
-    
-    function getSmileyText(id) {
-        return getId(id).text[0];
-    }
-    
-    return {
-        'init': function() {
-            drawTable();
-        },
-        'toggleTable': function() {
-            $container.toggle();
-        },
-        'getSmileyText': function(id) {
-            return getSmileyText(id);
-        }
-    };
-})();
-
-var tooltip = (function() {
-    var $div;
-    
-    function init() {
-        $div = $('#tooltip');
-    }
-    
-    function setText(text) {
-        $div.html(text);
-    }
-    
-    function setPosition(posx, posy) {
-        var newTop = (posy-25);
-        var newLeft = (posx-$div.outerWidth());
-        // Adjust to make sure it can't go off screen
-        newTop = newTop < 0 ? 0 : newTop;
-        newLeft = newLeft < 0 ? 0 : newLeft;
-        // Plave the div
-        $div.css({
-            'top': newTop, // Move above mouse
-            'left': newLeft // Move the tooltip to the left side
-        });
-    } 
-    
-    return {
-        'init': function() {
-            init();
-        },
-        'on': function(text, posx, posy) {
-            setText(text);
-            setPosition(posx, posy);
-            $div.show();
-        },
-        'off': function() {
-            $div.hide();
-        }
-    };
-})();
-
 // -- Ancillary functions -- //
 /**
  * Toggles the visibility of the help menu
@@ -1111,7 +1115,7 @@ function selectElement(elem) {
         range.selectNodeContents(elem);
         sel.removeAllRanges();
         sel.addRange(range);
-    } else if (documnet.body.createTextRange) {
+    } else if (document.body.createTextRange) {
         var range = document.body.createTextRange();
         range.moveToElementText(elem);
         range.select();
