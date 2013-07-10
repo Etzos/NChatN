@@ -821,7 +821,7 @@ var chatRoom = (function(window, $) {
         $menu.append(menu.getRoot());
         $('#menuLink').click(function() {
             $(document).one('click', function() {
-                menu.close();
+                menu.closeMenu();
             });
             
             menu.toggle();

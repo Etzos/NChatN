@@ -17,6 +17,7 @@
 var MenuList = function(entryList) {
     var entries = {};
     var $menu = $('<ul class="headerMenu"></ul>');
+    var parent = null;
     
     // Merge and check entries
     addEntries(entryList);
@@ -56,9 +57,6 @@ var MenuList = function(entryList) {
         var $entryLink = $('<a href="#">'+entry.text+'</a>');
         
         $entryLink.click(entry.action).click(function() {
-            // Find a way to close the uppermost menu
-            // TODO: This only closes the current menu (and sub menus) *NOT* parent menus!
-            // Actually the one-off click() event in chat.js handles this for now
             close();
             this.blur();
         }).appendTo($entry);
@@ -96,11 +94,11 @@ var MenuList = function(entryList) {
             var menuWidth = $menu.width();
             entry.child.pos(loc.top, menuWidth-1); // Move it back 1 pixel to cover the border
             
-            entry.child.open();
+            entry.child.openMenu();
             
             // Hide when moving to another element in the menu
             $e.parent().siblings('li').children().one("mouseover", function() {
-                entry.child.close();
+                entry.child.closeChildren();
             });
         });
         
@@ -125,34 +123,47 @@ var MenuList = function(entryList) {
         for(var e in entries) {
             var entry = entries[e];
             if(entry.child) {
-                entry.child.close();
+                entry.child.closeChildren();
             }
         }
     }
     
+    function closeParent() {
+        if(parent === null) {
+            return;
+        }
+        parent.closeParent();
+    }
+    
     function close() {
         closeChildren();
+        closeThis();
+        closeParent();
+    }
+    
+    function closeThis() {
         $menu.hide();
     }
     
     return {
         addMenu: function(entryId, menu) {
+            menu.setParent(this);
             return addMenu(entryId, menu);
         },
         getRoot: function() {
             return $menu;
         },
-        open: function() {
+        openMenu: function() {
             $menu.show();
         },
-        close: function() {
+        closeMenu: function() {
             close();
         },
         toggle: function() {
             if($menu.css("display") === "none") {
-                this.open();
+                this.openMenu();
             } else {
-                this.close();
+                this.closeMenu();
             }
         },
         pos: function(top, right) {
@@ -168,6 +179,17 @@ var MenuList = function(entryList) {
             }
             entries[entryId].text = newText;
             updateElem(entryId);
+        },
+        setParent: function(newParent) {
+            parent = newParent;
+        },
+        closeChildren: function() {
+            closeChildren();
+            closeThis();
+        },
+        closeParent: function() {
+            closeThis();
+            closeParent();
         }
     };
 };
