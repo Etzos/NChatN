@@ -3,13 +3,10 @@ TODO
 
 For Feature Parity
 ------------------
-- Start calculating the chat response speed
-- Check for invasions
 - Initial commands
 - Various command aliases
   - /help
   - /?
-  - /who
 - Clickable usernames
 
 Cool Additions
