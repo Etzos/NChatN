@@ -907,11 +907,13 @@ var chatRoom = (function(window, $) {
         
         var settingMenu = new MenuList({
             toggleSys: {
-                text: "Toggle Sys Messages",
+                text: "System Messages ["+ (settings.showSysMessages ? "on" : "off") +"]",
                 description: "Toggles the visibility of system messages",
                 action: function() {
                     toggleSysMsgVisibility();
-                    return true;
+                    var stat = settings.showSysMessages ? "on" : "off";
+                    settingMenu.modifyEntry("toggleSys", "System Messages ["+stat+"]");
+                    return false;
                 }
             },
             loginHistory: {
@@ -919,22 +921,20 @@ var chatRoom = (function(window, $) {
                 description: "Change the amount of chat history shown upon entering",
                 action: function() {
                     changeLoginHistory();
-                    return true;
+                    return false;
                 }
             },
             detectChannel: {
-                text: "Auto-detect Channels",
+                text: "Detect Channels ["+ (settings.detectChannels ? "on" : "off") +"]",
                 description: "Automatically detect the available channels",
                 action: function() {
-                    var result = window.prompt('Wheter or not to automatically detect channels.\n(Enter either true or false, non-falsy values will be treated as true)', settings.detectChannels);
-                    // If empty, assume they want to leave it the same
-                    if(result === "" || (result !== 'true' && result !== 'false') ) {
-                        return;
-                    }
-                    result = (result === 'true') ? true : false;
-
-                    changeSetting("detectChannels", result);
-                    return true;
+                    var newVal = !settings.detectChannels;
+                    
+                    settingMenu.modifyEntry("detectChannel", "Detect Channels ["+ (newVal ? "on" : "off") +"]");
+                    
+                    changeSetting("detectChannels", newVal);
+                    // TODO: If changed to true, attempt to load the channels
+                    return false;
                 }
             }
         });

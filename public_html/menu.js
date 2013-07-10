@@ -60,6 +60,7 @@ var MenuList = function(entryList) {
             // TODO: This only closes the current menu (and sub menus) *NOT* parent menus!
             // Actually the one-off click() event in chat.js handles this for now
             close();
+            this.blur();
         }).appendTo($entry);
         
         if(entry.description) {
@@ -108,6 +109,11 @@ var MenuList = function(entryList) {
         return true;
     }
     
+    function updateElem(entryId) {
+        var entry = entries[entryId];
+        entry.$link.html(entry.text);
+    }
+    
     function position(top, right) {
         $menu.css({
             'top': top+'px',
@@ -154,6 +160,14 @@ var MenuList = function(entryList) {
         },
         addEntries: function(entryList) {
             addEntries(entryList);
+        },
+        modifyEntry: function(entryId, newText) {
+            if(!entries.hasOwnProperty(entryId)) {
+                console.error("Entry '" + entryId + "' does not exist.");
+                return false;
+            }
+            entries[entryId].text = newText;
+            updateElem(entryId);
         }
     };
 };
