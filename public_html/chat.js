@@ -414,24 +414,24 @@ var chatRoom = (function(window, $) {
         }
         var $cc = $('#chat-window-'+chanServerId);
 
-        if(_isAtBottom($cc)) {
-            $cc.append(message);
-            if(isSys && !settings.showSysMessages) {
-                $('.systemMsg').hide();
-            }
-            $cc.scrollTop( $cc.prop('scrollHeight') );
-        } else {
-            $cc.append(message);
-            if(isSys && !settings.showSysMessages) {
-                $('.systemMsg').hide();
-            }
+        var localId = _getIdFromServerId(chanServerId);
+        var isSelected = (localId === selectedChannel);
+        var isBottom = (isSelected)? _isAtBottom($cc) : channels[localId].atBottom;
+        
+        $cc.append(message);
+        
+        if(isSys && !settings.showSysMessages) {
+            $('.systemMsg').hide();
         }
         
-        var localId = _getIdFromServerId(chanServerId);
+        if(isBottom) {
+            $cc.scrollTop( $cc.prop('scrollHeight') );
+        }
+        
         // Check scroll
         doScrollCheck(localId);
         // Update tabs (if not active tab)
-        if(localId !== selectedChannel && (isSys && settings.showSysMessages)) {
+        if(!isSelected && (!isSys || (isSys && settings.showSysMessages))) {
             $('#chat-tab-'+chanServerId).addClass('newMessageTab');
         }
     }
@@ -452,9 +452,11 @@ var chatRoom = (function(window, $) {
      */
     function doScrollCheck(localId) {
         var $cWin = $('#chat-window-'+channels[localId].id);
-        var bot = _isAtBottom( $cWin );
-        channels[localId].atBottom = bot;
-        if(bot) {
+        // Don't poll to see if the element is at the bottom if it's not the active tab (it will return bogus info)
+        var atBottom = (localId === selectedChannel)? _isAtBottom( $cWin ) : channels[localId].atBottom;
+        channels[localId].atBottom = atBottom;
+        
+        if(atBottom) {
             $cWin.removeClass('historyShade');
         } else {
             $cWin.addClass('historyShade');
