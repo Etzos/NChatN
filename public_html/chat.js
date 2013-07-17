@@ -870,7 +870,12 @@ var chatRoom = (function(window, $) {
             content: "Hopefully a checkbox list will go here eventually or something"
         });
         
-        
+        var aboutDialog = new Dialog({
+            title: "About NChatNext",
+            content: 'NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott<br>'+
+                     'NChatN is licensed under the GNU Public License version 3.<br>'+
+                     'A copy of the license is available at &lt;<a href="http://www.gnu.org/licenses/" target="_blank">http://www.gnu.org/licenses/</a>&gt;.'
+        });
         // Fill in the Menu
         $menu.html('');
         
@@ -912,11 +917,7 @@ var chatRoom = (function(window, $) {
             about: {
                 text: "About",
                 action: function() {
-                    // TODO: This is a horrible way to display the information
-                    window.alert('NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott\n'+
-                        'NChatN is licensed under the GNU Public License version 3.\n'+
-                        'A copy of the license is available at <http://www.gnu.org/licenses/>.'
-                    );
+                    aboutDialog.openDialog();
                     return false;
                 }
             }
@@ -1149,3 +1150,14 @@ chatRoom.registerHook('presend', function(e) {
         e.stopEventImmediate();
     }
 });
+
+// Proposed Plugin Format
+var plugin = {
+    name: "/who Command",
+    description: "Gives basic /who and /whois support. A nice simple plugin",
+    hooks: {
+        'presend': function() {
+            
+        }
+    }
+};
