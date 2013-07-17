@@ -19,7 +19,6 @@ function importScripts(scripts) {
     }
 
     for(var i = 0; i < scripts.length; i++) {
-        var s = scripts[i];
         var scriptElem = document.createElement('script');
 
         scriptElem.type = 'text/javascript';
