@@ -32,7 +32,7 @@ function importScripts(scripts) {
 //var baseUrl = 'http://garth.web.nowhere-else.org/web/Uploads/';  // Etzos's testing branch
 var baseUrl = 'https://rawgithub.com/Etzos/NChatN/master/public_html/util/';
 
-importScripts(['util.js', 'tooltip.js', 'smilies.js', 'menu.js']);
+importScripts(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js']);
 
 var chatRoom = (function(window, $) {
     var URL = {
@@ -864,6 +864,13 @@ var chatRoom = (function(window, $) {
         // Get value from cookie
         playerName = Util.Cookies.neabGet("RPG", 1);
         
+        // Create the user script dialog
+        var userDialog = new Dialog({
+            title: "User scripts",
+            content: "Hopefully a checkbox list will go here eventually or something"
+        });
+        
+        
         // Fill in the Menu
         $menu.html('');
         
@@ -891,6 +898,14 @@ var chatRoom = (function(window, $) {
             settings: {
                 text: "Settings",
                 action: function() {
+                    return false;
+                }
+            },
+            scripts: {
+                text: "User Scripts",
+                action: function() {
+                    // TODO: Add open action here
+                    userDialog.openDialog();
                     return false;
                 }
             },
@@ -1123,8 +1138,6 @@ function selectElement(elem) {
         range.select();
     }
 }
-
-// box-shadow: inset 0em -4em 3em -3em lightblue
 
 // -- Built in Hooks -- //
 chatRoom.registerHook('presend', function(e) {

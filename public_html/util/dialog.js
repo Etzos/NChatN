@@ -17,7 +17,8 @@
 var Dialog = function(content) {
     var dialogContent = {};
     var $dialog = $("<div class='dialog'> <div class='dialogContent'>This is a default dialog</div></div>");
-    var $dialogTitle = $("<div class='dialogTitle'><span id='dialogTitleContent'>Default Title</span> <a href='#'>[X]</a></div>");
+    var $dialogTitle = $("<div class='dialogTitle'><span class='dialogTitleContent'>Default Title</span> <a href='#'>[X]</a></div>");
+    
     $dialogTitle.mousedown(function(event) {
         var mainPos = $dialog.offset();
         var offset = {
@@ -42,10 +43,19 @@ var Dialog = function(content) {
     
     $dialogTitle.prependTo($dialog);
     
+    $dialog.find('.dialogTitle a').click(function() {
+        closeDialog();
+        this.blur();
+        return false;
+    });
     $dialog.find('.dialogTitleContent').html(content.title);
     $dialog.find('.dialogContent').html(content.content);
     
     $dialog.appendTo('body');
+    
+    function closeDialog() {
+        $dialog.hide();
+    }
     
     return {
         /**
@@ -54,7 +64,10 @@ var Dialog = function(content) {
          * @param {array} options [Optional] The options to pass to the open() function of the page
          */
         openDialog: function(page, options) {
-            
+            $dialog.show();
+        },
+        closeDialog: function() {
+            closeDialogIn();
         }
     };
 };

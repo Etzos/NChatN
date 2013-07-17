@@ -497,7 +497,8 @@ img {
 
 .dialogTitle a {
     float: right;
-    color: blue;
+    color: rgb(0, 170, 255);
+    margin-right: 3px;
 }
 
 .dialogContent {
