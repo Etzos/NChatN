@@ -468,3 +468,39 @@ img {
 .historyShade {
     box-shadow: inset 0em -4em 3em -3em lightblue;
 }
+
+/** Dialog Coloring **/
+.dialog {
+    background-color: white;
+    border: 1px solid black;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    border-radius: 0.5em;
+    
+    z-index: 999;
+    
+    width: 400px;
+    height: 200px;
+}
+
+.dialogTitle {
+    color: white;
+    font-weight: bold;
+    height: 1.5em;
+    background-color: #4F4F4F;
+    text-align: center;
+    vertical-align: middle;
+    padding-top: 3px;
+    border-bottom: 1px solid black;
+}
+
+.dialogTitle a {
+    float: right;
+    color: blue;
+}
+
+.dialogContent {
+    margin: 0.3em;
+    color: rgb(120, 120, 120);
+}
