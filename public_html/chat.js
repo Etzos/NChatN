@@ -30,7 +30,8 @@ function importScripts(scripts) {
         document.getElementsByTagName('head')[0].appendChild(scriptElem);
     }
 }
-var baseUrl = 'http://garth.web.nowhere-else.org/web/Uploads/';
+//var baseUrl = 'http://garth.web.nowhere-else.org/web/Uploads/';  // Etzos's testing branch
+var baseUrl = 'https://rawgithub.com/Etzos/NChatN/master/public_html/util/';
 
 importScripts(['util.js', 'tooltip.js', 'smilies.js', 'menu.js']);
 
