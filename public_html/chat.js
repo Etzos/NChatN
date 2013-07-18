@@ -80,50 +80,215 @@ var chatRoom = (function(window, $) {
         $channelSelect,             // Select to open new channels
         $menu,                      // The menu container
         $invasion;                  // Invasion message container
-        
-    var hooks = {
-        'selfJoin': [],             // When the player enters a channel
-        'join': [],                 // When someone enters a channel (currently based on changes in the online list)
-        'selfDepart': [],           // When the player leaves a channel
-        'depart': [],               // When someone leaves a channel (same as join)
-        'presend': [],              // Before sending a message
-        'send': [],                 // After sending a message
-        'receive': [],              // When a message is received (called for each chat line added individually!)
-        'changeTab': []             // When a player changes tabs
-    };
     
-    function HookEvent(publicContext) {
-        var stopImmediate = false,
-            stop = false;
-
-        var pub = {
-            'stopEventImmediate': function() {
-                stopImmediate = true;
-                stop = true;
+    var PluginManager = (function() {
+        var index = 0;
+        var pluginList = { };
+        
+        var newHooks = {
+            // Internal
+            pluginLoad: [],         // Plugin register and loaded
+            pluginUnload: [],       // Plugin unregistered
+            // Online List
+            playerJoin: [],         // Player joins
+            playerDepart: [],       // Player departs
+            // Chat
+            'send': [],               // Player sends message
+            receive: [],            // Player receives a message
+            // UI / Mechanics
+            tabChange: [],          // Chat tab is changed
+            joinChat: [],           // Player joins another channel
+            leaveChat: []           // Player closes a chat
+        };
+        
+        // Context exposed by the this variable (contains utilities and such)
+        var thisCtx = {
+            removeTags: function(str) {
+                return str.replace(/(<([^>]+)>)/ig, "");
             },
-            'stopEvent': function() {
-                stop = true;
+            removeTime: function(str) {
+                return str.replace(/^<B>.*?<\/B>/ig, "");
             },
-            'isStopped': function() {
-                return stop;
+            isJoinMessage: function(str) {
+                return str.test(/color="\#AA0070"/ig);
             },
-            'isStoppedImmediate': function() {
-                return stopImmediate;
+            isPlayerAction: function(str) {
+                // Stub
+                return false;
+            },
+            isSystemMessage: function(str) {
+                // Stub
+                return false;
+            },
+            isFromPlayer: function(str) {
+                // Stub
+                return false;
+            },
+            isWhisper: function(str) {
+                // Stub
+                return false;
+            },
+            isWhisperFrom: function(str, player) {
+                // Stub
+                return false;
+            },
+            whisperFrom: function(str) {
+                // Stub
+                return "";
+            },
+            whisperTo: function(str) {
+                // Stub
+                return "";
             }
         };
-
-        // Merge public variables into return
-        for(var prop in publicContext) {
-            // Prevent overwriting existing values (like the utility functions)
-            if(!pub.hasOwnProperty(publicContext[prop])) {
-                pub[prop] = publicContext[prop];
-            } else {
-                console.warn('Unable to merge! Duplicate property. ('+prop.toString()+')');
+        
+        // The actual event context
+        var eventCtx = {
+            'stopEvent': false,     // Stops the event (can be overridden by a plugin called later)
+            'stopEventNow': false   // Stops the event immediately (prevents other plugins from running)
+        };
+        
+        // TODO: Expose more of the 'global' chat context for each event, like online players and such
+        
+        function createContext(original, toMerge) {
+            var obj = {};
+            
+            // Add the original in
+            for(var prop in original) {
+                obj[prop] = original[prop];
             }
+            
+            // Add the merge in (be careful not to overwrite)
+            for(var prop in toMerge) {
+                if(obj.hasOwnProperty(prop)) {
+                    console.error("Improper hook register! Trying to add preexisting property: "+prop);
+                    continue;
+                }
+                obj[prop] = toMerge[prop];
+            }
+            
+            return obj;
         }
-
-        return pub;
-    }
+        
+        function runHook(hookName, additionalContext, ignoreStop) {
+            if(typeof ignoreStop === 'undefined') {
+                ignoreStop = false;
+            }
+            if(!newHooks.hasOwnProperty(hookName)) {
+                console.error("Trying to run non-existant hook "+hookName);
+                return {};
+            }
+            
+            var selectedHook = newHooks[hookName];
+            var eventContext = createContext(eventCtx, additionalContext);
+            
+            for(var i = 0; i < selectedHook.length; i++) {
+                selectedHook[i].fn.apply(thisCtx, [eventContext]);
+                
+                if(eventContext.stopEventNow === true) {
+                    eventContext.stopEvent = true;
+                    break;
+                }
+            }
+            
+            return eventContext;
+        }
+        
+        function getPluginIdByName(name) {
+            for(var prop in pluginList) {
+                var plugin = pluginList[prop];
+                if(plugin.name === name)
+                    return prop;
+            }
+            return "";
+        }
+        
+        function pluginTag(plugin) {
+            return "[Plugin: '"+plugin.name+"'] ";
+        }
+        
+        function checkPluginValidity(plugin) {
+            if(!plugin.hasOwnProperty('name')) {
+                console.error("Plugin does not have a name property. Unable to register.");
+                return false;
+            } else if(!plugin.hasOwnProperty('hooks')) {
+                console.error(pluginTag(plugin)+"Plugin must register some hooks in order to work properly.");
+                return false;
+            }
+            
+            for(var prop in plugin.hooks) {
+                if(!newHooks.hasOwnProperty(prop)) {
+                    console.error(pluginTag(plugin)+"Unknown hook '"+prop+"'. Plugin may not function properly.");
+                    continue;
+                }
+                if(typeof plugin.hooks[prop] !== 'function') {
+                    console.error(pluginTag(plugin)+"Hook '"+prop+"' is not a function. Plugin may not function properly.");
+                    continue;
+                }
+            }
+            
+            if(!plugin.hasOwnProperty('description')) {
+                console.warn("Plugin should have a description property to describe its purpose.");
+            }
+            return true;
+        }
+        
+        function registerPlugin(plugin) {
+            // Check to make sure the plugin has all required properties
+            if(!checkPluginValidity(plugin)) {
+                return false;
+            }
+            
+            // Give the plugin its ID (and make sure it stays unique)
+            var pluginId = index;
+            index++;
+            
+            for(var prop in plugin.hooks) {
+                newHooks[prop].push({'plugin': pluginId, 'fn': plugin.hooks[prop]});
+            }
+            
+            pluginList["plugin"+pluginId] = {
+                id: pluginId,
+                name: plugin.name,
+                descrption: plugin.name,
+                license: plugin.license | null,
+                author: plugin.author | null
+            };
+            
+            return true;
+        }
+        
+        function unregisterPlugin(pluginName) {
+            var plugin = getPluginIdByName(pluginName);
+            if(plugin === '') {
+                return false;
+            }
+            
+            // TODO: Call plugin unload hook
+            
+            // Remove hooks
+            $.each(newHooks, function(key) {
+                delete newHooks[key][plugin];
+            });
+            
+            // Remove plugin
+            delete pluginList[plugin];
+            
+            return true;
+        }
+        
+        return {
+            registerPlugin: function(plugin) {
+                return registerPlugin(plugin);
+            },
+            unregisterPlugin: function(pluginName) {
+                return unregisterPlugin(pluginName);
+            },
+            runHook: function(hookName, additionalContext) {
+                return runHook(hookName, additionalContext, false);
+            }
+        };
+    })();
     
     function sendChat() {
         
@@ -136,13 +301,17 @@ var chatRoom = (function(window, $) {
         // PreSend Hook
         var ctx = {
             'channel': chan,
-            'text': text
+            'text': text,
+            'clearInput': true
         };
-        var res = callHook('presend', ctx);
-        text = res.text;
-        if(res.isStopped()) {
-            // Set the input to the value of res.text for good measure
-            $input.val(res.text);
+        var hook = PluginManager.runHook('send', ctx);
+        
+        // This should be done *first* because even a stopped event should be able to control the input value
+        if(hook.clearInput) {
+            $input.val('');
+        }
+        
+        if(hook.stopEvent) {
             return;
         }
         // End PreSend Hook
@@ -164,9 +333,6 @@ var chatRoom = (function(window, $) {
         
         // Process text (escape and replace +)
         text = escape(text).replace(/\+/g, '%2B');
-        
-        // Clear the entry
-        $input.val('');
         
         $.get(
             URL.send,
@@ -235,16 +401,16 @@ var chatRoom = (function(window, $) {
                         
                         // No one is allowed to circumvent scripts running
                         if(!isScript) {
-                            var receiveEvent = callHook('receive', {
+                            var hook = PluginManager.runHook('receive', {
                                 'isInit': isInit,
                                 'message': msg,
                                 'channel': chan
                             });
                             
-                            if(receiveEvent.isStopped()) {
+                            if(hook.stopEvent) {
                                 continue;
                             }
-                            _insertMessage(chan.id, receiveEvent.message);
+                            _insertMessage(chan.id, hook.message);
                         } else {
                             _insertMessage(chan.id, msg);
                         }
@@ -666,37 +832,6 @@ var chatRoom = (function(window, $) {
         localStorage.setItem("NChatN-settings", JSON.stringify(settings));
     }
     
-    function registerHook(event, fn) {
-        if(!hooks.hasOwnProperty(event)) {
-            alert('"'+event+'" is not a possible hook');
-            return;
-        }
-        
-        hooks[event].push( fn );
-    }
-    
-    function callHook(hook, properties) {
-        if(!hooks.hasOwnProperty(hook)) {
-            console.error("Attempting to call nonexistant hook '"+hook+"'!");
-            return; // Something has gone terribly wrong
-        }
-        
-        
-        var event = new HookEvent(properties);
-        
-        for(var i = 0; i < hooks[hook].length; i++) {
-            // NOTE: Apply passes in a reference to ctx, so modifications are live!
-            hooks[hook][i](event);
-            
-            if(event.isStoppedImmediate()) {
-                event.stopEvent();
-                break;
-            }
-        }
-        
-        return event;
-    }
-    
     function changeSetting(setting, newValue) {
         if(!settings.hasOwnProperty(setting)) {
             return;
@@ -747,8 +882,9 @@ var chatRoom = (function(window, $) {
             'channel': chanServerId,
             'previousChannel': chan.id
         };
-        var res = callHook('changeTab', ctx);
-        if(res.stopEvent === true) {
+        var hook = PluginManager.runHook('tabChange', ctx);
+        
+        if(hook.stopEvent) {
             return;
         }
         // End changeTab Hook
@@ -1111,8 +1247,8 @@ var chatRoom = (function(window, $) {
                 $input.focus();
             } 
         },
-        'registerHook': function(hook, fn) {
-            registerHook(hook, fn);
+        'addPlugin': function(plugin) {
+            return PluginManager.registerPlugin(plugin);
         }
     };
 })(window, jQuery);
@@ -1140,24 +1276,20 @@ function selectElement(elem) {
     }
 }
 
-// -- Built in Hooks -- //
-chatRoom.registerHook('presend', function(e) {
-    if(e.text.indexOf('/who ') === 0 || e.text.indexOf('/whois ') === 0) {
-        var textPiece = e.text.split(' ').splice(1).join('_');
-        window.open('player_info.php?SEARCH='+escape(textPiece), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
-        e.text = '';
-        // There is no need for any other handler to try to evaluate this
-        e.stopEventImmediate();
-    }
-});
-
-// Proposed Plugin Format
-var plugin = {
+chatRoom.addPlugin({
     name: "/who Command",
     description: "Gives basic /who and /whois support. A nice simple plugin",
+    author: "Etzos",
+    license: "GPLv3",
     hooks: {
-        'presend': function() {
-            
+        'send': function(e) {
+            var line = e.text;
+            if(line.indexOf('/who') === 0 || line.indexOf('/whois') === 0) {
+                var textPiece = line.split(' ').splice(1).join('_');
+                window.open('player_info.php?SEARCH='+escape(textPiece), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+                e.clearInput = true;
+                e.stopEventNow = true;
+            }
         }
     }
-};
+});
