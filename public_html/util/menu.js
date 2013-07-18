@@ -22,6 +22,9 @@ var MenuList = function(entryList) {
     // Merge and check entries
     addEntries(entryList);
     
+    // TODO: Size the dialog appropiately
+    // TODO: Position the dialog in the center of the screen
+    
     // -- Private Functions -- //
     function isValidEntry(entry) {
         if(!entry.hasOwnProperty("text")) {
