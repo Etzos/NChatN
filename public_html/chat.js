@@ -197,7 +197,12 @@ var chatRoom = (function(window, $) {
             var eventContext = createContext(eventCtx, additionalContext);
             
             for(var i = 0; i < selectedHook.length; i++) {
-                selectedHook[i].fn.apply(thisCtx, [eventContext]);
+                var runningHook = selectedHook[i];
+                // Don't run deactived plugins
+                if(!runningHook.active) {
+                    continue;
+                }
+                runningHook.fn.apply(thisCtx, [eventContext]);
                 
                 if(eventContext.stopEventNow === true) {
                     eventContext.stopEvent = true;
@@ -253,22 +258,58 @@ var chatRoom = (function(window, $) {
                 return false;
             }
             
-            // Give the plugin its ID (and make sure it stays unique)
             var pluginId = index;
             index++;
             
+            var registeredHooks = [];
             for(var prop in plugin.hooks) {
-                newHooks[prop].push({'plugin': pluginId, 'fn': plugin.hooks[prop]});
+                var hookObj = {'plugin': "plugin"+pluginId, 'fn': plugin.hooks[prop], 'active': true};
+                newHooks[prop].push(hookObj);
+                registeredHooks.push(hookObj);
             }
             
             pluginList["plugin"+pluginId] = {
                 id: pluginId,
                 name: plugin.name,
                 descrption: plugin.description,
-                license: plugin.license | null,
-                author: plugin.author | null
+                license: (plugin.license) ? plugin.license : null,
+                author: (plugin.author) ? plugin.author : null,
+                active: true,
+                hooks: registeredHooks
             };
             
+            return true;
+        }
+        
+        /**
+         * Activates or deactivates the given plugin
+         * 
+         * @param {string} pluginName The name of the plugin to enable or disable
+         * @param {bool} active [Optional] Whether to enable (true) or disable (false) the plugin (Default: toggle
+         * current state)
+         * @returns {Boolean} Returns true if the plugin has been enabled or disabled, returns false if the plugin is
+         * already enabled/disabled and told to enable or disable respectively
+         */
+        function changePluginStatus(pluginName, active) {
+            var pluginTag = getPluginIdByName(pluginName);
+            if(pluginTag === '') {
+                console.warn("Unable to find plugin '"+pluginName+"'");
+                return false;
+            }
+            var plugin = pluginList[pluginTag];
+
+            if(typeof active === 'undefined') {
+                active = !plugin.active;
+            } else {
+                if(plugin.active === active) {
+                    return false;
+                }
+            }
+            
+            $.each(plugin.hooks, function(key, value) {
+               value.active = active;
+            });
+            plugin.active = active;
             return true;
         }
         
@@ -304,6 +345,9 @@ var chatRoom = (function(window, $) {
             },
             runHook: function(hookName, additionalContext) {
                 return runHook(hookName, additionalContext, false);
+            },
+            deactivatePlugin: function(pluginName) {
+                return changePluginStatus(pluginName, false);
             }
         };
     })();
