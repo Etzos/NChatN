@@ -83,6 +83,20 @@ var chatRoom = (function(window, $) {
     
     var PluginManager = (function() {
         var index = 0;
+        /* Stores plugins as such:
+         * {
+         *     plugin0: {
+         *         id: 0,
+         *         name: <plugin name>
+         *         description: <plugin description>
+         *         author: <plugin author> | null
+         *         license: <plugin license> | null
+         *     },
+         *     plugin1: {
+         *         . . .
+         *     }
+         * }
+         */
         var pluginList = { };
         
         var newHooks = {
@@ -250,7 +264,7 @@ var chatRoom = (function(window, $) {
             pluginList["plugin"+pluginId] = {
                 id: pluginId,
                 name: plugin.name,
-                descrption: plugin.name,
+                descrption: plugin.description,
                 license: plugin.license | null,
                 author: plugin.author | null
             };
@@ -275,6 +289,10 @@ var chatRoom = (function(window, $) {
             delete pluginList[plugin];
             
             return true;
+        }
+        
+        function listPlugins() {
+            
         }
         
         return {
@@ -377,7 +395,6 @@ var chatRoom = (function(window, $) {
                     var end = (isInit) ? msgArr.length-1 : msgArr.length;
                     // Only reset the begining if it's needed (init and the sent messages are too long)
                     var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
-                    //console.log('Running with init: '+isInit+' end: '+ end + ' begin: '+begin);
                     
                     // Insert each message in order
                     for(var i = begin; i < end; i++) {
