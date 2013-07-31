@@ -499,6 +499,11 @@ var chatRoom = (function(window, $) {
         });
     }
     
+    /**
+     * Gets the invasion status from the server
+     * 
+     * @returns {undefined}
+     */
     function getInvasionStatus() {
         $.ajax({
             url: URL.invasion,
@@ -525,6 +530,11 @@ var chatRoom = (function(window, $) {
         }
     }
     
+    /**
+     * Updates the connection status light
+     * 
+     * @returns {undefined}
+     */
     function updateTickClock() {
         var lightClass = 'greenLight';
         var text = 'Delay: '+(lastConnection/1000)+' sec';
@@ -549,10 +559,16 @@ var chatRoom = (function(window, $) {
             });
     }
     
+    /**
+     * Updates the invasion status portion of chat
+     * 
+     * @param {string} status The numerical status message (treated as a string)
+     * @param {string} message The invasion message to be shown on hovering over the status
+     * @returns {undefined}
+     */
     function _updateInvasionMessage(status, message) {
         if(!INVASION_STATUS.hasOwnProperty(status)) {
-            // TODO: Throw some kind of error here!
-            alert('Unknown status: '+status);
+            console.error("Unknown invasion status: '"+status+"'");
             return;
         }
         var invStatus = INVASION_STATUS[status];
@@ -570,10 +586,21 @@ var chatRoom = (function(window, $) {
         $invasion.html($span);
     }
     
+    /**
+     * Wraps a given string is the tags required to mark it as a system message
+     * 
+     * @param {string} message The message to wrap
+     * @returns {String} A string wrapped in the appropiate tags to mark it as a system message
+     */
     function _formatSystemMsg(message) {
         return '<span class="systemMsg">'+message+'<br></span>';
     }
     
+    /**
+     * Regenerates the online player dropdown (used for selecting whisper target)
+     * 
+     * @returns {undefined}
+     */
     function _updatePlayerDropdown() {
         var chan = channels[selectedChannel];
         
@@ -587,10 +614,24 @@ var chatRoom = (function(window, $) {
         $pmSelect.html(cont);
     }
     
+    /**
+     * Returns wheter the given element is scrolled all the way down or not
+     * 
+     * @param {jquery} $elem The jQuery wrapped element
+     * @returns {Boolean} True if the given element is scrolled all the way down, false otherwise
+     */
     function _isAtBottom($elem) {
         return ( $elem.prop('scrollHeight') - $elem.scrollTop() === $elem.outerHeight() );
     }
     
+    /**
+     * Appends a message to the defined channel
+     * 
+     * @param {int} chanServerId The channel to append the message to
+     * @param {string} message The message to be appended
+     * @param {bool} isSys [Optional] If true, the message will be treated as a message from the chat client (Default: false) 
+     * @returns {undefined}
+     */
     function _insertMessage(chanServerId, message, isSys) {
         if(typeof isSys === 'undefined') {
             isSys = false;
@@ -619,6 +660,13 @@ var chatRoom = (function(window, $) {
         }
     }
     
+    /**
+     * Generates the HTML for an option tag
+     * 
+     * @param {int} id The content of the value attribute
+     * @param {string} text The value between the option tags i.e. what is shown to the user
+     * @returns {String} The resulting option element
+     */
     function _genOption(id, text) {
         return '<option value="'+id+'">'+text+'</option>';
     }
@@ -631,7 +679,7 @@ var chatRoom = (function(window, $) {
     
     /**
      * Checks to see if the given chat is at the bottom or not and handles all modifiers
-     * @param {number} localId The local id for the channel
+     * @param {int} localId The local id for the channel
      */
     function doScrollCheck(localId) {
         var $cWin = $('#chat-window-'+channels[localId].id);
@@ -648,8 +696,8 @@ var chatRoom = (function(window, $) {
         
     /**
      * Creates the various HTML elements for the given channel ID
-     * @param chanServerId The server id for the channel
-     * @param chanName The name of the channel
+     * @param {int} chanServerId The server id for the channel
+     * @param {string} chanName The name of the channel
      */
     function _createChannelElem(chanServerId, chanName) {
         // Create chat window
@@ -708,7 +756,12 @@ var chatRoom = (function(window, $) {
         }
     }
     
-    function _selectChannelElem(chanServerId) {
+    /**
+     * Makes an existing channel (i.e. one already open) the active one
+     * 
+     * @param {int} chanServerId The server ID of the channel to make active
+     */
+    function _makeChannelActive(chanServerId) {
         var localId = _getIdFromServerId(chanServerId);
         var selServerId = channels[selectedChannel].id;
         // Get the position of the scroll bar, so it can be restored later
@@ -909,7 +962,7 @@ var chatRoom = (function(window, $) {
         chan.input = $input.val();
         chan.pm = $pmSelect.children(':selected').val();
         
-        _selectChannelElem(chanServerId);
+        _makeChannelActive(chanServerId);
         _updatePlayerDropdown();
         
         var newChan = channels[_getIdFromServerId(chanServerId)];
@@ -1009,7 +1062,7 @@ var chatRoom = (function(window, $) {
         var chan = channels[selectedChannel];
         
         _createChannelElem(chan.id, chan.name);
-        _selectChannelElem(chan.id);
+        _makeChannelActive(chan.id);
         
         // Load settings
         _loadSettings();
@@ -1074,7 +1127,6 @@ var chatRoom = (function(window, $) {
             scripts: {
                 text: "User Scripts",
                 action: function() {
-                    // TODO: Add open action here
                     userDialog.openDialog();
                     return false;
                 }
@@ -1290,6 +1342,10 @@ function toggleHelp() {
     $('#chatHelp').toggle();
 }
 
+/**
+ * Selects the text (and other contents) of an element
+ * @param {DOMNode} elem The DOM Node to select the contents of
+ */
 function selectElement(elem) {
     // Heavily influenced by http://stackoverflow.com/a/2838358
     if (window.getSelection && document.createRange) {
@@ -1305,6 +1361,11 @@ function selectElement(elem) {
     }
 }
 
+/**
+ * Pads a number with a 0 if the number is < 10
+ * @param {int} num The number to be padded
+ * @returns {String} The resulting padded number
+ */
 function numPad(num) {
     return num < 10 ? '0'+num : num;
 }
