@@ -1018,13 +1018,25 @@ var chatRoom = (function(window, $) {
 
         var mainMenu = new MenuList({
             select: {
-                text: "Select Text",
-                description: "Select all text in the current channel",
+                text: "Download Chat",
+                description: "Download the current chat history to a file",
                 action: function() {
-                    var id = channels[selectedChannel].id;
-                    selectElement( $('#chat-window-'+id)[0] );
-
-                    return false;
+                    var chan = channels[selectedChannel];
+                    
+                    // TODO: Fix smilies and bad styles
+                    // This download method only works on recent version of Firefox and Chrome
+                    var raw = $('#chat-window-'+chan.id).html();
+                    var blob = new Blob([raw], {type: 'application/octet-stream'});
+                    var src = window.URL.createObjectURL(blob);
+                    this.href = src;
+                    
+                    var time = new Date();
+                    // Format: 2013-06-23
+                    var timeStr = time.getFullYear() + "-" + numPad(time.getMonth()+1) + "-" + numPad(time.getDate());
+                    this.download = "NEaB Chat - "+chan.name+" ["+timeStr+"].html";
+                    
+                    // Note: This should be allowed to bubble (apparently, haven't tested)
+                    //return false;
                 }
             },
             updateOnline: {
@@ -1274,6 +1286,10 @@ function selectElement(elem) {
         range.moveToElementText(elem);
         range.select();
     }
+}
+
+function numPad(num) {
+    return num < 10 ? '0'+num : num;
 }
 
 chatRoom.addPlugin({
