@@ -13,4 +13,6 @@
 // @updateURL    https://rawgithub.com/Etzos/NChatN/master/public_html/bin/GMShim.user.js
 // ==/UserScript==
 
-alert("If you see this, it means something went wrong. Please force an update for the NChatNext GMShim.user.js");
+alert("If you see this, it means something went wrong. Please force an update for the NChatNext GMShim.user.js\n"+
+      "Or just reinstall by going to this location:\n"+
+      "https://rawgithub.com/Etzos/NChatN/master/public_html/bin/GMShim.user.js");
