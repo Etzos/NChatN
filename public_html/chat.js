@@ -63,7 +63,9 @@ var chatRoom = (function(window, $) {
             {"id": 0, "name": "Lodge"},
             {"id": 1, "name": "Newbie"},
             {"id": 6, "name": "Trade Channel"}
-        ];         
+        ],
+        initiated = false,          // True when init() has been run, false otherwise
+        queuedPlugins = [];         // Stop-gap container for plugins that have to wait for init()
     
     var settings = {
         showSysMessages: true,      // Whether or not to show system messages
@@ -266,7 +268,7 @@ var chatRoom = (function(window, $) {
             
             // Avoid running disabled plugins from the start
             var defaultActive = true;
-            if(plugin.name in settings.disabledPlugins) {
+            if(settings.disabledPlugins.indexOf(plugin.name) > -1) {
                 defaultActive = false;
             }
             
@@ -286,7 +288,6 @@ var chatRoom = (function(window, $) {
                 active: defaultActive,
                 hooks: registeredHooks
             };
-            
             return true;
         }
         
@@ -357,6 +358,9 @@ var chatRoom = (function(window, $) {
             },
             deactivatePlugin: function(pluginName) {
                 return changePluginStatus(pluginName, false);
+            },
+            activatePlugin: function(pluginName) {
+                return changePluginStatus(pluginName, true);
             },
             forEachPlugin: function(callback) {
                 $.each(pluginList, function(key, value) {
@@ -1096,7 +1100,28 @@ var chatRoom = (function(window, $) {
         });
     }
     
+    /**
+     * Queues a plugin for registration if init() hasn't been called
+     * TODO: Load settings before init() is called so that there's no need for this (since plugin registration relies on settings.disabledPlugins)
+     * 
+     * @param {JSON} plugin The plugin to queue to be added
+     * @returns {bool} Result of PluginManager.registerPlugin() or true if init() not called yet
+     */
+    function queuePlugin(plugin) {
+        if(initiated === true) {
+            return PluginManager.registerPlugin(plugin);
+        } else {
+            queuedPlugins.push(plugin);
+            return true;
+        }
+    }
+    
     function init() {
+        // Don't start twice
+        if(initiated === true) {
+            return;
+        }
+        initiated = true;
         // Start other required tools
         tooltip.init();
         smileyManager.init();
@@ -1128,10 +1153,37 @@ var chatRoom = (function(window, $) {
         // Get value from cookie
         playerName = Util.Cookies.neabGet("RPG", 1);
         
+        // Load queued plugins
+        for(var i = 0; i < queuedPlugins.length; i++) {
+            PluginManager.registerPlugin(queuedPlugins[i]);
+        }
+        
+        var $container = $("<span></span>");
+        PluginManager.forEachPlugin(function(plugin) {
+            var $inpt = $('<input type="checkbox" '+((plugin.active) ? "checked=checked" : "")+'>');
+            $inpt.change(function() {
+                var checked = $(this).prop('checked');
+                if(!checked) {
+                    settings.disabledPlugins.push(plugin.name);
+                    _saveSettings();
+                    PluginManager.deactivatePlugin(plugin.name);
+                } else {
+                    settings.disabledPlugins.splice(settings.disabledPlugins.indexOf(plugin.name), 1);
+                    _saveSettings();
+                    PluginManager.activatePlugin(plugin.name);
+                }
+            });
+            $container.append($inpt);
+            $container.append("<b>"+plugin.name+"</b> <i>"+plugin.author+"</i> ("+plugin.license+")<br>"+
+                    "&nbsp;&nbsp;&nbsp;"+plugin.description+" "+
+                    "<br><br>");
+        });
+        
         // Create the user script dialog
         var userDialog = new Dialog({
             title: "User scripts",
-            content: "Hopefully a checkbox list will go here eventually or something"
+            //content: "Hopefully a checkbox list will go here eventually or something"
+            content: $container
         });
         
         var aboutDialog = new Dialog({
@@ -1387,7 +1439,8 @@ var chatRoom = (function(window, $) {
             } 
         },
         'addPlugin': function(plugin) {
-            return PluginManager.registerPlugin(plugin);
+            //return PluginManager.registerPlugin(plugin);
+            return queuePlugin(plugin);
         }
     };
 })(window, jQuery);
