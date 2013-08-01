@@ -41,6 +41,10 @@ var Dialog = function(content) {
         event.preventDefault();
     });
     
+    $dialog.mousedown(function() {
+        makeTop();
+    });
+    
     $dialogTitle.prependTo($dialog);
     
     $dialog.find('.dialogTitle a').click(function() {
@@ -50,9 +54,16 @@ var Dialog = function(content) {
     });
     $dialog.find('.dialogTitleContent').html(content.title);
     // Use append so jQuery objects and other elements can be passed in
-    $dialog.find('.dialogContent').append(content.content);
+    $dialog.find('.dialogContent').html("").append(content.content);
     
     $dialog.appendTo('body');
+    
+    // Put dialog in center of window
+    var $doc = $(document);
+    $dialog.css({
+        top: ($doc.height()/2) - ($dialog.outerHeight()/2),
+        left: ($doc.width()/2) - ($dialog.outerWidth()/2)
+    });
     
     function closeDialog() {
         // Wait for the transition to finish before hiding
@@ -60,6 +71,11 @@ var Dialog = function(content) {
             $dialog.hide();
         });
         $dialog.removeClass('dialogOpen');
+    }
+    
+    function makeTop() {
+        $dialog.siblings().filter('.dialog').removeClass('topDialog');
+        $dialog.addClass('topDialog');
     }
     
     return {
@@ -70,6 +86,7 @@ var Dialog = function(content) {
          */
         openDialog: function(page, options) {
             $dialog.show();
+            makeTop();
             // Delay since we're changing the display property
             setTimeout(function() {
                 $dialog.addClass('dialogOpen');
