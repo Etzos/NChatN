@@ -69,7 +69,8 @@ var chatRoom = (function(window, $) {
         showSysMessages: true,      // Whether or not to show system messages
         chatHistoryLogin: 20,       // The number of history lines shown on entry
         maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
-        detectChannels: true        // Attempt to guess which channels (other than the defaults) can be joined
+        detectChannels: true,       // Attempt to guess which channels (other than the defaults) can be joined
+        disabledPlugins: []         // A list of the names of plugins to disable
     };
     
     var $input,                     // Input for chat
@@ -86,11 +87,13 @@ var chatRoom = (function(window, $) {
         /* Stores plugins as such:
          * {
          *     plugin0: {
-         *         id: 0,
+         *         id: 0
          *         name: <plugin name>
          *         description: <plugin description>
          *         author: <plugin author> | null
          *         license: <plugin license> | null
+         *         active: <plugin enable status>
+         *         hooks: [<reference to plugin hooks>]
          *     },
          *     plugin1: {
          *         . . .
@@ -261,9 +264,15 @@ var chatRoom = (function(window, $) {
             var pluginId = index;
             index++;
             
+            // Avoid running disabled plugins from the start
+            var defaultActive = true;
+            if(plugin.name in settings.disabledPlugins) {
+                defaultActive = false;
+            }
+            
             var registeredHooks = [];
             for(var prop in plugin.hooks) {
-                var hookObj = {'plugin': "plugin"+pluginId, 'fn': plugin.hooks[prop], 'active': true};
+                var hookObj = {'plugin': "plugin"+pluginId, 'fn': plugin.hooks[prop], 'active': defaultActive};
                 newHooks[prop].push(hookObj);
                 registeredHooks.push(hookObj);
             }
@@ -271,10 +280,10 @@ var chatRoom = (function(window, $) {
             pluginList["plugin"+pluginId] = {
                 id: pluginId,
                 name: plugin.name,
-                descrption: plugin.description,
+                description: plugin.description,
                 license: (plugin.license) ? plugin.license : null,
                 author: (plugin.author) ? plugin.author : null,
-                active: true,
+                active: defaultActive,
                 hooks: registeredHooks
             };
             
@@ -348,6 +357,11 @@ var chatRoom = (function(window, $) {
             },
             deactivatePlugin: function(pluginName) {
                 return changePluginStatus(pluginName, false);
+            },
+            forEachPlugin: function(callback) {
+                $.each(pluginList, function(key, value) {
+                    callback(value);
+                });
             }
         };
     })();
