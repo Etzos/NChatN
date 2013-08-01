@@ -1000,10 +1000,15 @@ var chatRoom = (function(window, $) {
             return;
         }
         // selfJoin Hook
-        // TODO: This!
         var ctx = {
-            'channel': chanServerId
+            channelId: chanServerId,
+            channel: name,
+            firstJoin: false
         };
+        var res = PluginManager.runHook('joinChat', ctx);
+        if(res.stopEvent) {
+            return;
+        }
         // End selfJoin Hook
         _insertNewChannel(chanServerId, name);
         var localId = _getIdFromServerId(chanServerId);
@@ -1398,6 +1403,14 @@ var chatRoom = (function(window, $) {
         var onlineHeartBeat = setInterval(getAllOnline, 16000);
         // Start Checking for Invasions
         var invasionHeartBeat = setInterval(getInvasionStatus, 20000);
+        
+        // This is a special call to joinChat that can't be canceled, it's the initial join
+        var ctx = {
+            channelId: chan.id,
+            channel: chan.name,
+            firstJoin: true
+        };
+        PluginManager.runHook('joinChat', ctx);
         
         renderChannelList();
         if(settings.detectChannels === true) {
