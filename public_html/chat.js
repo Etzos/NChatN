@@ -1519,3 +1519,17 @@ chatRoom.addPlugin({
         }
     }
 });
+
+chatRoom.addPlugin({
+    name: "Auto /pop",
+    description: "Automatically /pops when you enter the Lodge",
+    author: "Etzos",
+    license: "GPLv3",
+    hooks: {
+        'joinChat': function(e) {
+            if(e.firstJoin === true) {
+                this.sendMessage("/pop");
+            }
+        }
+    }
+});
