@@ -158,6 +158,10 @@ var chatRoom = (function(window, $) {
             whisperTo: function(str) {
                 // Stub
                 return "";
+            },
+            // Action context
+            sendMessage: function(message) {
+                sendChat(message);
             }
         };
         
@@ -370,9 +374,13 @@ var chatRoom = (function(window, $) {
         };
     })();
     
-    function sendChat() {
-        
+    function sendChat(msg) {
         var text = $input.val();
+        
+        if(typeof msg !== 'undefined') {
+            text = msg;
+        }
+        
         if(text === '')
             return;
         
