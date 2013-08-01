@@ -483,6 +483,9 @@ img {
     width: 400px;
     height: 200px;
     display: none;
+    
+    opacity: 0;
+    transition: opacity 0.2s;
 }
 
 .dialogTitle {
@@ -505,4 +508,8 @@ img {
 .dialogContent {
     margin: 0.3em;
     color: rgb(120, 120, 120);
+}
+
+.dialogOpen {
+    opacity: 1;
 }

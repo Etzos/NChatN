@@ -49,12 +49,17 @@ var Dialog = function(content) {
         return false;
     });
     $dialog.find('.dialogTitleContent').html(content.title);
-    $dialog.find('.dialogContent').html(content.content);
+    // Use append so jQuery objects and other elements can be passed in
+    $dialog.find('.dialogContent').append(content.content);
     
     $dialog.appendTo('body');
     
     function closeDialog() {
-        $dialog.hide();
+        // Wait for the transition to finish before hiding
+        $dialog.one('transitionend', function() {
+            $dialog.hide();
+        });
+        $dialog.removeClass('dialogOpen');
     }
     
     return {
@@ -65,6 +70,10 @@ var Dialog = function(content) {
          */
         openDialog: function(page, options) {
             $dialog.show();
+            // Delay since we're changing the display property
+            setTimeout(function() {
+                $dialog.addClass('dialogOpen');
+            }, 1);
         },
         closeDialog: function() {
             closeDialogIn();
