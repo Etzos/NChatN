@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var chatRoom = (function(window, $) {
+var Chat = (function(window, $) {
     var URL = {
       'send': 'sendchat.php',
       'receive': 'lastchat.php',
@@ -603,9 +603,9 @@ var chatRoom = (function(window, $) {
         $light.removeClass('greenLight yellowLight redLight')
             .addClass(lightClass)
             .hover(function(event) {
-                tooltip.on(text, event.pageX+100, event.pageY+50);
+                Tooltip.on(text, event.pageX+100, event.pageY+50);
             }, function() {
-                tooltip.off();
+                Tooltip.off();
             });
     }
     
@@ -627,9 +627,9 @@ var chatRoom = (function(window, $) {
             .addClass(invStatus.color)
             .html(invStatus.msg)
             .hover(function(event) {
-                tooltip.on(message, event.pageX+100, event.pageY+40);
+                Tooltip.on(message, event.pageX+100, event.pageY+40);
             }, function() {
-                tooltip.off();
+                Tooltip.off();
             });
 
         // Clear old invasion
@@ -776,7 +776,7 @@ var chatRoom = (function(window, $) {
             if(chanServerId !== 0) { // Only display the close option for channels that aren't Lodge
                 var $del = $('<a href="#">X</a>')
                 .click(function(e) {
-                    chatRoom.leaveChannel(chanServerId);
+                    removeChannel(chanServerId);
                     e.stopImmediatePropagation();
                     return false;
                 })
@@ -795,12 +795,12 @@ var chatRoom = (function(window, $) {
                 $('<a>'+chanName+'</a>')
                 .attr('href', '#')
                 .click(function() {
-                    chatRoom.selectChannel(chanServerId);
+                    switchChannel(chanServerId);
                     return false;
                 })
                 .append($del)
             ).click(function() {
-                    chatRoom.selectChannel(chanServerId);
+                    switchChannel(chanServerId);
                     return false;
             });
         }
@@ -1116,8 +1116,8 @@ var chatRoom = (function(window, $) {
         }
         initiated = true;
         // Start other required tools
-        tooltip.init();
-        smileyManager.init();
+        Tooltip.init();
+        Smilies.init();
         _insertNewChannel(0, 'Lodge');
         selectedChannel = 0;
         
@@ -1482,7 +1482,7 @@ function numPad(num) {
     return num < 10 ? '0'+num : num;
 }
 
-chatRoom.addPlugin({
+Chat.addPlugin({
     name: "/who Command",
     description: "Gives basic /who and /whois support. A nice simple plugin",
     author: "Etzos",
@@ -1500,7 +1500,7 @@ chatRoom.addPlugin({
     }
 });
 
-chatRoom.addPlugin({
+Chat.addPlugin({
     name: "Auto /pop",
     description: "Automatically /pops when you enter the Lodge",
     author: "Etzos",

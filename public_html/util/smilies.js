@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var smileyManager = (function($, tooltip, document){
+var Smilies = (function($, Tooltip, document){
     var $container;
     var smilies = [
         { id:'0',  name: 'Smile', text: [':)', ':-)'] },
@@ -84,14 +84,14 @@ var smileyManager = (function($, tooltip, document){
         $.each(smilies, function(index, smiley) {
             var $entry = $('<a href="#"><img src="http://www.nowhere-else.org/smilies/'+smiley.id+'.gif" alt="'+smiley.name+'"></a>');
             $entry.click(function() {
-                chatRoom.insertInputText(' '+smiley.text[0]);
+                Chat.insertInputText(' '+smiley.text[0]);
                 $('#smileyContainer').toggle();
                 return false;
             })
             .hover(function(event) {
-                tooltip.on(smiley.name, event.pageX, event.pageY);
+                Tooltip.on(smiley.name, event.pageX, event.pageY);
             }, function() {
-                tooltip.off(); 
+                Tooltip.off();
             });
             $container.append($entry);
         });
@@ -120,4 +120,4 @@ var smileyManager = (function($, tooltip, document){
             return getSmileyText(id);
         }
     };
-})(jQuery, tooltip, document);
+})(jQuery, Tooltip, document);

@@ -40,7 +40,7 @@ var Loader = (function(document) {
 
             scriptElem.type = 'text/javascript';
             // This should block execution until the script is loaded
-            scriptElem.async = true;
+            scriptElem.async = false;
             scriptElem.src = baseUrl+scripts[i];
             scriptElem.onload = function() {
                 scriptLoaded();
@@ -62,7 +62,7 @@ var Loader = (function(document) {
 })(document);
 
 Loader.onComplete(function() {
-    chatRoom.init();
+    Chat.init();
 });
 
 Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', 'chat.js']);
