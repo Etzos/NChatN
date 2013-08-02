@@ -13,26 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-function importScripts(scripts) {
-    if(!Array.isArray(scripts)) {
-        scripts = [scripts];
-    }
-
-    for(var i = 0; i < scripts.length; i++) {
-        var scriptElem = document.createElement('script');
-
-        scriptElem.type = 'text/javascript';
-        // This should block execution until the script is loaded
-        scriptElem.async = true;
-        scriptElem.src = baseUrl+scripts[i];
-
-        document.getElementsByTagName('head')[0].appendChild(scriptElem);
-    }
-}
-//var baseUrl = 'http://garth.web.nowhere-else.org/web/Uploads/';  // Etzos's testing branch
-var baseUrl = 'https://rawgithub.com/Etzos/NChatN/master/public_html/util/';
-
-importScripts(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js']);
 
 var chatRoom = (function(window, $) {
     var URL = {
