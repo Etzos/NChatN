@@ -6,6 +6,9 @@
 // @match        *://www.nowhere-else.org/general_chat.php
 // @match        *://nowhere-else.org/general_chat.php
 // @match        *://*.nowhere-else.org/general_chat.php
+// @match        *://www.nowhere-else.org/general_chat.php#
+// @match        *://nowhere-else.org/general_chat.php#
+// @match        *://*.nowhere-else.org/general_chat.php#
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @copyright    2013+, Kevin Ott
 // @resource     payload https://rawgithub.com/Etzos/NChatN/master/public_html/chat.html
