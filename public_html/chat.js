@@ -1557,7 +1557,7 @@ Chat.addPlugin({
     }
 });
 
-Chat.addPlugin({
+/*Chat.addPlugin({
     name: "Smiley Replace",
     description: "Replaces smilies with their text equivalent",
     author: "Etzos",
@@ -1567,4 +1567,4 @@ Chat.addPlugin({
             e.message = Smilies.replaceTagsWithText(e.message);
         }
     }
-});
+});*/
