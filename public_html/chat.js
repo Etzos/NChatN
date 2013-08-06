@@ -52,7 +52,9 @@ var Chat = (function(window, $) {
         chatHistoryLogin: 20,       // The number of history lines shown on entry
         maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
         detectChannels: true,       // Attempt to guess which channels (other than the defaults) can be joined
-        disabledPlugins: []         // A list of the names of plugins to disable
+        disabledPlugins: [          // A list of the names of plugins to disable
+            'Smiley Replace'        // This plugin is more of a test than an actual plugin, so disable it
+        ]
     };
     
     var $input,                     // Input for chat
@@ -1551,6 +1553,18 @@ Chat.addPlugin({
             // Check against online players [TODO]
             msg = msg.replace(/<B>*([\w\-]+)(\&gt;)<\/B>*/i, "<b><a href='#' class='chatLineName' onclick='openWhoWindow(\"$1\"); return false;'>$1</a>$2</b>");
             e.message = msg;
+        }
+    }
+});
+
+Chat.addPlugin({
+    name: "Smiley Replace",
+    description: "Replaces smilies with their text equivalent",
+    author: "Etzos",
+    license: "GPLv3",
+    hooks: {
+        receive: function(e) {
+            e.message = Smilies.replaceTagsWithText(e.message);
         }
     }
 });
