@@ -1500,6 +1500,11 @@ function numPad(num) {
     return num < 10 ? '0'+num : num;
 }
 
+function openWhoWindow(player) {
+    window.open('player_info.php?SEARCH='+escape(player), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+    return false;
+}
+
 Chat.addPlugin({
     name: "/who Command",
     description: "Gives basic /who and /whois support. A nice simple plugin",
@@ -1528,6 +1533,23 @@ Chat.addPlugin({
             if(e.firstJoin === true) {
                 this.sendMessage("/pop");
             }
+        }
+    }
+});
+
+Chat.addPlugin({
+    name: "Clickable Names",
+    description: "Makes usernames link to the player's info page",
+    author: "Etzos",
+    license: "GPLv3",
+    hooks: {
+        receive: function(e) {
+            var msg = e.message;
+            // Check for actions and joins ('** <username> <whatever>' and '-- <username> <whatever>') [TODO]
+            // Check what's said (<username>&gt;)
+            // Check against online players [TODO]
+            msg = msg.replace(/<B>*([\w\-]+)(\&gt;)<\/B>*/i, "<b><a href='#' class='chatLineName' onclick='openWhoWindow(\"$1\"); return false;'>$1</a>$2</b>");
+            e.message = msg;
         }
     }
 });
