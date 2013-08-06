@@ -65,4 +65,4 @@ Loader.onComplete(function() {
     Chat.init();
 });
 
-Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', 'chat.js']);
+Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', '../chat.js']);
