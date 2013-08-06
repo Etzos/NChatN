@@ -1287,7 +1287,6 @@ var Chat = (function(window, $) {
             if(!isInputFocused) {
                 return;
             }
-            
             var key = e.keyCode ? e.keyCode : e.which;
             if(key === 13) { // Enter key
                 // Check focus
@@ -1299,17 +1298,36 @@ var Chat = (function(window, $) {
                     }
                 }
             } else if(key === 9) { // Tab Key
-                // Check for content
-                var content = $input.val().split(' ');
-                var last = content[content.length-1];
-                if(last === '') {
+                var val = $input.val();
+                if(val.length < 1) {
                     return;
                 }
-                var match = _matchPlayers(last);
+                var cursorPos = $input.prop('selectionEnd');
+                // TODO: Do something about names with spaces
+                // If the cursor is on a non-name character (letters and '-'), then there is nothing to complete
+                if(!(/[\w\-]/).test(val.charAt(cursorPos-1))) {
+                    return;
+                }
+                // Cut off anything on the right hand side of cursor
+                var namePart = val.substring(0, cursorPos);
+                // And everything on the left hand side to the previous space
+                var lastSpace = namePart.lastIndexOf(' ');
+                if(lastSpace < 0) {
+                    lastSpace = 0;
+                } else {
+                    // If a space is found we don't want to include it
+                    lastSpace++;
+                }
+                var endPos = namePart.length;
+                var namePart = namePart.substring(lastSpace, endPos);
+                
+                var match = _matchPlayers(namePart);
                 if(match !== '') {
-                    // TODO: Location aware replace (i.e. If it's the first word make it name:, if not add a space)
-                    //       However, base it on if another tab is pressed! :O
-                    $input.val($input.val().replace(/[\w\-]+$/gi, match));
+                    // TODO: Location aware replace based on preference
+                    $input.val( val.substring(0, lastSpace) + match + val.substring(endPos, val.length) );
+                    // TODO: Make this optional, putting the cursor at the end of the line can be handy
+                    var newCursorPos = lastSpace+match.length;
+                    $input[0].setSelectionRange(newCursorPos, newCursorPos);
                     $input.focus();
                 }
                 e.preventDefault();
