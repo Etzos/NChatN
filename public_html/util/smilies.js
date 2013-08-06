@@ -109,6 +109,12 @@ var Smilies = (function($, Tooltip, document){
         return getId(id).text[0];
     }
     
+    function replaceTagsWithText(str) {
+        return str.replace(/\<img src\="*smilies\/(\d+)\.gif"* [\w\="]*>/gi, function(match, p1) {
+            return getSmileyText(p1);
+        });
+    }
+    
     return {
         'init': function() {
             drawTable();
@@ -118,6 +124,9 @@ var Smilies = (function($, Tooltip, document){
         },
         'getSmileyText': function(id) {
             return getSmileyText(id);
+        },
+        'replaceTagsWithText': function(str) {
+            return replaceTagsWithText(str);
         }
     };
 })(jQuery, Tooltip, document);

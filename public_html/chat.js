@@ -1199,6 +1199,7 @@ var Chat = (function(window, $) {
                     // TODO: Fix smilies and bad styles
                     // This download method only works on recent version of Firefox and Chrome
                     var raw = $('#chat-window-'+chan.id).html();
+                    raw = Smilies.replaceTagsWithText(raw);
                     var blob = new Blob([raw], {type: 'application/octet-stream'});
                     var src = window.URL.createObjectURL(blob);
                     this.href = src;
