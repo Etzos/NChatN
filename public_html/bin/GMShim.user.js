@@ -13,7 +13,7 @@
 // @copyright    2013+, Kevin Ott
 // @resource     payload https://rawgithub.com/Etzos/NChatN/master/public_html/chat.html
 // @run-at       document-start
-// @updateURL    https://rawgithub.com/Etzos/NChatN/master/public_html/util/GMShim.user.js
+// @updateURL    https://rawgithub.com/Etzos/NChatN/master/public_html/bin/GMShim.user.js
 // ==/UserScript==
 
 $(document).ready(function() {
