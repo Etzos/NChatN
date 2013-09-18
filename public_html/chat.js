@@ -13,7 +13,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+// TODO: *MAJOR* breakage. Using the localId is fine, but it should be unique. Removing elements from the channel array 
+//       makes things go bad. Very bad. (i.e. channel 2 elem still exists, but channel 2 has become channel 1)
 var Chat = (function(window, $) {
     var URL = {
       'send': 'sendchat.php',
@@ -33,7 +34,8 @@ var Chat = (function(window, $) {
     
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
-        
+    var whisperRegex = /(to|from) ([\w\-]+)(?:<\/I> )?\&gt;/i;
+    
     var channels = [],              // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
@@ -398,7 +400,11 @@ var Chat = (function(window, $) {
         chan.buffer[0] = '';
         chan.bufferPointer = 0;
         
-        var to = $pmSelect.find(':selected').val();
+        // All whisper channels are directed to Lodge (to make it viewer-friendly for non NChatN users)
+        var targetChannel = chan.isServer ? chan.id : 0;
+        // Whisper target for whisper channels should come from the chan.pm (since it's permanent)
+        var to = chan.isServer ? $pmSelect.find(':selected').val() : chan.pm;
+        console.log(chan.isServer + " and target: "+to);
         var rand = _getTime();
         
         // Process text (escape and replace +)
@@ -406,7 +412,7 @@ var Chat = (function(window, $) {
         
         $.get(
             URL.send,
-            'CHANNEL='+chan.id+'&TO='+to+'&RND='+rand+'&TEXT='+text
+            'CHANNEL='+targetChannel+'&TO='+to+'&RND='+rand+'&TEXT='+text
         );
         // TODO: Check for failure. If there is a failure, store the message
         // TODO: PostSend Hook
@@ -453,13 +459,17 @@ var Chat = (function(window, $) {
                     // Only reset the begining if it's needed (init and the sent messages are too long)
                     var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
                     
+                    var whisperTarget = null;
                     // Insert each message in order
                     for(var i = begin; i < end; i++) {
                         var msg = msgArr[i];
-                        var isScript = scriptRegex.test(msg);
                         if(msg === '') {
                             continue;
                         }
+                        
+                        var isScript = scriptRegex.test(msg);
+                        whisperTarget = whisperRegex.exec(msg);
+                        
                         msg += '<br>';
 
                         if(isInit) {
@@ -480,11 +490,16 @@ var Chat = (function(window, $) {
                                 'message': msg,
                                 'channel': chan
                             });
-                            
+
                             if(hook.stopEvent) {
                                 continue;
                             }
-                            _insertMessage(chanId, hook.message);
+                            
+                            if(whisperTarget) {
+                                _insertWhisper(whisperTarget[2], hook.message);
+                            } else {
+                                _insertMessage(chanId, hook.message);
+                            }
                         } else {
                             _insertMessage(chanId, msg);
                         }
@@ -507,6 +522,10 @@ var Chat = (function(window, $) {
     
     function getOnline(chanId) {
         var chan = channels[chanId];
+        // Skip non-server channels
+        if(!chan.isServer) {
+            return;
+        }
         
         $.ajax({
             url: URL.online,
@@ -872,6 +891,29 @@ var Chat = (function(window, $) {
         return -1;
     }
     
+    function _getIdFromWhisperTarget(whisperTarget) {
+        for(var i = 0; i < channels.length; i++) {
+            if(channels[i].pm === whisperTarget) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    /**
+     * Safely inserts a whisper (makes sure the channel exists first)
+     * @param {string} whisperTarget
+     * @param {string} message
+     */
+    function _insertWhisper(whisperTarget, message) {
+        var localId = _getIdFromWhisperTarget(whisperTarget);
+        if(localId < 0) {
+            localId = _createWhisperChannel(whisperTarget);
+        }
+        
+        _insertMessage(localId, message, false);
+    }
+    
     function _selectWhisperTarget(name) {
         var $sel = null;
         
@@ -1026,8 +1068,19 @@ var Chat = (function(window, $) {
      */
     function createBlankChannel(name) {
         var localId = _insertNewChannel(-1, name);
+        channels[localId].isServer = false;
         _createChannelElem(localId, name);
         switchChannel(localId);
+        return localId;
+    }
+    
+    function _createWhisperChannel(whisperTarget) {
+        var localId = createBlankChannel("W: "+whisperTarget);
+        var chan = channels[localId];
+        // TODO: Insert player and whisperTarget
+        //chan.players = []
+        chan.pm = whisperTarget;
+        
         return localId;
     }
     
@@ -1086,7 +1139,9 @@ var Chat = (function(window, $) {
         // End changeTab Hook
         
         chan.input = $input.val();
-        chan.pm = $pmSelect.children(':selected').val();
+        if(chan.isServer) {
+            chan.pm = $pmSelect.children(':selected').val();
+        }
         
         _makeChannelActive(chanId);
         _updatePlayerDropdown();
@@ -1094,7 +1149,9 @@ var Chat = (function(window, $) {
         var newChan = channels[chanId];
         $input.val(newChan.input).focus();
         
-        _selectWhisperTarget(newChan.pm);
+        if(newChan.isServer) {
+            _selectWhisperTarget(newChan.pm);
+        }
     }
     
     /**
