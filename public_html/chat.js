@@ -415,6 +415,11 @@ var Chat = (function(window, $) {
     function getMessage(chanId) {
         var chan = channels[chanId];
         
+        // Skip non-server channels
+        if(!chan.isServer) {
+            return;
+        }
+        
         // Check connection speed only for Lodge (for now)
         if(chanId === 0) {
             var timeStart = Date.now();
@@ -479,9 +484,9 @@ var Chat = (function(window, $) {
                             if(hook.stopEvent) {
                                 continue;
                             }
-                            _insertMessage(chan.id, hook.message);
+                            _insertMessage(chanId, hook.message);
                         } else {
-                            _insertMessage(chan.id, msg);
+                            _insertMessage(chanId, msg);
                         }
                     }
                     
@@ -523,12 +528,12 @@ var Chat = (function(window, $) {
                     // new - old = enter
                     var entered = _arrSub(newPlayerList, chan.players);
                     for(var i=0; i<entered.length; i++) {
-                        _insertMessage(chan.id, _formatSystemMsg('-- '+entered[i]+' joins --'), true);
+                        _insertMessage(chanId, _formatSystemMsg('-- '+entered[i]+' joins --'), true);
                     }
                     // old - new = leave
                     var left = _arrSub(chan.players, newPlayerList);
                     for(var i=0; i<left.length; i++) {
-                        _insertMessage(chan.id, _formatSystemMsg('-- '+left[i]+' departs --'), true);
+                        _insertMessage(chanId, _formatSystemMsg('-- '+left[i]+' departs --'), true);
                     }
                 
                 }
@@ -544,7 +549,7 @@ var Chat = (function(window, $) {
                 }
                 
                 // For now, I'm just dumping this in as-is
-                $('#online-window-'+chan.id).html(onlinePayload);
+                $('#online-window-'+chanId).html(onlinePayload);
                 
                 chan.playerHash = resParts[0];
             }
@@ -679,20 +684,19 @@ var Chat = (function(window, $) {
     /**
      * Appends a message to the defined channel
      * 
-     * @param {int} chanServerId The channel to append the message to
+     * @param {int} chanId The local ID of the channel to append a message
      * @param {string} message The message to be appended
      * @param {bool} isSys [Optional] If true, the message will be treated as a message from the chat client (Default: false) 
      * @returns {undefined}
      */
-    function _insertMessage(chanServerId, message, isSys) {
+    function _insertMessage(chanId, message, isSys) {
         if(typeof isSys === 'undefined') {
             isSys = false;
         }
-        var $cc = $('#chat-window-'+chanServerId);
+        var $cc = $('#chat-window-'+chanId);
 
-        var localId = _getIdFromServerId(chanServerId);
-        var isSelected = (localId === selectedChannel);
-        var isBottom = (isSelected)? _isAtBottom($cc) : channels[localId].atBottom;
+        var isSelected = (chanId === selectedChannel);
+        var isBottom = (isSelected)? _isAtBottom($cc) : channels[chanId].atBottom;
         
         $cc.append(message);
         
@@ -705,10 +709,10 @@ var Chat = (function(window, $) {
         }
         
         // Check scroll
-        doScrollCheck(localId);
+        doScrollCheck(chanId);
         // Update tabs (if not active tab)
         if(!isSelected && (!isSys || (isSys && settings.showSysMessages))) {
-            $('#chat-tab-'+chanServerId).addClass('newMessageTab');
+            $('#chat-tab-'+chanId).addClass('newMessageTab');
         }
     }
     
@@ -734,7 +738,7 @@ var Chat = (function(window, $) {
      * @param {int} localId The local id for the channel
      */
     function doScrollCheck(localId) {
-        var $cWin = $('#chat-window-'+channels[localId].id);
+        var $cWin = $('#chat-window-'+localId);
         // Don't poll to see if the element is at the bottom if it's not the active tab (it will return bogus info)
         var atBottom = (localId === selectedChannel)? _isAtBottom( $cWin ) : channels[localId].atBottom;
         channels[localId].atBottom = atBottom;
@@ -748,37 +752,36 @@ var Chat = (function(window, $) {
         
     /**
      * Creates the various HTML elements for the given channel ID
-     * @param {int} chanServerId The server id for the channel
+     * @param {int} chanId The internal ID of the channel
      * @param {string} chanName The name of the channel
      */
-    function _createChannelElem(chanServerId, chanName) {
+    function _createChannelElem(chanId, chanName) {
         // Create chat window
-        if( $('#chat-window-'+chanServerId).length === 0 ) {
+        if( $('#chat-window-'+chanId).length === 0 ) {
             $('<div></div>', {
-                'id': 'chat-window-'+chanServerId,
+                'id': 'chat-window-'+chanId,
                 'class': 'chatWindow inactive'
             }).scroll(function() {
                 // Check to see if it's at the bottom
-                var localId = _getIdFromServerId(chanServerId);
-                doScrollCheck(localId);
+                doScrollCheck(chanId);
             }).appendTo($chatContainer);
         }
         
         // Create online window
-        if( $('#online-window-'+chanServerId).length === 0 ) {
+        if( $('#online-window-'+chanId).length === 0 ) {
             $('<div></div>', {
-                'id': 'online-window-'+chanServerId,
+                'id': 'online-window-'+chanId,
                 'class': 'onlineWindow inactive'
             }).appendTo($onlineContainer);
         }
         
         // Add tab
-        if( $('#chat-tab-'+chanServerId).length === 0 ) {
+        if( $('#chat-tab-'+chanId).length === 0 ) {
             var $del = ''; 
-            if(chanServerId !== 0) { // Only display the close option for channels that aren't Lodge
-                var $del = $('<a href="#">X</a>')
+            if(chanId !== 0) { // Only display the close option for channels that aren't Lodge
+                $del = $('<a href="#">X</a>')
                 .click(function(e) {
-                    removeChannel(chanServerId);
+                    removeChannel(chanId);
                     e.stopImmediatePropagation();
                     return false;
                 })
@@ -789,7 +792,7 @@ var Chat = (function(window, $) {
             }
             
             $('<div></div>', {
-                'id': 'chat-tab-'+chanServerId,
+                'id': 'chat-tab-'+chanId,
                 'class': 'chatTabDiv'
             })
             .appendTo($tabContainer)
@@ -797,12 +800,12 @@ var Chat = (function(window, $) {
                 $('<a>'+chanName+'</a>')
                 .attr('href', '#')
                 .click(function() {
-                    switchChannel(chanServerId);
+                    switchChannel(chanId);
                     return false;
                 })
                 .append($del)
             ).click(function() {
-                    switchChannel(chanServerId);
+                    switchChannel(chanId);
                     return false;
             });
         }
@@ -811,27 +814,25 @@ var Chat = (function(window, $) {
     /**
      * Makes an existing channel (i.e. one already open) the active one
      * 
-     * @param {int} chanServerId The server ID of the channel to make active
+     * @param {int} chanId The internal ID of the channel to make active
      */
-    function _makeChannelActive(chanServerId) {
-        var localId = _getIdFromServerId(chanServerId);
-        var selServerId = channels[selectedChannel].id;
+    function _makeChannelActive(chanId) {
         // Get the position of the scroll bar, so it can be restored later
-        channels[selectedChannel].atBottom = _isAtBottom( $('#chat-window-'+selServerId) );
+        channels[selectedChannel].atBottom = _isAtBottom( $('#chat-window-'+selectedChannel) );
         
-        var $chatWindow = $('#chat-window-'+chanServerId);
+        var $chatWindow = $('#chat-window-'+chanId);
         $chatWindow.show().siblings().hide();
-        $('#online-window-'+chanServerId).show().siblings().hide();
+        $('#online-window-'+chanId).show().siblings().hide();
         // Restore the position of the scroll bar
-        if(channels[localId].atBottom === true) {
+        if(channels[chanId].atBottom === true) {
             $chatWindow.scrollTop( $chatWindow.prop('scrollHeight') );
         }
         
         // Update the tabs
-        $('#chat-tab-'+selServerId).removeClass('selectedTab'); // This MUST come first for init()
-        $('#chat-tab-'+chanServerId).addClass('selectedTab').removeClass('newMessageTab');
+        $('#chat-tab-'+selectedChannel).removeClass('selectedTab'); // This MUST come first for init()
+        $('#chat-tab-'+chanId).addClass('selectedTab').removeClass('newMessageTab');
         
-        selectedChannel = localId;
+        selectedChannel = chanId;
     }
     
     /**
@@ -893,12 +894,13 @@ var Chat = (function(window, $) {
     
     function _insertNewChannel(chanServerId, name) {
         var len = channels.push({
-            'id': parseInt(chanServerId, 10),  // Server ID of the channel
+            'id': parseInt(chanServerId, 10),  // Server ID of the channel (For non-server channels this should be -1)
             'name': name,                      // Name of the channel
             'lastId': 0,                       // The ID of the last message sent from the server
             'input': '',                       // The contents of the input bar (Used when switching tabs)
             'players': new Array(),            // The list of players currently in the channel
             'playerHash': '',                  // The last hash sent with the player list from the server
+            'isServer': true,                  // Whether the channel is a server channel or a custom one (used for whisper)
             'pm': '*',                         // The selected whisper target for this channel
             'newMessage': false,               // Whether there is a new (unread) message in this channel
             'atBottom': false,                 // Whether the chat window was scrolled to the bottom (only used when switching tabs)
@@ -906,6 +908,7 @@ var Chat = (function(window, $) {
             'bufferPointer': 0                 // Where in the buffer array the player has last been
         });
         channels[(len-1)].buffer.push('');     // channels.buffer[0] is used for the current input
+        return len-1;
     }
     
     function _addMenuItem(text, stopHide) {
@@ -966,8 +969,16 @@ var Chat = (function(window, $) {
         _saveSettings();
     }
     
+    /**
+     * Checks if a given server channel ID is in the list of active channels
+     * @param {type} chanServerId
+     * @returns {Boolean}
+     */
     function inChannel(chanServerId) {
         chanServerId = parseInt(chanServerId, 10);
+        if(chanServerId < 0) {
+            return false;
+        }
         for(var i=0; i<channels.length; i++) {
             if(channels[i].id === chanServerId) {
                 return true;
@@ -976,14 +987,22 @@ var Chat = (function(window, $) {
         return false;
     }
     
-    function joinChannel(chanServerId, name) {
-        if(inChannel(chanServerId)) {
-            switchChannel(chanServerId);
+    /**
+     * Attempts to join a channel, if it already is joined then switches to that channel
+     * @param {int} chanId The local channel ID to attempt to switch to
+     * @param {name} name The name to use for the channel if it needs to be joined
+     */
+    function joinChannel(chanId, name) {
+        console.log("This shouldn't be called, but it is.");
+        // TODO: This can't do what it's supposed to without a server ID!
+        // Check if it could be a local ID
+        if(chanId > -1 && chanId < channels.length-1) {
+            switchChannel(chanId);
             return;
         }
         // selfJoin Hook
         var ctx = {
-            channelId: chanServerId,
+            channelId: chanId,
             channel: name,
             firstJoin: false
         };
@@ -1000,14 +1019,64 @@ var Chat = (function(window, $) {
         switchChannel(chanServerId);
     }
     
-    function switchChannel(chanServerId) {
+    /**
+     * Creates a "channel stub": A blank channel, and returns the internal ID
+     * @param {string} name The name to give the new channel
+     * @returns {int} The local ID of the newly created channel
+     */
+    function createBlankChannel(name) {
+        var localId = _insertNewChannel(-1, name);
+        _createChannelElem(localId, name);
+        switchChannel(localId);
+        return localId;
+    }
+    
+    /**
+     * Join a channel using the server channel ID
+     * 
+     * This method is a convience method to provide a quick way to join a channel without having to manually translate
+     * a server ID into a local ID.
+     * @param {int} chanServerId The server ID of the channel to join
+     * @param {string} name The name to give the channel if it needs to be created
+     */
+    function joinServerChannel(chanServerId, name) {     
+        if(inChannel(chanServerId)) {
+            var chanId = _getIdFromServerId(chanServerId);
+            switchChannel(chanId);
+            return;
+        }
+        
+        // selfJoin Hook
+        var ctx = {
+            channelId: chanServerId,
+            channel: name,
+            firstJoin: false
+        };
+        var res = PluginManager.runHook('joinChat', ctx);
+        if(res.stopEvent) {
+            return;
+        }
+        // End selfJoin Hook
+        _insertNewChannel(chanServerId, name);
+        var localId = _getIdFromServerId(chanServerId);
+        _createChannelElem(localId, name);
+        getMessage(localId);
+        getOnline(localId);
+        switchChannel(localId);
+    }
+    
+    /**
+     * Switches the active channel to the one provided
+     * @param {int} chanId The internal ID of the channel to switch to
+     */
+    function switchChannel(chanId) {
         // Switch the input over
         var chan = channels[selectedChannel];
         
         // changeTab Hook
         var ctx = {
-            'channel': chanServerId,
-            'previousChannel': chan.id
+            'channel': chanId,
+            'previousChannel': selectedChannel
         };
         var hook = PluginManager.runHook('tabChange', ctx);
         
@@ -1019,34 +1088,38 @@ var Chat = (function(window, $) {
         chan.input = $input.val();
         chan.pm = $pmSelect.children(':selected').val();
         
-        _makeChannelActive(chanServerId);
+        _makeChannelActive(chanId);
         _updatePlayerDropdown();
         
-        var newChan = channels[_getIdFromServerId(chanServerId)];
+        var newChan = channels[chanId];
         $input.val(newChan.input).focus();
         
         _selectWhisperTarget(newChan.pm);
     }
     
-    function removeChannel(chanServerId) {
-        if(chanServerId === 0) 
+    /**
+     * Removes a channel from the tab list (as well as all of its elements)
+     * @param {int} chanId The internal ID of the channel
+     */
+    function removeChannel(chanId) {
+        if(chanId === 0) {
             return; // No leaving Lodge!
+        }
         
-        var localId = _getIdFromServerId(chanServerId);
-        var chan = channels[localId];
+        //var chan = channels[chanId];
         // If selected channel, move to Lodge
-        if(selectedChannel === localId) {
+        if(selectedChannel === chanId) {
             switchChannel(0);
         }
         
         // Clear it from the array
-        channels.splice(localId, 1);
+        channels.splice(chanId, 1);
         // Clear the chat
-        $('#chat-window-'+chanServerId).remove();
+        $('#chat-window-'+chanId).remove();
         // Clear the online
-        $('#online-window-'+chanServerId).remove();
+        $('#online-window-'+chanId).remove();
         // Clear the tag
-        $('#chat-tab-'+chanServerId).remove();
+        $('#chat-tab-'+chanId).remove();
     }
     
     function toggleSysMsgVisibility() {
@@ -1139,8 +1212,8 @@ var Chat = (function(window, $) {
         
         var chan = channels[selectedChannel];
         
-        _createChannelElem(chan.id, chan.name);
-        _makeChannelActive(chan.id);
+        _createChannelElem(selectedChannel, chan.name);
+        _makeChannelActive(selectedChannel);
         
         // Load settings
         _loadSettings();
@@ -1200,7 +1273,7 @@ var Chat = (function(window, $) {
                     
                     // TODO: Fix smilies and bad styles
                     // This download method only works on recent version of Firefox and Chrome
-                    var raw = $('#chat-window-'+chan.id).html();
+                    var raw = $('#chat-window-'+selectedChannel).html();
                     raw = Smilies.replaceTagsWithText(raw);
                     var blob = new Blob([raw], {type: 'application/octet-stream'});
                     var src = window.URL.createObjectURL(blob);
@@ -1375,7 +1448,7 @@ var Chat = (function(window, $) {
            if(chanServerId === '')
                return;
            
-           joinChannel(chanServerId, $chanSel.html());
+           joinServerChannel(chanServerId, $chanSel.html());
            
            $channelSelect.children('option:eq(0)').prop('selected', true);
            $chanSel.prop('selected', false);
@@ -1446,7 +1519,7 @@ var Chat = (function(window, $) {
             init();
         },
         'joinChannel': function(chanServerId, name) {
-            joinChannel(chanServerId, name);
+            joinServerChannel(chanServerId, name);
         },
         'leaveChannel': function(chanId) {
             removeChannel(chanId);
