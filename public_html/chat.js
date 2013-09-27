@@ -404,7 +404,6 @@ var Chat = (function(window, $) {
         var targetChannel = chan.isServer ? chan.id : 0;
         // Whisper target for whisper channels should come from the chan.pm (since it's permanent)
         var to = chan.isServer ? $pmSelect.find(':selected').val() : chan.pm;
-        console.log(chan.isServer + " and target: "+to);
         var rand = _getTime();
         
         // Process text (escape and replace +)
