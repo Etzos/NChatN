@@ -596,12 +596,18 @@ var Chat = (function(window, $) {
     
     function getAllOnline() {
         for(var i=0; i<channels.length; i++) {
+            if(!channels[i]) {
+                continue;
+            }
             getOnline(i);
         }
     }
     
     function getAllMessages() {
         for(var i=0; i<channels.length; i++) {
+            if(!channels[i]) {
+                continue;
+            }
             getMessage(i);
         }
     }
@@ -888,6 +894,9 @@ var Chat = (function(window, $) {
     function _getIdFromServerId(chanServerId) {
         chanServerId = parseInt(chanServerId, 10);
         for(var i=0; i<channels.length; i++) {
+            if(!channels[i]) {
+                continue;
+            }
             if(channels[i].id === chanServerId)
                 return i;
         }
@@ -896,6 +905,9 @@ var Chat = (function(window, $) {
     
     function _getIdFromWhisperTarget(whisperTarget) {
         for(var i = 0; i < channels.length; i++) {
+            if(!channels[i]) {
+                continue;
+            }
             if(channels[i].pm === whisperTarget) {
                 return i;
             }
@@ -1005,6 +1017,9 @@ var Chat = (function(window, $) {
             return false;
         }
         for(var i=0; i<channels.length; i++) {
+            if(!channels[i]) {
+                continue;
+            }
             if(channels[i].id === chanServerId) {
                 return true;
             }
@@ -1121,7 +1136,8 @@ var Chat = (function(window, $) {
         }
         
         // Clear it from the array
-        channels.splice(chanId, 1);
+        //channels.splice(chanId, 1);
+        channels[chanId] = null;
         // Clear the chat
         $('#chat-window-'+chanId).remove();
         // Clear the online
