@@ -1035,7 +1035,6 @@ var Chat = (function(window, $) {
         var localId = _insertNewChannel(-1, name);
         channels[localId].isServer = false;
         _createChannelElem(localId, name);
-        switchChannel(localId);
         return localId;
     }
     
