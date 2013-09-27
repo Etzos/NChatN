@@ -955,34 +955,14 @@ var Chat = (function(window, $) {
         channels[(len-1)].buffer.push('');     // channels.buffer[0] is used for the current input
         return len-1;
     }
-    
-    function _addMenuItem(text, stopHide) {
-        if(typeof stopHide === 'undefined') {
-            stopHide = false;
-        }
-        var $container = $('<li></li>');
-        var $link = $('<a></a>');
-        $link.attr('href', '#')
-            .html(text)
-            .appendTo($container);
-        $container.appendTo($menu);
-        if(!stopHide) {
-            $link.click(function() {
-               $menu.hide();
-               return false;
-            });
-        }
-        
-        return $link;
-    }
-    
+
     function _loadSettings() {
         if(!localStorageSupport) {
             return;
         }
-        
+
         var savedSettings = localStorage.getItem("NChatN-settings");
-        
+
         try {
             savedSettings = JSON.parse(savedSettings);
 
@@ -1033,38 +1013,6 @@ var Chat = (function(window, $) {
     }
     
     /**
-     * Attempts to join a channel, if it already is joined then switches to that channel
-     * @param {int} chanId The local channel ID to attempt to switch to
-     * @param {name} name The name to use for the channel if it needs to be joined
-     */
-    function joinChannel(chanId, name) {
-        console.log("This shouldn't be called, but it is.");
-        // TODO: This can't do what it's supposed to without a server ID!
-        // Check if it could be a local ID
-        if(chanId > -1 && chanId < channels.length-1) {
-            switchChannel(chanId);
-            return;
-        }
-        // selfJoin Hook
-        var ctx = {
-            channelId: chanId,
-            channel: name,
-            firstJoin: false
-        };
-        var res = PluginManager.runHook('joinChat', ctx);
-        if(res.stopEvent) {
-            return;
-        }
-        // End selfJoin Hook
-        _insertNewChannel(chanServerId, name);
-        var localId = _getIdFromServerId(chanServerId);
-        _createChannelElem(chanServerId, name);
-        getMessage(localId);
-        getOnline(localId);
-        switchChannel(chanServerId);
-    }
-    
-    /**
      * Creates a "channel stub": A blank channel, and returns the internal ID
      * @param {string} name The name to give the new channel
      * @returns {int} The local ID of the newly created channel
@@ -1095,7 +1043,7 @@ var Chat = (function(window, $) {
      * @param {int} chanServerId The server ID of the channel to join
      * @param {string} name The name to give the channel if it needs to be created
      */
-    function joinServerChannel(chanServerId, name) {     
+    function joinServerChannel(chanServerId, name) {
         if(inChannel(chanServerId)) {
             var chanId = _getIdFromServerId(chanServerId);
             switchChannel(chanId);
@@ -1503,7 +1451,7 @@ var Chat = (function(window, $) {
            sendChat(); 
         });
         $channelSelect.change(function() {
-           var $chanSel = $channelSelect.children(':selected');
+           var $chanSel = $channelSelect.children('option:selected');
            var chanServerId = $chanSel.val();
            if(chanServerId === '')
                return;
@@ -1526,7 +1474,7 @@ var Chat = (function(window, $) {
             }
 
         });
-        
+
         // Timers (Times are default from NEaB)
         // Start Chat Timer
         getAllMessages();
