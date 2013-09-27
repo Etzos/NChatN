@@ -1,151 +1,144 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-<title>NEaB Chat Next</title>
+    <meta charset='UTF-8'>
+    <title>NEaB Chat Next</title>
 
-<!-- Use NEaB's default styles to make it look a tad more "native" -->
-<link href="normal.css" rel="stylesheet" type="text/css">
-<link href='https://rawgithub.com/Etzos/NChatN/master/public_html/chat.css' rel='stylesheet' type='text/css'>
+    <link href='https://rawgithub.com/Etzos/NChatN/master/public_html/chat.css' rel='stylesheet' type='text/css'>
 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type="text/javascript" src="https://rawgithub.com/Etzos/NChatN/master/public_html/loader.js"></script>
-
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://rawgithub.com/Etzos/NChatN/master/public_html/loader.js"></script>
 </head>
 <body>
-    
-	<div id="headerContainer">
-    <div class="relDiv">
+
+    <section id="headerContainer">
+        <span id="invasions">Invasion Status: <span id="invasionStatus" class="bolden">Unknown</span></span>
+
         <form name="channelAdd" onSubmit="return false;" method="GET" action="" id="channelAddForm">
-			<select id="channel">
-                <option value="0" disabled>-- Channels --</option>
-			</select>
-		</form>
+            <select id="channel">
+                <option value="0" selected>-- Channels --</option>
+            </select>
+        </form>
         
-        <div id="mainLight" class="colorWraper">
-            <div class="colorLight">
-                <div class="lightGloss"></div>
-                <div class="lightShadow"></div>
+        <div id="chatHelp">
+            To chat with other players, simply enter your message and press
+            enter! <br>
+            <br> Chat supports the following commands:
+            <table>
+                <tr>
+                    <td class="bolden">/look</td>
+                    <td style="width: 130px;">&lt;username&gt;</td>
+                    <td>Look at a player in chat.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/kick</td>
+                    <td>&lt;username&gt;</td>
+                    <td>Kick another player.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/who</td>
+                    <td>&lt;username&gt;</td>
+                    <td>See the player's stat card.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/me</td>
+                    <td>&lt;username&gt; &lt;action&gt;</td>
+                    <td>Do something as yourself in chat.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/msg</td>
+                    <td>&lt;username&gt; &lt;message&gt;</td>
+                    <td>Whisper to someone in chat privately.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/r</td>
+                    <td>&lt;username&gt; &lt;reply&gt;</td>
+                    <td>Reply to a player's whisper in private.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/online</td>
+                    <td></td>
+                    <td>List online players.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/hug</td>
+                    <td>&lt;username&gt;</td>
+                    <td>Hug another player.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/store</td>
+                    <td>&lt;username&gt; &lt;message&gt;</td>
+                    <td>Store a message for a player. The player will see it when
+                        he/she opens chat. This is displayed publically.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/private</td>
+                    <td>&lt;username&gt; &lt;message&gt;</td>
+                    <td>Does the same thing as <span class="bolden">/store</span>,
+                        but will be displayed in private.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="bolden">/help</td>
+                    <td></td>
+                    <td>Request help. Have you tried checking the Wiki first?</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/yawn</td>
+                    <td></td>
+                    <td>Yawn.</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/afk</td>
+                    <td></td>
+                    <td>Go afk (away from keyboard).</td>
+                </tr>
+                <tr>
+                    <td class="bolden">/away</td>
+                    <td></td>
+                    <td>Does the same as <span class="bolden">/afk</span>.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="bolden">/report</td>
+                    <td></td>
+                    <td>Send a report to the admins about a player that is misbehaving in chat.
+                    </td>
+                </tr>
+            </table>
+            <br> If the username contains a space replace it with an
+            underscore (_).<br> For example, the name 'Black Orchid' would
+            become 'Black_Orchid'.
+
+            <div class="centered">
+                [<a href="#" onClick="toggleHelp(); return false;">Close</a>]
             </div>
         </div>
-        
-        <div id="invasions">Invasion Status: <span id="invasionStatus" class="bolden">Unknown</span></div>
-        
-		<div id="chatHelp">
-			To chat with other players, simply enter your message and press
-			enter! <br>
-			<br> Chat supports the following commands:
-			<table cellspacing="0" cellpadding="2" border="0">
-				<tr>
-					<td class="bolden">/look</td>
-					<td style="width: 130px;">&lt;username&gt;</td>
-					<td>Look at a player in chat.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/kick</td>
-					<td>&lt;username&gt;</td>
-					<td>Kick another player.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/who</td>
-					<td>&lt;username&gt;</td>
-					<td>See the player's stat card.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/me</td>
-					<td>&lt;username&gt; &lt;action&gt;</td>
-					<td>Do something as yourself in chat.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/msg</td>
-					<td>&lt;username&gt; &lt;message&gt;</td>
-					<td>Whisper to someone in chat privately.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/r</td>
-					<td>&lt;username&gt; &lt;reply&gt;</td>
-					<td>Reply to a player's whisper in private.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/online</td>
-                    <td></td>
-					<td>List online players.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/hug</td>
-					<td>&lt;username&gt;</td>
-					<td>Hug another player.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/store</td>
-					<td>&lt;username&gt; &lt;message&gt;</td>
-					<td>Store a message for a player. The player will see it when
-						he/she opens chat. This is displayed publically.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/private</td>
-					<td>&lt;username&gt; &lt;message&gt;</td>
-					<td>Does the same thing as <span class="bolden">/store</span>,
-						but will be displayed in private.
-					</td>
-				</tr>
-				<tr>
-					<td class="bolden">/help</td>
-					<td></td>
-					<td>Request help. Have you tried checking the Wiki first?</td>
-				</tr>
-				<tr>
-					<td class="bolden">/yawn</td>
-					<td></td>
-					<td>Yawn.</td>
-				</tr>
-				<tr>
-					<td class="bolden">/afk</td>
-					<td></td>
-					<td>Go afk (away from keyboard).</td>
-				</tr>
-				<tr>
-					<td class="bolden">/away</td>
-					<td></td>
-					<td>Does the same as <span class="bolden">/afk</span>.
-					</td>
-				</tr>
-				<tr>
-					<td class="bolden">/report</td>
-					<td></td>
-					<td>Send a report to the admins about a player that is misbehaving in chat.
-					</td>
-				</tr>
-			</table>
-			<br> If the username contains a space replace it with an 
-			underscore (_).<br> For example, the name 'Black Orchid' would 
-			become 'Black_Orchid'.
+    </section>
 
-			<div class="centered">
-				[<a href="#" onClick="toggleHelp(); return false;">Close</a>]
-			</div>
-		</div>
-    </div>
-	</div>
-
-	<div id="channelContainer">
-	<div class="relDiv">
-		<div id="onlineListContainer">
-		<div class="relDiv">
-			<div class="channelHeader">Players In Channel</div>
-			<div id="onlineList">
+    <section id="channelContainer">
+        <div id="onlineListContainer">
+        <div class="relDiv">
+            <div class="channelHeader">Players In Channel</div>
+            <div id="onlineList">
             <!-- List div's go here -->
-			</div>
-			<div id="onlineSelectContainer">
-				<select id="onlineSelect">
-					<option value="*">-- To All --</option>
-				</select>
-			</div>
-		</div>
-		</div>
-		<div id="chatContainer">
-		<div class="relDiv">
-			<div class="channelHeader">
+            </div>
+            <div id="onlineSelectContainer">
+                <select id="onlineSelect">
+                    <option value="*" selected>-- To All --</option>
+                </select>
+            </div>
+        </div>
+        </div>
+        <div id="chatContainer">
+        <div class="relDiv">
+            <div class="channelHeader">
+                <div id="mainLight" class="colorWraper">
+                    <div class="colorLight">
+                        <div class="lightGloss"></div>
+                        <div class="lightShadow"></div>
+                    </div>
+                </div>
                 Messages 
                 <div class='headerLinkContainer'>
                     <a href="#" class="headerItem" id="menuLink">Menu</a>
@@ -154,25 +147,25 @@
                     </span>
                 </div>
             </div>
-			<div id="chatPadder">
+            <div id="chatPadder">
             <div id="chat">
             <!-- Chat div's go here -->
-			</div>
             </div>
-			<div id="chatMessageContainer">
-				<form onSubmit="return false;" action="" id="chatInputForm">
-					<div id="inputContainer"><input type="text" id="chatInput" lang="en" value=""></div>
-				</form>
+            </div>
+            <div id="chatMessageContainer">
+                <form onSubmit="return false;" action="" id="chatInputForm">
+                    <div id="inputContainer"><input type="text" id="chatInput" lang="en" value=""></div>
+                </form>
                 <a href='#' onClick='return false;' id='smileyLink'><img src='http://www.nowhere-else.org/smilies/0.gif' alt="Smilies"></a>
                 <div id='smileyContainer'></div>
             </div>
-		</div>
-		</div>
-	</div>
-	</div>
+        </div>
+        </div>
+    </section>
 
-	<div id="tabContainer">
-	</div>
+    <section id="tabContainer">
+        <ul id="tabList"></ul>
+    </section>
 
     <div id='tooltip'></div>
 </body>

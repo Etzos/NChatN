@@ -1,135 +1,95 @@
 body {
-	background-color: #FFFFFF;
-	margin: 0;
+    background-color: #FFFFFF;
+    margin: 0;
+
+    /* Follow NEaB's default text styling */
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+}
+
+td {
+    font-size: 12px;
+}
+
+a {
+    text-decoration: none;
+}
+
+td a:visited {
+    color: blue;
 }
 
 img {
     border: none;
 }
 
+/* Used for active chat windows */
 .active {
-	visibility: visible;
+    visibility: visible;
 }
 
 .chatDiv {
-	position: absolute;
-	visibility: hidden;
-	/* This changes depending on which channel is open */
-	width: 100%;
-	height: 400px;
-}
-
-.chatDiv iframe {
-	width: 100%;
-	height: 100%;
-	border: none;
-}
-
-/** Chat Tabs **/
-.chatTabDiv {
-	left: 0px;
-    width: 114px;
-	height: 1.3em;
-    float: left;
-    
-    margin-left: 2px;
-    padding-left: 2px;
-    
-    color: #FFFFFF;
-	text-decoration: none;
-    
-	background: black;
-    border-right: 1px solid black;
-    border-left: 1px solid black;
-    border-bottom: 1px solid black;
-}
-
-.chatTabDiv a {
-    color: white;
-}
-
-.chatTabDiv a:visited {
-	color: #FFFFFF;
-	text-decoration: none;
-}
-
-.chatTabDiv a:link {
-	text-decoration: none;
-}
-
-.selectedTab {
-    background: gray;
-}
-
-.newMessageTab a {
-    color: gray;
-    font-weight: bold;
-    font-style: italic;
-}
-
-#tabContainer {
-	position: absolute;
-	left: 0px;
-	bottom: 0px;
-	height: 30px; /* Give some space on the bottom */
-	width: 100%;
-	border-top: 1px solid black;
-	background-color: white;
+    position: absolute;
+    visibility: hidden;
+    /* This changes depending on which channel is open */
+    width: 100%;
+    height: 400px;
 }
 
 /** Help Box **/
 #chatHelp {
-	display: none;
-	position: absolute;
-	top: 70px;
-	right: 2px;
-	height: 200px;
-	width: 500px;
-	background-color: #FFFFB0;
-	border: 1px solid black;
-	padding: 3px;
-	font-size: 8pt;
-	overflow: auto;
-	z-index: 3;
-	color: black;
+    display: none;
+    position: absolute;
+    top: 4em;
+    right: 2px;
+    height: 200px;
+    width: 500px;
+    background-color: #FFFFB0;
+    border: 1px solid black;
+    padding: 3px;
+    font-size: 8pt;
+    overflow: auto;
+    z-index: 3;
+    color: black;
 }
 
 #chatHelp table {
-	width: 100%;
-	border-top: 1px solid gray;
-	border-bottom: 1px solid gray;
+    width: 100%;
+    border-top: 1px solid gray;
+    border-bottom: 1px solid gray;
+    border-spacing: 0;
+    border-collapse: collapse;
 }
 
 #chatHelp td {
-	vertical-align: top;
+    vertical-align: top;
     font-size: 8pt;
 }
 
 /* This is part of CSS3, but it's not like the rest of this site is standards-compliant */
 #chatHelp tr:nth-child(2n) { 
-	background-color: #FFFF60;
+    background-color: #FFFF60;
 }
 
 .bolden {
-	font-weight: bold;
+    font-weight: bold;
 }
 
 .centered {
-	margin: 0px auto;
-	text-align: center;
+    margin: 0px auto;
+    text-align: center;
 }
 
 .channelHeader {
-	position: absolute;
-	top: 0px;
-	
-	width: 100%;
-	height: 1.3em;
-	background-color: #4F4F4F;
-	color: white;
-	font-weight: bold;
-	text-align: center;
-	vertical-align: top;
+    position: absolute;
+    top: 0px;
+
+    width: 100%;
+    height: 1.3em;
+    background-color: #4F4F4F;
+    color: white;
+    font-weight: bold;
+    text-align: center;
 }
 
 .channelHeader a {
@@ -137,62 +97,55 @@ img {
 }
 
 #channelContainer {
-	position: absolute;
-	top: 50px; /*TODO: CHANGE THIS TO MATCH!!!*/
-	bottom: 31px;
-	left: 0px;
-	right: 0px;
-	
-	border-right: 2px solid white;
-	border-left: 2px solid white;
-	border-bottom: 1px solid white;
-	background-color: black;
+    position: absolute;
+    top: 2em;
+    bottom: 3em;
+    left: 0px;
+    right: 0px;
+
+    background-color: black;
 }
 
 .relDiv {
-	position: relative;
-	width: 100%;
-	height: 100%;
+    position: relative;
+    width: 100%;
+    height: 100%;
 }
 
 #headerContainer {
-	position: absolute;
-	top: 0px;
-	right: 0px;
-	left: 0px;
-	height: 50px;
-	
-	border-top: 2px solid white;
-	border-left: 2px solid white;
-	border-right: 2px solid white;
-	color: white;
-    
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    left: 0px;
+    height: 2em;
+
+    color: white;
     background-color: black;
 }
 
 #onlineListContainer {
-	position: absolute;
-	top: 2px;
-	bottom: 2px;
-	left: 2px;
-	
-	width: 225px;
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 2px;
+
+    width: 225px;
 }
 
 #chatContainer {
-	position: absolute;
-	top: 2px;
-	bottom: 2px;
-	right: 2px;
-	left: 230px;
-	min-width: 350px;
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    right: 2px;
+    left: 230px;
+    min-width: 350px;
 }
 
 #onlineSelectContainer select {
-	position: absolute;
-	width: 100%;
-	height: 25px;
-	bottom: 0px;
+    position: absolute;
+    width: 100%;
+    height: 25px;
+    bottom: 0px;
     padding: 3px;
 }
 
@@ -204,16 +157,31 @@ img {
     left: 0px;
 }
 
+#chatInput {
+    background-color: white;
+    color: #AAAAAA;
+    border: 1px solid darkgray;
+    height: 1.6em;
+    box-shadow: inset 1px 1px 3px darkgray;
+
+    transition: color 0.2s, box-shadow 0.2s;
+}
+
+#chatInput:focus {
+    color: black;
+    box-shadow: none;
+}
+
 #chatMessageContainer input {
-	width: 100%;
+    width: 100%;
 }
 
 #onlineList {
-	position: absolute;
-	top: 1.5em;
-	bottom: 27px;
-	width: 100%;
-	background-color: white;
+    position: absolute;
+    top: 1.5em;
+    bottom: 27px;
+    width: 100%;
+    background-color: white;
 }
 
 #chat {
@@ -226,19 +194,19 @@ img {
     top: 1.5em;
     left: 0px;
     right: 0px;
-    
+
     padding: 2px;
     padding-right: 0px;
-    
+
     background-color: white;
 }
 
 .chatWindow {
     height: 100%;
     width: 100%;
-    
+
     overflow: auto;
-    
+
     font-size: 9pt;
     line-height: 16px;
 }
@@ -250,7 +218,7 @@ img {
 .chatWindow hr {
     padding: 0px;
     margin: 0px;
-    
+
     border: none;
     border-top: 1px dashed darkgray;
 }
@@ -258,7 +226,7 @@ img {
 .onlineWindow {
     height: 100%;
     width: 100%;
-    
+
     overflow: auto;
 }
 
@@ -279,11 +247,11 @@ img {
     position: absolute;
     bottom: 28px;
     right: 5px;
-    
+
     border: 1px solid black;
     padding: 2px;
     background-color: white;
-    
+
     display: none;
 }
 
@@ -319,7 +287,7 @@ img {
 .headerLinkContainer {
     font-weight: normal;
     height: 100%;
-    
+
     position: absolute;
     top: 0px;
     right: 0px;
@@ -330,12 +298,12 @@ img {
     display: block;
     float: right;
     height: 100%;
-    
+
     padding-right: 3px;
     padding-left: 3px;
-    
+
     margin-right: 4px;
-    
+
     border-right: 1px solid black;
     border-left: 1px solid black;
     background-color: #777777;
@@ -388,13 +356,12 @@ img {
 }
 
 #channelAddForm {
-    display: inline-block;
+    float: right;
 }
 
 /** Invasion Message **/
 #invasions {
-    display: block;
-    
+    margin-left: 0.4em;
 }
 
 .greenText {
@@ -442,7 +409,7 @@ img {
     position: absolute;
     top: 0;
     width: 13px;
-    
+
     background-color: white;
     border: 1px solid gray;
 }
@@ -460,8 +427,7 @@ img {
 }
 #mainLight {
     display: inline;
-    margin-top: 3px;
-    margin-left: 3px;
+    float: left;
 }
 
 /** Chat History Coloring **/
@@ -478,13 +444,13 @@ img {
     left: 10px;
     border-top-left-radius: 0.5em;
     border-top-right-radius: 0.5em;
-    
+
     z-index: 50;
-    
+
     min-width: 200px;
     min-height: 150px;
     display: none;
-    
+
     opacity: 0;
     transition: opacity 0.2s;
 }
@@ -524,4 +490,106 @@ img {
     color: inherit;
     font-weight: inherit;
     text-decoration: underline;
+}
+
+/** Channel Tabs **/
+#tabContainer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3em;
+    width: 100%;
+    border-top: 1px solid black;
+    background-color: white;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+#tabList {
+    position: absolute;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    padding-left: 2px;
+    padding-right: 2px;
+    white-space: nowrap;
+}
+
+#tabList a {
+    color: rgb(0, 170, 255);
+    text-shadow: 1px 1px 2px black;
+}
+
+#tabList li {
+    display: inline-block;
+    vertical-align: top;
+    background-color: #666666;
+
+    padding: 1px;
+
+    border-left: 1px solid black;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+
+    /* Move the tab over the previous tab's border */
+    margin-left: -1px;
+
+    transition: background-color 0.2s, padding 0.2s;
+}
+
+#tabList li.selectedTab {
+    background-color: #333333;
+    padding-right: 2px;
+    padding-left: 2px;
+    padding-top: 2px;
+    padding-bottom: 3px;
+
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+
+    box-shadow: 0px 5px 5px -2px gray;
+}
+
+#tabList li:last-child:not(.selectedTab) {
+    border-bottom-right-radius: 6px;
+}
+
+#tabList li:first-child:not(.selectedTab) {
+    border-bottom-left-radius: 6px;
+}
+
+/* .tabLink is the link that sets the body of the tab */
+#tabList .tabLink {
+    display: block;
+    width: 120px;
+    height: 1.3em;
+}
+
+/* Only target the first a element, not the close link */
+#tabList .newMessageTab > a {
+    text-shadow: 1px 1px 2px blue;
+    font-weight: bold;
+    font-style: italic;
+}
+
+/* The span holds the closing link */
+#tabList .tabClose {
+    float: right;
+    margin-top: 1px;
+    margin-right: 1px;
+}
+
+#tabList .tabClose a {
+    color: red;
+    font-weight: bold;
+    font-style: normal;
+    text-shadow: 0px 1px 1px darkred;
+}
+
+#tabList span.tabName {
+    width: 110px; /* NOTE: This is set based off of the tab's width */
+    float: left;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }

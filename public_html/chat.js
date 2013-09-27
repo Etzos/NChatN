@@ -777,7 +777,7 @@ var Chat = (function(window, $) {
     function _createChannelElem(chanId, chanName) {
         // Create chat window
         if( $('#chat-window-'+chanId).length === 0 ) {
-            $('<div></div>', {
+            $('<div>', {
                 'id': 'chat-window-'+chanId,
                 'class': 'chatWindow inactive'
             }).scroll(function() {
@@ -788,7 +788,7 @@ var Chat = (function(window, $) {
         
         // Create online window
         if( $('#online-window-'+chanId).length === 0 ) {
-            $('<div></div>', {
+            $('<div>', {
                 'id': 'online-window-'+chanId,
                 'class': 'onlineWindow inactive'
             }).appendTo($onlineContainer);
@@ -796,37 +796,40 @@ var Chat = (function(window, $) {
         
         // Add tab
         if( $('#chat-tab-'+chanId).length === 0 ) {
-            var $del = ''; 
+            var $del = '';
             if(chanId !== 0) { // Only display the close option for channels that aren't Lodge
-                $del = $('<a href="#">X</a>')
-                .click(function(e) {
-                    removeChannel(chanId);
-                    e.stopImmediatePropagation();
-                    return false;
-                })
-                .css({
-                    'float': 'right',
-                    'padding-right': '2px'
-                });
+                $del = $('<span>')
+                .addClass('tabClose')
+                .append(
+                    $('<a>', {
+                        'href': '#'
+                    })
+                    .html("X")
+                    .click(function(e) {
+                        removeChannel(chanId);
+                        e.stopImmediatePropagation();
+                        return false;
+                    })
+                );
             }
             
-            $('<div></div>', {
-                'id': 'chat-tab-'+chanId,
-                'class': 'chatTabDiv'
+            $('<li>', {
+                'id': 'chat-tab-'+chanId
             })
-            .appendTo($tabContainer)
             .append(
-                $('<a>'+chanName+'</a>')
-                .attr('href', '#')
+                $('<a>', {
+                    'href': '#',
+                    'class': 'tabLink',
+                    'title': chanName
+                })
                 .click(function() {
                     switchChannel(chanId);
                     return false;
                 })
+                .append("<span class='tabName'>"+chanName+"</span>")
                 .append($del)
-            ).click(function() {
-                    switchChannel(chanId);
-                    return false;
-            });
+            )
+            .appendTo($tabContainer);
         }
     }
     
@@ -1204,7 +1207,7 @@ var Chat = (function(window, $) {
     
     function renderChannelList() {
         $channelSelect.empty();
-        $channelSelect.append("<option value=''>-- Channels --</option>\n");
+        $channelSelect.append("<option value='' selected>-- Channels --</option>\n");
         for(var i = 0; i < availChannels.length; i++) {
             var c = availChannels[i];
             $channelSelect.append("<option value='"+c.id+"'>"+c.name+"</option>\n");
@@ -1254,7 +1257,7 @@ var Chat = (function(window, $) {
         selectedChannel = 0;
         
         $input = $('#chatInput');
-        $tabContainer = $('#tabContainer');
+        $tabContainer = $('#tabList');
         $onlineContainer = $('#onlineList');
         $chatContainer = $('#chat');
         $pmSelect = $('#onlineSelect');
@@ -1266,23 +1269,23 @@ var Chat = (function(window, $) {
         if("spellcheck" in document.createElement('input')) {
             $input.attr('spellcheck', 'true');
         }
-        
+
         var chan = channels[selectedChannel];
         
         _createChannelElem(selectedChannel, chan.name);
         _makeChannelActive(selectedChannel);
-        
+
         // Load settings
         _loadSettings();
-        
+
         // Get value from cookie
         playerName = Util.Cookies.neabGet("RPG", 1);
-        
+
         // Load queued plugins
         for(var i = 0; i < queuedPlugins.length; i++) {
             PluginManager.registerPlugin(queuedPlugins[i]);
         }
-        
+
         var $container = $("<span></span>");
         PluginManager.forEachPlugin(function(plugin) {
             var $inpt = $('<input type="checkbox" '+((plugin.active) ? "checked=checked" : "")+'>');
@@ -1303,14 +1306,14 @@ var Chat = (function(window, $) {
                     "&nbsp;&nbsp;&nbsp;"+plugin.description+" "+
                     "<br><br>");
         });
-        
+
         // Create the user script dialog
         var userDialog = new Dialog({
             title: "User scripts",
             //content: "Hopefully a checkbox list will go here eventually or something"
             content: $container
         });
-        
+
         var aboutDialog = new Dialog({
             title: "About NChatNext",
             content: 'NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott<br>'+
@@ -1319,7 +1322,7 @@ var Chat = (function(window, $) {
         });
         // Fill in the Menu
         $menu.html('');
-        
+
 
         var mainMenu = new MenuList({
             select: {
@@ -1327,7 +1330,7 @@ var Chat = (function(window, $) {
                 description: "Download the current chat history to a file",
                 action: function() {
                     var chan = channels[selectedChannel];
-                    
+
                     // TODO: Fix smilies and bad styles
                     // This download method only works on recent version of Firefox and Chrome
                     var raw = $('#chat-window-'+selectedChannel).html();
@@ -1335,12 +1338,12 @@ var Chat = (function(window, $) {
                     var blob = new Blob([raw], {type: 'application/octet-stream'});
                     var src = window.URL.createObjectURL(blob);
                     this.href = src;
-                    
+
                     var time = new Date();
                     // Format: 2013-06-23
                     var timeStr = time.getFullYear() + "-" + numPad(time.getMonth()+1) + "-" + numPad(time.getDate());
                     this.download = "NEaB Chat - "+chan.name+" ["+timeStr+"].html";
-                    
+
                     // Note: This should be allowed to bubble (apparently, haven't tested)
                     //return false;
                 }
@@ -1412,7 +1415,7 @@ var Chat = (function(window, $) {
         mainMenu.addMenu("settings", settingMenu);
         
         addMenu(mainMenu);
-        
+
         // Keybinding
         // Input Enter key pressed
         $(window).keydown(function(e) {
