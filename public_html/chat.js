@@ -32,7 +32,7 @@ var Chat = (function(window, $) {
     
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
-    var whisperRegex = /(to|from) ([\w\-]+)(?:<\/I> )?\&gt;/i;
+    var whisperRegex = /(to|from) ([\w\-]+)(<\/I> \&gt;|\&gt;<\/I>)/gi;
     
     var channels = [],              // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -94,7 +94,7 @@ var Chat = (function(window, $) {
             playerJoin: [],         // Player joins
             playerDepart: [],       // Player departs
             // Chat
-            'send': [],               // Player sends message
+            send: [],               // Player sends message
             receive: [],            // Player receives a message
             // UI / Mechanics
             tabChange: [],          // Chat tab is changed
