@@ -13,8 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-// TODO: *MAJOR* breakage. Using the localId is fine, but it should be unique. Removing elements from the channel array 
-//       makes things go bad. Very bad. (i.e. channel 2 elem still exists, but channel 2 has become channel 1)
 var Chat = (function(window, $) {
     var URL = {
       'send': 'sendchat.php',
