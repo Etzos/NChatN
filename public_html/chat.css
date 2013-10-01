@@ -75,6 +75,10 @@ img {
     font-weight: bold;
 }
 
+.stricken {
+    text-decoration: line-through;
+}
+
 .centered {
     margin: 0px auto;
     text-align: center;
@@ -592,4 +596,42 @@ img {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+ol.onlinePlayerList {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+ol.onlinePlayerList li {
+    padding-bottom: 2px;
+}
+
+/* This is the away sign image */
+ol.onlinePlayerList img:nth-child(2) {
+    position: absolute;
+    left: 3px;
+}
+
+ol.onlinePlayerList span {
+    position: absolute;
+    left: 0px;
+    margin-left: 50px;
+}
+
+ol.onlinePlayerList a {
+    display: block;
+    color: blue;
+    font-weight: bold;
+    margin-bottom: 1px;
+
+    padding-top: 1px;
+    padding-bottom: 1px;
+    padding-left: 2px;
+}
+
+ol.onlinePlayerList a:hover {
+    border-bottom: 1px solid lightgray;
+    margin-bottom: 0;
 }

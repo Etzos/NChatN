@@ -17,7 +17,7 @@ var Chat = (function(window, $) {
     var URL = {
       'send': 'sendchat.php',
       'receive': 'lastchat.php',
-      'online': 'online.php',
+      'online': 'rs/online.php',
       'invasion': 'check_invasions.php',
       'player': 'player_info.php'
     };
@@ -526,50 +526,67 @@ var Chat = (function(window, $) {
         
         $.ajax({
             url: URL.online,
-            data: 'CHANNEL='+chan.id+'&CMD=REFRESH&LASTCRC='+chan.playerHash+'&RND='+_getTime(),
+            data: 'CHANNEL='+chan.id,
             type: 'GET',
             context: this,
             success: function(result) {
-                var resParts = result.split('---***---');
-                if(resParts.length !== 3)
-                    return;
+                var oldPlayerList = $.merge([], chan.players);
                 
-                var newPlayerList = resParts[1].split('\n');
-                // Remove extra empty element added by the extra \n
-                newPlayerList.splice((newPlayerList.length-1), 1);
-                var onlinePayload = resParts[2];
+                var extractName = function(index, data) {
+                    if(data.hasOwnProperty("name")) {
+                        chan.players.push(data.name);
+                    }
+                };
                 
-                if(chan.playerHash !== '') {
-                    // Yeah this is really slow, but it take 16 seconds anyway, what's a few more
-                    // new - old = enter
-                    var entered = _arrSub(newPlayerList, chan.players);
+                chan.players = [];
+                $.each(result.bots, extractName);
+                $.each(result.guests, extractName);
+                $.each(result.players, extractName);
+
+                // TODO: This doesn't really check if it's when first entering the chat room, although that's probably not an issue
+                if(oldPlayerList.length > 0) {
+                    var entered = _arrSub(chan.players, oldPlayerList);
                     for(var i=0; i<entered.length; i++) {
                         _insertMessage(chanId, _formatSystemMsg('-- '+entered[i]+' joins --'), true);
                     }
                     // old - new = leave
-                    var left = _arrSub(chan.players, newPlayerList);
+                    var left = _arrSub(oldPlayerList, chan.players);
                     for(var i=0; i<left.length; i++) {
                         _insertMessage(chanId, _formatSystemMsg('-- '+left[i]+' departs --'), true);
                     }
-                
                 }
-                
-                chan.players = newPlayerList;
-                
-                // Update the list only if the current channel is the selected one
-                if(chan.id === channels[selectedChannel].id) {
-                    var prevSelect = $pmSelect.children(':selected').val();
-                    _updatePlayerDropdown();
-                    if(prevSelect !== '') // Only an empty string when nothing selected, so ignore
-                        _selectWhisperTarget(prevSelect);
-                }
-                
-                // For now, I'm just dumping this in as-is
-                $('#online-window-'+chanId).html(onlinePayload);
-                
-                chan.playerHash = resParts[0];
+
+                chan.playerInfo = result;
+                _renderOnlineList(chanId);
             }
         });
+    }
+
+    function _renderOnlineList(chanId) {
+        var stuff = channels[chanId].playerInfo;
+        var playerGuests = $.merge($.merge([], stuff.players), stuff.guests);
+        var afkImage = '<img src="images/away.gif">';
+
+        var html = '<ol class="onlinePlayerList">';
+        $.each(stuff.bots, function(key, value) {
+            var isAway = value.away === 'true';
+            var extraClass = '';
+            if(isAway) {
+                extraClass = ' class="stricken"';
+            }
+            html += "<li"+extraClass+"><a href=''#><img src='"+value.icon+"'>"+(isAway?afkImage:'')+"<span>"+value.title+" "+value.name+"</span></a></li>";
+        });
+        $.each(playerGuests, function(key, value) {
+            var isAway = value.away === 'true';
+            var extraClass = '';
+            if(isAway) {
+                extraClass = ' class="stricken"';
+            }
+            html += "<li"+extraClass+"><a href='#'><img src='players_small/"+value.icon+"'>"+(isAway?afkImage:'')+"<span>"+value.title+" "+value.name+"</span></a></li>";
+        });
+        html += '</ol>';
+
+        $("#online-window-"+chanId).html(html);
     }
     
     /**
@@ -954,6 +971,7 @@ var Chat = (function(window, $) {
             'input': '',                       // The contents of the input bar (Used when switching tabs)
             'players': new Array(),            // The list of players currently in the channel
             'playerHash': '',                  // The last hash sent with the player list from the server
+            'playerInfo': [],                  // This contains information gleaned about each player
             'isServer': true,                  // Whether the channel is a server channel or a custom one (used for whisper)
             'pm': '*',                         // The selected whisper target for this channel
             'newMessage': false,               // Whether there is a new (unread) message in this channel
