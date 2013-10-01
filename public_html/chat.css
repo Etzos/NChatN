@@ -629,9 +629,14 @@ ol.onlinePlayerList a {
     padding-top: 1px;
     padding-bottom: 1px;
     padding-left: 2px;
+
+    border-top: 1px solid white;
+    border-bottom: 1px solid white;
+    transition: background-color 0.5s, border 0.5s;
 }
 
 ol.onlinePlayerList a:hover {
-    border-bottom: 1px solid lightgray;
-    margin-bottom: 0;
+    background-color: #DDDDFF;
+    border-top: 1px solid gray;
+    border-bottom: 1px solid gray;
 }
