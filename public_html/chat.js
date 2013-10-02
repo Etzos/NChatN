@@ -574,7 +574,7 @@ var Chat = (function(window, $) {
             if(isAway) {
                 extraClass = ' class="stricken"';
             }
-            html += "<li"+extraClass+"><a href=''#><img src='"+value.icon+"'>"+(isAway?afkImage:'')+"<span>"+value.title+" "+value.name+"</span></a></li>";
+            html += "<li"+extraClass+"><a href='#'><img src='"+value.icon+"'>"+(isAway?afkImage:'')+"<span>"+value.title+" "+value.name+"</span></a></li>";
         });
         $.each(playerGuests, function(key, value) {
             var isAway = value.away === 'true';
