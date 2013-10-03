@@ -117,21 +117,13 @@
     </section>
 
     <section id="channelContainer">
-        <div id="onlineListContainer">
-        <div class="relDiv">
+        <section id="onlineListContainer" class="channelPart">
             <div class="channelHeader">Players In Channel</div>
-            <div id="onlineList">
+            <ol id="onlineList" class="channelContent">
             <!-- List div's go here -->
-            </div>
-            <div id="onlineSelectContainer">
-                <select id="onlineSelect">
-                    <option value="*" selected>-- To All --</option>
-                </select>
-            </div>
-        </div>
-        </div>
-        <div id="chatContainer">
-        <div class="relDiv">
+            </ol>
+        </section>
+        <section id="chatContainer" class="channelPart">
             <div class="channelHeader">
                 <div id="mainLight" class="colorWraper">
                     <div class="colorLight">
@@ -147,10 +139,8 @@
                     </span>
                 </div>
             </div>
-            <div id="chatPadder">
-            <div id="chat">
+            <div id="chat" class="channelContent">
             <!-- Chat div's go here -->
-            </div>
             </div>
             <div id="chatMessageContainer">
                 <form onSubmit="return false;" action="" id="chatInputForm">
@@ -159,8 +149,7 @@
                 <a href='#' onClick='return false;' id='smileyLink'><img src='http://www.nowhere-else.org/smilies/0.gif' alt="Smilies"></a>
                 <div id='smileyContainer'></div>
             </div>
-        </div>
-        </div>
+        </section>
     </section>
 
     <section id="tabContainer">
