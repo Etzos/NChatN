@@ -3,6 +3,7 @@
 // @namespace    http://garth.web.nowhere-else.org/web/
 // @version      1.9
 // @description  Loads NChatN (NEaB Chat Next) instead of the default NEaB chat
+// @grant        GM_getResourceText
 // @match        *://www.nowhere-else.org/general_chat.php
 // @match        *://nowhere-else.org/general_chat.php
 // @match        *://*.nowhere-else.org/general_chat.php
