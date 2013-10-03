@@ -61,7 +61,6 @@ var Chat = (function(window, $) {
         $tabContainer,              // The container for chat tabs
         $onlineContainer,           // The container for online players
         $chatContainer,             // The container for chat
-        $pmSelect,                  // Select for who to chat with (*, or player names)
         $channelSelect,             // Select to open new channels
         $menu,                      // The menu container
         $invasion;                  // Invasion message container
@@ -401,7 +400,7 @@ var Chat = (function(window, $) {
         // All whisper channels are directed to Lodge (to make it viewer-friendly for non NChatN users)
         var targetChannel = chan.isServer ? chan.id : 0;
         // Whisper target for whisper channels should come from the chan.pm (since it's permanent)
-        var to = chan.isServer ? $pmSelect.find(':selected').val() : chan.pm;
+        var to = chan.isServer ? '*' : chan.pm;
         var rand = _getTime();
         
         // Process text (escape and replace +)
@@ -691,25 +690,7 @@ var Chat = (function(window, $) {
     function _formatSystemMsg(message) {
         return '<span class="systemMsg">'+message+'<br></span>';
     }
-    
-    /**
-     * Regenerates the online player dropdown (used for selecting whisper target)
-     * 
-     * @returns {undefined}
-     */
-    function _updatePlayerDropdown() {
-        var chan = channels[selectedChannel];
-        
-        var cont = _genOption('*', '-- To All --');
-        
-        for(var i=0; i<chan.players.length; i++) {
-            var safeName = chan.players[i].replace(/ /g, '_');
-            cont += _genOption(safeName, chan.players[i]);
-        }
-        
-        $pmSelect.html(cont);
-    }
-    
+
     /**
      * Returns wheter the given element is scrolled all the way down or not
      * 
@@ -942,27 +923,7 @@ var Chat = (function(window, $) {
         
         _insertMessage(localId, message, false);
     }
-    
-    function _selectWhisperTarget(name) {
-        var $sel = null;
-        
-        if(name === '*') {
-            $sel = $pmSelect.children('option').first();
-        } else {
-            $sel = $pmSelect.children('option[value='+name+']');
-        }
-        
-        if($sel.length !== 1) {
-            var $children = $pmSelect.children('option');
-            if($children.length === 0) {
-                return;
-            }
-            $sel = $children.first();
-        }
-        $pmSelect.children('option').prop('selected', false);
-        $sel.prop('selected', true);
-    }
-    
+
     function _insertNewChannel(chanServerId, name) {
         var len = channels.push({
             'id': parseInt(chanServerId, 10),  // Server ID of the channel (For non-server channels this should be -1)
@@ -1105,35 +1066,27 @@ var Chat = (function(window, $) {
     function switchChannel(chanId) {
         // Switch the input over
         var chan = channels[selectedChannel];
-        
+
         // changeTab Hook
         var ctx = {
             'channel': chanId,
             'previousChannel': selectedChannel
         };
         var hook = PluginManager.runHook('tabChange', ctx);
-        
+
         if(hook.stopEvent) {
             return;
         }
         // End changeTab Hook
-        
+
         chan.input = $input.val();
-        if(chan.isServer) {
-            chan.pm = $pmSelect.children(':selected').val();
-        }
-        
+
         _makeChannelActive(chanId);
-        _updatePlayerDropdown();
-        
+
         var newChan = channels[chanId];
         $input.val(newChan.input).focus();
-        
-        if(newChan.isServer) {
-            _selectWhisperTarget(newChan.pm);
-        }
     }
-    
+
     /**
      * Removes a channel from the tab list (as well as all of its elements)
      * @param {int} chanId The internal ID of the channel
@@ -1238,7 +1191,6 @@ var Chat = (function(window, $) {
         $tabContainer = $('#tabList');
         $onlineContainer = $('#onlineList');
         $chatContainer = $('#chat');
-        $pmSelect = $('#onlineSelect');
         $channelSelect = $('#channel');
         $menu = $('#mainMenu');
         $invasion = $('#invasionStatus');
