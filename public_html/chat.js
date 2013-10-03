@@ -717,7 +717,7 @@ var Chat = (function(window, $) {
      * @returns {Boolean} True if the given element is scrolled all the way down, false otherwise
      */
     function _isAtBottom($elem) {
-        return ( $elem.prop('scrollHeight') - $elem.scrollTop() === $elem.outerHeight() );
+        return ($elem.prop('scrollHeight') - $elem.prop('scrollTop') === $elem.prop('clientHeight'));
     }
     
     /**
