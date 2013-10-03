@@ -163,7 +163,7 @@ img {
     bottom: 2px;
     right: 25px;
     left: 0px;
-    margin-bottom: 4px;
+    /*margin-bottom: 4px;*/
 }
 
 #chatInput {
@@ -339,7 +339,9 @@ img {
 }
 
 #channelAddForm {
-    float: right;
+    position: absolute;
+    top: 0px;
+    right: 0px;
 }
 
 /** Invasion Message **/
