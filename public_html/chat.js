@@ -975,7 +975,7 @@ var Chat = (function(window, $) {
             'isServer': true,                  // Whether the channel is a server channel or a custom one (used for whisper)
             'pm': '*',                         // The selected whisper target for this channel
             'newMessage': false,               // Whether there is a new (unread) message in this channel
-            'atBottom': false,                 // Whether the chat window was scrolled to the bottom (only used when switching tabs)
+            'atBottom': true,                  // Whether the chat window was scrolled to the bottom (only used when switching tabs)
             'buffer': new Array(),             // The last n messages the player has sent to this channel
             'bufferPointer': 0                 // Where in the buffer array the player has last been
         });
