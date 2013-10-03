@@ -32,7 +32,7 @@ var Chat = (function(window, $) {
     
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
-    var whisperRegex = /(to|from) ([\w\-]+)(<\/I> \&gt;|\&gt;<\/I>)/gi;
+    var whisperRegex = /(to|from) ([\w\-]+)(<\/I> \&gt;|\&gt;<\/I>)/i;
     
     var channels = [],              // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -64,7 +64,7 @@ var Chat = (function(window, $) {
         $channelSelect,             // Select to open new channels
         $menu,                      // The menu container
         $invasion;                  // Invasion message container
-    
+
     var PluginManager = (function() {
         var index = 0;
         /* Stores plugins as such:
@@ -354,19 +354,19 @@ var Chat = (function(window, $) {
             }
         };
     })();
-    
+
     function sendChat(msg) {
         var text = $input.val();
-        
+
         if(typeof msg !== 'undefined') {
             text = msg;
         }
-        
+
         if(text === '')
             return;
-        
+
         var chan = channels[selectedChannel];
-        
+
         // PreSend Hook
         var ctx = {
             'channel': chan,
@@ -374,38 +374,38 @@ var Chat = (function(window, $) {
             'clearInput': true
         };
         var hook = PluginManager.runHook('send', ctx);
-        
+
         // This should be done *first* because even a stopped event should be able to control the input value
         if(hook.clearInput) {
             $input.val('');
         }
-        
+
         if(hook.stopEvent) {
             return;
         }
         // End PreSend Hook
-        
+
         // If the buffer is too large, trim it (current 5 at a time to reduce the number of times this needs to be done)
         if(chan.buffer.length > 55) {
             chan.buffer = chan.buffer.splice(49);
         }
-        
+
         // Stick the input into the buffer
         chan.buffer.push(text);
-        
+
         // Clear out anything in the saved buffer and reset the pointer
         chan.buffer[0] = '';
         chan.bufferPointer = 0;
-        
+
         // All whisper channels are directed to Lodge (to make it viewer-friendly for non NChatN users)
         var targetChannel = chan.isServer ? chan.id : 0;
         // Whisper target for whisper channels should come from the chan.pm (since it's permanent)
         var to = chan.isServer ? '*' : chan.pm;
         var rand = _getTime();
-        
+
         // Process text (escape and replace +)
         text = escape(text).replace(/\+/g, '%2B');
-        
+
         $.get(
             URL.send,
             'CHANNEL='+targetChannel+'&TO='+to+'&RND='+rand+'&TEXT='+text
@@ -413,20 +413,20 @@ var Chat = (function(window, $) {
         // TODO: Check for failure. If there is a failure, store the message
         // TODO: PostSend Hook
     }
-    
+
     function getMessage(chanId) {
         var chan = channels[chanId];
-        
+
         // Skip non-server channels
         if(!chan.isServer) {
             return;
         }
-        
+
         // Check connection speed only for Lodge (for now)
         if(chanId === 0) {
             var timeStart = Date.now();
         }
-        
+
         $.ajax({
             url: URL.receive,
             data: 'CHANNEL='+chan.id+'&RND='+_getTime()+'&ID='+chan.lastId,
@@ -435,26 +435,26 @@ var Chat = (function(window, $) {
             success: function(result) {
                 if(result === '')
                     return;
-                
+
                 if(chanId === 0) {
                     // Update last connection
                     lastConnection = Date.now() - timeStart;
                     // Clear any timeouts
                     numTimeouts = 0;
                 }
-                
+
                 var splitLoc = result.indexOf('\n');
                 var last = parseInt(result.substring(0, splitLoc));
-                
+
                 if(last !== chan.lastId) {
                     var msgArr = result.substring(splitLoc+1, result.length).split('<BR>');
-                    
+
                     var isInit = (chan.lastId === 0);
                     // Init has an extra <BR> tag that should be avoided
                     var end = (isInit) ? msgArr.length-1 : msgArr.length;
                     // Only reset the begining if it's needed (init and the sent messages are too long)
                     var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
-                    
+
                     var whisperTarget = null;
                     // Insert each message in order
                     for(var i = begin; i < end; i++) {
@@ -462,10 +462,10 @@ var Chat = (function(window, $) {
                         if(msg === '') {
                             continue;
                         }
-                        
+
                         var isScript = scriptRegex.test(msg);
                         whisperTarget = whisperRegex.exec(msg);
-                        
+
                         msg += '<br>';
 
                         if(isInit) {
@@ -478,7 +478,7 @@ var Chat = (function(window, $) {
                                 msg = msg.slice(0, msg.length-4) + "<hr>";
                             }
                         }
-                        
+
                         // No one is allowed to circumvent scripts running
                         if(!isScript) {
                             var hook = PluginManager.runHook('receive', {
@@ -490,7 +490,7 @@ var Chat = (function(window, $) {
                             if(hook.stopEvent) {
                                 continue;
                             }
-                            
+
                             if(whisperTarget) {
                                 _insertWhisper(whisperTarget[2], hook.message);
                             } else {
@@ -500,7 +500,6 @@ var Chat = (function(window, $) {
                             _insertMessage(chanId, msg);
                         }
                     }
-                    
                     chan.lastId = last;
                 }
             }
@@ -515,14 +514,14 @@ var Chat = (function(window, $) {
             }
         });
     }
-    
+
     function getOnline(chanId) {
         var chan = channels[chanId];
         // Skip non-server channels
         if(!chan.isServer) {
             return;
         }
-        
+
         $.ajax({
             url: URL.online,
             data: 'CHANNEL='+chan.id,
@@ -530,13 +529,13 @@ var Chat = (function(window, $) {
             context: this,
             success: function(result) {
                 var oldPlayerList = $.merge([], chan.players);
-                
+
                 var extractName = function(index, data) {
                     if(data.hasOwnProperty("name")) {
                         chan.players.push(data.name);
                     }
                 };
-                
+
                 chan.players = [];
                 $.each(result.bots, extractName);
                 $.each(result.guests, extractName);
@@ -587,7 +586,7 @@ var Chat = (function(window, $) {
 
         $("#online-window-"+chanId).html(html);
     }
-    
+
     /**
      * Gets the invasion status from the server
      * 
@@ -606,7 +605,7 @@ var Chat = (function(window, $) {
             }
         });
     }
-    
+
     function getAllOnline() {
         for(var i=0; i<channels.length; i++) {
             if(!channels[i]) {
@@ -615,7 +614,7 @@ var Chat = (function(window, $) {
             getOnline(i);
         }
     }
-    
+
     function getAllMessages() {
         for(var i=0; i<channels.length; i++) {
             if(!channels[i]) {
@@ -624,7 +623,7 @@ var Chat = (function(window, $) {
             getMessage(i);
         }
     }
-    
+
     /**
      * Updates the connection status light
      * 
@@ -643,7 +642,7 @@ var Chat = (function(window, $) {
             lightClass = 'yellowLight';
             text = 'High Delay ('+(lastConnection/1000)+' sec)';
         }
-        
+
         var $light = $('#mainLight').children().first();
         $light.removeClass('greenLight yellowLight redLight')
             .addClass(lightClass)
@@ -653,7 +652,7 @@ var Chat = (function(window, $) {
                 Tooltip.off();
             });
     }
-    
+
     /**
      * Updates the invasion status portion of chat
      * 
@@ -680,7 +679,7 @@ var Chat = (function(window, $) {
         // Clear old invasion
         $invasion.html($span);
     }
-    
+
     /**
      * Wraps a given string is the tags required to mark it as a system message
      * 
@@ -700,7 +699,7 @@ var Chat = (function(window, $) {
     function _isAtBottom($elem) {
         return ($elem.prop('scrollHeight') - $elem.prop('scrollTop') === $elem.prop('clientHeight'));
     }
-    
+
     /**
      * Appends a message to the defined channel
      * 
@@ -717,17 +716,17 @@ var Chat = (function(window, $) {
 
         var isSelected = (chanId === selectedChannel);
         var isBottom = (isSelected)? _isAtBottom($cc) : channels[chanId].atBottom;
-        
+
         $cc.append(message);
-        
+
         if(isSys && !settings.showSysMessages) {
             $('.systemMsg').hide();
         }
-        
+
         if(isBottom) {
             $cc.scrollTop( $cc.prop('scrollHeight') );
         }
-        
+
         // Check scroll
         doScrollCheck(chanId);
         // Update tabs (if not active tab)
@@ -735,24 +734,13 @@ var Chat = (function(window, $) {
             $('#chat-tab-'+chanId).addClass('newMessageTab');
         }
     }
-    
-    /**
-     * Generates the HTML for an option tag
-     * 
-     * @param {int} id The content of the value attribute
-     * @param {string} text The value between the option tags i.e. what is shown to the user
-     * @returns {String} The resulting option element
-     */
-    function _genOption(id, text) {
-        return '<option value="'+id+'">'+text+'</option>';
-    }
-    
+
     function _arrSub(first, second) {
         return $.grep(first, function(x) {
             return $.inArray(x, second) < 0;
         });
     }
-    
+
     /**
      * Checks to see if the given chat is at the bottom or not and handles all modifiers
      * @param {int} localId The local id for the channel
