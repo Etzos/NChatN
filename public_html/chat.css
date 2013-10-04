@@ -154,7 +154,7 @@ img {
 }
 
 #chat {
-    bottom: 2.5em;
+    bottom: 2.0em;
 }
 
 #inputContainer {
@@ -248,7 +248,7 @@ img {
     bottom: 0px;
     right: 0px;
     left: 0px;
-    height: 2.5em;
+    height: 2.0em;
 }
 
 #smileyLink {
@@ -587,6 +587,7 @@ ol.onlinePlayerList {
 
 ol.onlinePlayerList li {
     padding-bottom: 2px;
+    position: relative;
 }
 
 /* This is the away sign image */
@@ -605,7 +606,7 @@ ol.onlinePlayerList a {
     display: block;
     color: blue;
     font-weight: bold;
-    margin-bottom: 1px;
+    /*margin-bottom: 1px;*/
 
     padding-top: 1px;
     padding-bottom: 1px;
@@ -620,4 +621,59 @@ ol.onlinePlayerList a:hover {
     background-color: #DDDDFF;
     border-top: 1px solid gray;
     border-bottom: 1px solid gray;
+}
+
+.onlinePlayerList ol {
+    list-style-type: none;
+    padding: 0;
+
+    height: 0;
+    visibility: hidden;
+}
+
+.onlinePlayerList ol li {
+    transition: height 0.2s;
+}
+
+li.playerMenuShown a {
+    background-color: #DDDDFF; 
+}
+
+li.playerMenuShown a:hover {
+    border-top-color: white;
+    border-bottom-color: white;
+}
+
+.onlinePlayerList ol li a {
+    display: block;
+
+    padding-left: 2.0em;
+    padding-bottom: 0.2em;
+    padding-top: 0.2em;
+
+    background-color: lightblue;
+    border-bottom: 1px solid lightblue;
+    border-top: 1px solid lightblue;
+
+    margin-bottom: 0.1em;
+
+    transition: background-color 0.5s, border 0.5s, padding 0.5s;
+}
+
+.onlinePlayerList ol li a:hover {
+    background-color: #e5f3f7;
+    border-bottom: 1px solid lightblue;
+    border-top: 1px solid lightblue;
+    padding-left: 2.4em;
+}
+
+
+li.playerMenuShown {
+    border-top: 1px solid gray;
+    border-bottom: 1px solid gray;
+}
+
+li.playerMenuShown ol {
+    visibility: visible;
+    height: auto;
 }

@@ -530,16 +530,16 @@ var Chat = (function(window, $) {
             success: function(result) {
                 var oldPlayerList = $.merge([], chan.players);
 
-                var extractName = function(index, data) {
-                    if(data.hasOwnProperty("name")) {
-                        chan.players.push(data.name);
-                    }
-                };
-
                 chan.players = [];
-                $.each(result.bots, extractName);
-                $.each(result.guests, extractName);
-                $.each(result.players, extractName);
+                // Add bots
+                $.each(result.bots, function(i, data) {
+                    chan.players.push(data.name);
+                });
+                // Add players (as well as changing the way they're stored)
+                $.each(result.players, function(i, data) {
+                    chan.players.push(data.name);
+                });
+                // Note: I'm ignoring guests on purpose as that function isn't possible anymore (as far as I know)
 
                 // TODO: This doesn't really check if it's when first entering the chat room, although that's probably not an issue
                 if(oldPlayerList.length > 0) {
@@ -563,28 +563,72 @@ var Chat = (function(window, $) {
     function _renderOnlineList(chanId) {
         var stuff = channels[chanId].playerInfo;
         var playerGuests = $.merge($.merge([], stuff.players), stuff.guests);
-        var afkImage = '<img src="images/away.gif">';
 
-        var html = '<ol class="onlinePlayerList">';
+        function templateOnlinePlayerRow(name, icon, isAway) {
+            return "<li class='playerMenuHidden'>" +
+                   "<a href='#'>" +
+                   "<img src='" + icon + "'><img src='images/away.gif' class='" + (isAway ? 'inactive' : '') + "'>" +
+                   "<span class='" + (isAway ? 'dimText' : '') + "'>" + name + "</span>" +
+                   "</a>" +
+                   "<ol><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
+                   "</li>";
+        }
+
+        var $html = $();
         $.each(stuff.bots, function(key, value) {
-            var isAway = value.away === 'true';
-            var extraClass = '';
-            if(isAway) {
-                extraClass = ' class="stricken"';
+            var $row = $( templateOnlinePlayerRow(value.title + " " + value.name, value.icon, value.away) );
+            $row.find('ol li a').each(function(i) {
+                var $this = $(this);
+                $this.on('click', function() {
+                    if(i === 0) {
+                        var chan = _createWhisperChannel(value.name);
+                        switchChannel(chan);
+                    } else if(i === 1) {
+                        alert(value.name + " is a chat bot. He doesn't have any stats.");
+                    }
+                    return false;
+                });
+            });
+            if($html.length < 1) {
+                $html = $row;
+            } else {
+                $html = $html.add($row);
             }
-            html += "<li"+extraClass+"><a href='#'><img src='"+value.icon+"'>"+(isAway?afkImage:'')+"<span>"+value.title+" "+value.name+"</span></a></li>";
         });
         $.each(playerGuests, function(key, value) {
-            var isAway = value.away === 'true';
-            var extraClass = '';
-            if(isAway) {
-                extraClass = ' class="stricken"';
+            var $row = $( templateOnlinePlayerRow(value.title + " " + value.name, "players_small/" + value.icon, value.away) );
+            $row.find('ol li a').each(function(i) {
+                var $this = $(this);
+                $this.on('click', function() {
+                    if(i === 0) {
+                        var chan = _createWhisperChannel(value.name);
+                        switchChannel(chan);
+                    } else if(i === 1) {
+                        openWhoWindow(value.name);
+                    }
+                    return false;
+                });
+            });
+            if($html.length < 1) {
+                $html = $row;
+            } else {
+                $html = $html.add($row);
             }
-            html += "<li"+extraClass+"><a href='#'><img src='players_small/"+value.icon+"'>"+(isAway?afkImage:'')+"<span>"+value.title+" "+value.name+"</span></a></li>";
         });
-        html += '</ol>';
 
-        $("#online-window-"+chanId).html(html);
+        $html.each(function() {
+            var $this = $(this);
+            $this.find('a:first').on('click', function() {
+                $this.toggleClass('playerMenuShown');
+                $this.siblings().removeClass('playerMenuShown');
+                $(document).one('click', function() {
+                    $this.removeClass('playerMenuShown');
+                });
+                return false;
+            });
+        });
+
+        $("#online-window-"+chanId).empty().append($html);
     }
 
     /**
@@ -777,9 +821,9 @@ var Chat = (function(window, $) {
         
         // Create online window
         if( $('#online-window-'+chanId).length === 0 ) {
-            $('<div>', {
+            $('<ol>', {
                 'id': 'online-window-'+chanId,
-                'class': 'onlineWindow inactive'
+                'class': 'onlineWindow onlinePlayerList inactive'
             }).appendTo($onlineContainer);
         }
         
