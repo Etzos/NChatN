@@ -564,8 +564,8 @@ var Chat = (function(window, $) {
         var stuff = channels[chanId].playerInfo;
         var playerGuests = $.merge($.merge([], stuff.players), stuff.guests);
 
-        function templateOnlinePlayerRow(name, icon, isAway) {
-            return "<li class='playerMenuHidden'>" +
+        function templateOnlinePlayerRow(id, name, icon, isAway) {
+            return "<li id='player-list-player-"+id+"' class=''>" +
                    "<a href='#'>" +
                    "<img src='" + icon + "'><img src='images/away.gif' class='" + (isAway ? 'inactive' : '') + "'>" +
                    "<span class='" + (isAway ? 'dimText' : '') + "'>" + name + "</span>" +
@@ -576,7 +576,7 @@ var Chat = (function(window, $) {
 
         var $html = $();
         $.each(stuff.bots, function(key, value) {
-            var $row = $( templateOnlinePlayerRow(value.title + " " + value.name, value.icon, value.away) );
+            var $row = $( templateOnlinePlayerRow(value.name, value.title + " " + value.name, value.icon, false) );
             $row.find('ol li a').each(function(i) {
                 var $this = $(this);
                 $this.on('click', function() {
@@ -596,7 +596,7 @@ var Chat = (function(window, $) {
             }
         });
         $.each(playerGuests, function(key, value) {
-            var $row = $( templateOnlinePlayerRow(value.title + " " + value.name, "players_small/" + value.icon, value.away) );
+            var $row = $( templateOnlinePlayerRow(value.id, value.title + " " + value.name, "players_small/" + value.icon, value.away) );
             $row.find('ol li a').each(function(i) {
                 var $this = $(this);
                 $this.on('click', function() {
@@ -628,7 +628,14 @@ var Chat = (function(window, $) {
             });
         });
 
-        $("#online-window-"+chanId).empty().append($html);
+        var $olWin = $("#online-window-"+chanId);
+        // Before replacing, check for a selected element
+        var $found = $olWin.find('.playerMenuShown');
+        if($found.length > 0) {
+            var selectedID = $found.attr('id');
+            $html.filter('#' + selectedID).addClass('playerMenuShown');
+        }
+        $olWin.empty().append($html);
     }
 
     /**
