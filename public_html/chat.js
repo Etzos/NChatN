@@ -633,7 +633,6 @@ var Chat = (function(window, $) {
 
             var hideFunc = function() {
                 $toHide.one('transitionend', function() {
-                    console.log("Firing");
                     $toHide.hide();
                 });
                 $this.removeClass('playerMenuShown');
