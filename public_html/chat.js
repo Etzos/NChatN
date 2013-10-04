@@ -1393,9 +1393,15 @@ var Chat = (function(window, $) {
 
         var aboutDialog = new Dialog({
             title: "About NChatNext",
-            content: 'NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott<br>'+
-                     'NChatN is licensed under the GNU Public License version 3.<br>'+
-                     'A copy of the license is available at &lt;<a href="http://www.gnu.org/licenses/" target="_blank">http://www.gnu.org/licenses/</a>&gt;.'
+            content: 'NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott<br><br>' +
+                     'NChatN is licensed under the GNU Public License version 3.<br>' +
+                     'A copy of the license is available at ' +
+                     '&lt;<a href="http://www.gnu.org/licenses/" target="_blank">http://www.gnu.org/licenses/</a>&gt;.<br><br>' +
+                     '<span>If you like what I\'ve done, feel free to thank me for my work.<br>Or if you\'re feeling really ' +
+                     'generous, consider giving me a Gittip: ' +
+                     '<script data-gittip-username="Etzos" data-gittip-widget="button" src="//gttp.co/v1.js"></script><br>' +
+                     'Do both, one, or none!<br>No matter which you pick, I appreciate you giving my chat client a try!' +
+                     '</span>'
         });
         // Fill in the Menu
         $menu.html('');
