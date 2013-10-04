@@ -682,3 +682,7 @@ li.playerMenuShown ol {
     height: auto;
     max-height: 20em; /* Tricky way to make it animate to an auto height, animate the max-height */
 }
+
+.dimText {
+    color: #777777;
+}
