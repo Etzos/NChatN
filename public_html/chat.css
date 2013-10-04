@@ -586,8 +586,10 @@ ol.onlinePlayerList {
 }
 
 ol.onlinePlayerList li {
-    padding-bottom: 2px;
     position: relative;
+    border-top: 1px solid white;
+    border-bottom: 1px solid white;
+    transition: border 0.6s;
 }
 
 /* This is the away sign image */
@@ -626,9 +628,12 @@ ol.onlinePlayerList a:hover {
 .onlinePlayerList ol {
     list-style-type: none;
     padding: 0;
+    max-height: 0;
+    overflow: hidden;
 
-    height: 0;
-    visibility: hidden;
+    display: block;
+
+    transition: max-height 0.6s; /* See `li.playerMenuShown ol` for details on this */
 }
 
 .onlinePlayerList ol li {
@@ -669,11 +674,11 @@ li.playerMenuShown a:hover {
 
 
 li.playerMenuShown {
-    border-top: 1px solid gray;
-    border-bottom: 1px solid gray;
+    border-top: 1px solid gray !important;
+    border-bottom: 1px solid gray !important;
 }
 
 li.playerMenuShown ol {
-    visibility: visible;
     height: auto;
+    max-height: 20em; /* Tricky way to make it animate to an auto height, animate the max-height */
 }

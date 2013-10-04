@@ -619,25 +619,45 @@ var Chat = (function(window, $) {
             }
         });
 
+        var $olWin = $("#online-window-"+chanId);
+        // Before replacing, check for a selected element
+        var $found = $olWin.find('.playerMenuShown');
+        var selectedID = '';
+        if($found.length > 0) {
+            selectedID = $found.attr('id');
+        }
+
         $html.each(function() {
             var $this = $(this);
-            $this.find('a:first').on('click', function() {
-                $this.toggleClass('playerMenuShown');
-                $this.siblings().removeClass('playerMenuShown');
-                $(document).one('click', function() {
-                    $this.removeClass('playerMenuShown');
+            var $toHide = $this.find('ol');
+
+            var hideFunc = function() {
+                $toHide.one('transitionend', function() {
+                    console.log("Firing");
+                    $toHide.hide();
                 });
+                $this.removeClass('playerMenuShown');
+            };
+
+            if($this.attr('id') === selectedID) {
+                $this.addClass('playerMenuShown');
+                $(document).one('click', hideFunc);
+            }
+
+            $this.find('a:first').on('click', function() {
+                $this.siblings().removeClass('playerMenuShown');
+                $toHide.show();
+
+                $(document).one('click', hideFunc);
+
+                // We have to wait for it to be added before showing
+                setTimeout(function() {
+                    $this.toggleClass('playerMenuShown');
+                }, 1);
                 return false;
             });
         });
 
-        var $olWin = $("#online-window-"+chanId);
-        // Before replacing, check for a selected element
-        var $found = $olWin.find('.playerMenuShown');
-        if($found.length > 0) {
-            var selectedID = $found.attr('id');
-            $html.filter('#' + selectedID).addClass('playerMenuShown');
-        }
         $olWin.empty().append($html);
     }
 
