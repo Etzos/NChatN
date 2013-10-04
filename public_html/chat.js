@@ -565,18 +565,21 @@ var Chat = (function(window, $) {
         var playerGuests = $.merge($.merge([], stuff.players), stuff.guests);
 
         function templateOnlinePlayerRow(id, name, icon, isAway) {
+            var awayClass = (isAway === "true") ? '' : 'inactive';
+            var spanAwayClass = (isAway === "true") ? 'dimText' : '';
+
             return "<li id='player-list-player-"+id+"' class=''>" +
                    "<a href='#'>" +
-                   "<img src='" + icon + "'><img src='images/away.gif' class='" + (isAway ? 'inactive' : '') + "'>" +
-                   "<span class='" + (isAway ? 'dimText' : '') + "'>" + name + "</span>" +
+                   "<img src='" + icon + "'><img src='images/away.gif' class='" + awayClass + "'>" +
+                   "<span class='" + spanAwayClass + "'>" + name + "</span>" +
                    "</a>" +
-                   "<ol><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
+                   "<ol class='inactive'><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
                    "</li>";
         }
 
         var $html = $();
         $.each(stuff.bots, function(key, value) {
-            var $row = $( templateOnlinePlayerRow(value.name, value.title + " " + value.name, value.icon, false) );
+            var $row = $( templateOnlinePlayerRow(value.name, value.title + " " + value.name, value.icon, "false") );
             $row.find('ol li a').each(function(i) {
                 var $this = $(this);
                 $this.on('click', function() {
