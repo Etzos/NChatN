@@ -560,22 +560,22 @@ var Chat = (function(window, $) {
         });
     }
 
+    function templateOnlinePlayerRow(id, name, icon, isAway) {
+        var awayClass = (isAway === "true") ? '' : 'inactive';
+        var spanAwayClass = (isAway === "true") ? 'dimText' : '';
+
+        return "<li id='player-list-player-"+id+"' class=''>" +
+               "<a href='#'>" +
+               "<img src='" + icon + "'><img src='images/away.gif' class='" + awayClass + "'>" +
+               "<span class='" + spanAwayClass + "'>" + name + "</span>" +
+               "</a>" +
+               "<ol class='inactive'><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
+               "</li>";
+    }
+
     function _renderOnlineList(chanId) {
         var stuff = channels[chanId].playerInfo;
         var playerGuests = $.merge($.merge([], stuff.players), stuff.guests);
-
-        function templateOnlinePlayerRow(id, name, icon, isAway) {
-            var awayClass = (isAway === "true") ? '' : 'inactive';
-            var spanAwayClass = (isAway === "true") ? 'dimText' : '';
-
-            return "<li id='player-list-player-"+id+"' class=''>" +
-                   "<a href='#'>" +
-                   "<img src='" + icon + "'><img src='images/away.gif' class='" + awayClass + "'>" +
-                   "<span class='" + spanAwayClass + "'>" + name + "</span>" +
-                   "</a>" +
-                   "<ol class='inactive'><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
-                   "</li>";
-        }
 
         var $html = $();
         $.each(stuff.bots, function(key, value) {
@@ -641,6 +641,7 @@ var Chat = (function(window, $) {
             if($this.attr('id') === selectedID) {
                 $this.addClass('playerMenuShown');
                 $(document).one('click', hideFunc);
+                $this.find('ol a').one('click', hideFunc);
             }
 
             $this.find('a:first').on('click', function() {
@@ -648,6 +649,7 @@ var Chat = (function(window, $) {
                 $toHide.show();
 
                 $(document).one('click', hideFunc);
+                $this.find('ol a').one('click', hideFunc);
 
                 // We have to wait for it to be added before showing
                 setTimeout(function() {
