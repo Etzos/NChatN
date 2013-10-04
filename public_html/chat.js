@@ -21,7 +21,7 @@ var Chat = (function(window, $) {
       'invasion': 'check_invasions.php',
       'player': 'player_info.php'
     };
-    
+
     var INVASION_STATUS = {
         // I'm guessing for these, since there seems to be some duplication
         '1': {'msg': 'No Invasion', 'color': 'greenText'},          // No invasion. Not sure where this is used
@@ -29,11 +29,11 @@ var Chat = (function(window, $) {
         '3': {'msg': 'Previous Invasion', 'color': 'greenText'},    // An invasion happened earlier in the day
         '4': {'msg': 'No Invasion', 'color': 'greenText'}           // Default state, no invasion has happened yet today
     };
-    
+
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
     var whisperRegex = /(to|from) ([\w\-]+)(<\/I> \&gt;|\&gt;<\/I>)/i;
-    
+
     var channels = [],              // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
@@ -46,7 +46,7 @@ var Chat = (function(window, $) {
         ],
         initiated = false,          // True when init() has been run, false otherwise
         queuedPlugins = [];         // Stop-gap container for plugins that have to wait for init()
-    
+
     var settings = {
         showSysMessages: true,      // Whether or not to show system messages
         chatHistoryLogin: 20,       // The number of history lines shown on entry
@@ -56,7 +56,7 @@ var Chat = (function(window, $) {
             'Smiley Replace'        // This plugin is more of a test than an actual plugin, so disable it
         ]
     };
-    
+
     var $input,                     // Input for chat
         $tabContainer,              // The container for chat tabs
         $onlineContainer,           // The container for online players
@@ -84,7 +84,7 @@ var Chat = (function(window, $) {
          * }
          */
         var pluginList = { };
-        
+
         var newHooks = {
             // Internal
             pluginLoad: [],         // Plugin register and loaded
@@ -100,7 +100,7 @@ var Chat = (function(window, $) {
             joinChat: [],           // Player joins another channel
             leaveChat: []           // Player closes a chat
         };
-        
+
         // Context exposed by the this variable (contains utilities and such)
         var thisCtx = {
             removeTags: function(str) {
@@ -145,23 +145,23 @@ var Chat = (function(window, $) {
                 sendChat(message);
             }
         };
-        
+
         // The actual event context
         var eventCtx = {
             'stopEvent': false,     // Stops the event (can be overridden by a plugin called later)
             'stopEventNow': false   // Stops the event immediately (prevents other plugins from running)
         };
-        
+
         // TODO: Expose more of the 'global' chat context for each event, like online players and such
-        
+
         function createContext(original, toMerge) {
             var obj = {};
-            
+
             // Add the original in
             for(var prop in original) {
                 obj[prop] = original[prop];
             }
-            
+
             // Add the merge in (be careful not to overwrite)
             for(var prop in toMerge) {
                 if(obj.hasOwnProperty(prop)) {
@@ -170,10 +170,10 @@ var Chat = (function(window, $) {
                 }
                 obj[prop] = toMerge[prop];
             }
-            
+
             return obj;
         }
-        
+
         function runHook(hookName, additionalContext, ignoreStop) {
             if(typeof ignoreStop === 'undefined') {
                 ignoreStop = false;
@@ -182,10 +182,10 @@ var Chat = (function(window, $) {
                 console.error("Trying to run non-existant hook "+hookName);
                 return {};
             }
-            
+
             var selectedHook = newHooks[hookName];
             var eventContext = createContext(eventCtx, additionalContext);
-            
+
             for(var i = 0; i < selectedHook.length; i++) {
                 var runningHook = selectedHook[i];
                 // Don't run deactived plugins
@@ -193,16 +193,16 @@ var Chat = (function(window, $) {
                     continue;
                 }
                 runningHook.fn.apply(thisCtx, [eventContext]);
-                
+
                 if(eventContext.stopEventNow === true) {
                     eventContext.stopEvent = true;
                     break;
                 }
             }
-            
+
             return eventContext;
         }
-        
+
         function getPluginIdByName(name) {
             for(var prop in pluginList) {
                 var plugin = pluginList[prop];
@@ -211,11 +211,11 @@ var Chat = (function(window, $) {
             }
             return "";
         }
-        
+
         function pluginTag(plugin) {
             return "[Plugin: '"+plugin.name+"'] ";
         }
-        
+
         function checkPluginValidity(plugin) {
             if(!plugin.hasOwnProperty('name')) {
                 console.error("Plugin does not have a name property. Unable to register.");
@@ -224,7 +224,7 @@ var Chat = (function(window, $) {
                 console.error(pluginTag(plugin)+"Plugin must register some hooks in order to work properly.");
                 return false;
             }
-            
+
             for(var prop in plugin.hooks) {
                 if(!newHooks.hasOwnProperty(prop)) {
                     console.error(pluginTag(plugin)+"Unknown hook '"+prop+"'. Plugin may not function properly.");
@@ -235,35 +235,35 @@ var Chat = (function(window, $) {
                     continue;
                 }
             }
-            
+
             if(!plugin.hasOwnProperty('description')) {
                 console.warn("Plugin should have a description property to describe its purpose.");
             }
             return true;
         }
-        
+
         function registerPlugin(plugin) {
             // Check to make sure the plugin has all required properties
             if(!checkPluginValidity(plugin)) {
                 return false;
             }
-            
+
             var pluginId = index;
             index++;
-            
+
             // Avoid running disabled plugins from the start
             var defaultActive = true;
             if(settings.disabledPlugins.indexOf(plugin.name) > -1) {
                 defaultActive = false;
             }
-            
+
             var registeredHooks = [];
             for(var prop in plugin.hooks) {
                 var hookObj = {'plugin': "plugin"+pluginId, 'fn': plugin.hooks[prop], 'active': defaultActive};
                 newHooks[prop].push(hookObj);
                 registeredHooks.push(hookObj);
             }
-            
+
             pluginList["plugin"+pluginId] = {
                 id: pluginId,
                 name: plugin.name,
@@ -275,7 +275,7 @@ var Chat = (function(window, $) {
             };
             return true;
         }
-        
+
         /**
          * Activates or deactivates the given plugin
          * 
@@ -300,37 +300,37 @@ var Chat = (function(window, $) {
                     return false;
                 }
             }
-            
+
             $.each(plugin.hooks, function(key, value) {
                value.active = active;
             });
             plugin.active = active;
             return true;
         }
-        
+
         function unregisterPlugin(pluginName) {
             var plugin = getPluginIdByName(pluginName);
             if(plugin === '') {
                 return false;
             }
-            
+
             // TODO: Call plugin unload hook
-            
+
             // Remove hooks
             $.each(newHooks, function(key) {
                 delete newHooks[key][plugin];
             });
-            
+
             // Remove plugin
             delete pluginList[plugin];
-            
+
             return true;
         }
-        
+
         function listPlugins() {
-            
+
         }
-        
+
         return {
             registerPlugin: function(plugin) {
                 return registerPlugin(plugin);
@@ -517,7 +517,7 @@ var Chat = (function(window, $) {
 
     function getOnline(chanId) {
         var chan = channels[chanId];
-        // Skip non-server channels
+        // Skip non-server channels, they should be handled by their channel creation method
         if(!chan.isServer) {
             return;
         }
@@ -555,7 +555,7 @@ var Chat = (function(window, $) {
                 }
 
                 chan.playerInfo = result;
-                _renderOnlineList(chanId);
+                renderOnlineList(chanId);
             }
         });
     }
@@ -573,7 +573,7 @@ var Chat = (function(window, $) {
                "</li>";
     }
 
-    function _renderOnlineList(chanId) {
+    function renderOnlineList(chanId) {
         var stuff = channels[chanId].playerInfo;
         var playerGuests = $.merge($.merge([], stuff.players), stuff.guests);
 
@@ -660,6 +660,32 @@ var Chat = (function(window, $) {
         });
 
         $olWin.empty().append($html);
+    }
+
+    /**
+     * Renders the online player list for whisper channels
+     * 
+     * Because of the way NEaB handles the list of online players and querying for them, it is impossible to get correct
+     * information to display a full online list, so we use what is always available: their names.
+     * @param {Number} chanId The local ID of the channel
+     * @returns {undefined}
+     */
+    function renderWhisperOnlineList(chanId) {
+        var chan = channels[chanId];
+        var $olWin = $("#online-window-"+chanId);
+        $.each(chan.players, function(i, value) {
+            var $elem = $("<li class='onlineListTextOnly'><a href='#'>" + value + "</a></li>");
+            $elem.find('a').on('click', function() {
+                // This is a really bad way to do this, but there's no other way I can think of that's efficient
+                if(value === 'Glum') {
+                    alert('Glum is a bot.');
+                } else {
+                    openWhoWindow(value);
+                }
+                return false;
+            });
+            $elem.appendTo($olWin);
+        });
     }
 
     /**
@@ -896,7 +922,7 @@ var Chat = (function(window, $) {
             .appendTo($tabContainer);
         }
     }
-    
+
     /**
      * Makes an existing channel (i.e. one already open) the active one
      * 
@@ -905,7 +931,7 @@ var Chat = (function(window, $) {
     function _makeChannelActive(chanId) {
         // Get the position of the scroll bar, so it can be restored later
         channels[selectedChannel].atBottom = _isAtBottom( $('#chat-window-'+selectedChannel) );
-        
+
         var $chatWindow = $('#chat-window-'+chanId);
         $chatWindow.show().siblings().hide();
         $('#online-window-'+chanId).show().siblings().hide();
@@ -913,14 +939,14 @@ var Chat = (function(window, $) {
         if(channels[chanId].atBottom === true) {
             $chatWindow.scrollTop( $chatWindow.prop('scrollHeight') );
         }
-        
+
         // Update the tabs
         $('#chat-tab-'+selectedChannel).removeClass('selectedTab'); // This MUST come first for init()
         $('#chat-tab-'+chanId).addClass('selectedTab').removeClass('newMessageTab');
-        
+
         selectedChannel = chanId;
     }
-    
+
     /**
      * Returns the current datetime as a UTC string
      * 
@@ -930,25 +956,35 @@ var Chat = (function(window, $) {
     function _getTime() {
         return escape(new Date().toUTCString());
     }
-    
+
+    /**
+     * Attempts to match a partial username to one in the list of online players
+     * @param {String} fragment The player name fragment to attempt to find a match for
+     * @returns {Mixed} Returns an empty string if none found, a string containing the one name matched, or an array of matches
+     */
     function _matchPlayers(fragment) {
         var players = channels[selectedChannel].players;
         var matches = new Array();
-        
+
         fragment = fragment.toLowerCase();
-        
+
         for(var i=0; i<players.length; i++) {
             var player = players[i];
             if(player.toLowerCase().indexOf(fragment) === 0)
                 matches.push(player);
         }
-        
+
         if(matches.length === 1)
             return matches[0];
-        
+
         return "";
     }
-    
+
+    /**
+     * Given a channel's server ID attempt to locate the local ID in the channels array
+     * @param {Number} chanServerId Server ID of the channel
+     * @returns {Number} The local ID of the given server ID if a match is found, otherwise -1.
+     */
     function _getIdFromServerId(chanServerId) {
         chanServerId = parseInt(chanServerId, 10);
         for(var i=0; i<channels.length; i++) {
@@ -960,7 +996,12 @@ var Chat = (function(window, $) {
         }
         return -1;
     }
-    
+
+    /**
+     * Given a whisper target attempt to locate the local ID in the channels array
+     * @param {String} whisperTarget Whisper target's name
+     * @returns {Number} The local ID of the given whisper target if a match is found, otherwise -1.
+     */
     function _getIdFromWhisperTarget(whisperTarget) {
         for(var i = 0; i < channels.length; i++) {
             if(!channels[i]) {
@@ -972,21 +1013,27 @@ var Chat = (function(window, $) {
         }
         return -1;
     }
-    
+
     /**
      * Safely inserts a whisper (makes sure the channel exists first)
-     * @param {string} whisperTarget
-     * @param {string} message
+     * @param {String} whisperTarget The target of the whisper (either from or to)
+     * @param {String} message The message to be whisper
      */
     function _insertWhisper(whisperTarget, message) {
         var localId = _getIdFromWhisperTarget(whisperTarget);
         if(localId < 0) {
             localId = _createWhisperChannel(whisperTarget);
         }
-        
+
         _insertMessage(localId, message, false);
     }
 
+    /**
+     * Inserts a new channel into the channels array with the given name
+     * @param {Number} chanServerId The channel's corresponding server ID, if there is no server ID this should be -1
+     * @param {String} name The name of the channel
+     * @returns {Number} The local ID of the newly inserted channel
+     */
     function _insertNewChannel(chanServerId, name) {
         var len = channels.push({
             'id': parseInt(chanServerId, 10),  // Server ID of the channel (For non-server channels this should be -1)
@@ -1007,6 +1054,10 @@ var Chat = (function(window, $) {
         return len-1;
     }
 
+    /**
+     * Loads saved settings from localStorage into the internal NChatN variables
+     * @returns {undefined}
+     */
     function _loadSettings() {
         if(!localStorageSupport) {
             return;
@@ -1024,15 +1075,25 @@ var Chat = (function(window, $) {
             // Faulty data. Not really a problem
         }
     }
-    
+
+    /**
+     * Saves the internal NChatN settings to localStorage
+     * @returns {undefined}
+     */
     function _saveSettings() {
         if(!localStorageSupport) {
             return;
         }
-        
+
         localStorage.setItem("NChatN-settings", JSON.stringify(settings));
     }
-    
+
+    /**
+     * Sets an internal NChatN setting and commits the change
+     * @param {String} setting The name of the setting to change
+     * @param {Mixed} newValue The value to change the given setting to
+     * @returns {undefined}
+     */
     function changeSetting(setting, newValue) {
         if(!settings.hasOwnProperty(setting)) {
             return;
@@ -1040,11 +1101,11 @@ var Chat = (function(window, $) {
         if(settings[setting] === newValue) {
             return;
         }
-        
+
         settings[setting] = newValue;
         _saveSettings();
     }
-    
+
     /**
      * Checks if a given server channel ID is in the list of active channels
      * @param {type} chanServerId
@@ -1065,7 +1126,7 @@ var Chat = (function(window, $) {
         }
         return false;
     }
-    
+
     /**
      * Creates a "channel stub": A blank channel, and returns the internal ID
      * @param {string} name The name to give the new channel
@@ -1077,17 +1138,23 @@ var Chat = (function(window, $) {
         _createChannelElem(localId, name);
         return localId;
     }
-    
+
+    /**
+     * Handles creation of a new whisper channel
+     * @param {String} whisperTarget The whisper target of the channel
+     * @returns {Number|int} The local ID of the new channel
+     */
     function _createWhisperChannel(whisperTarget) {
         var localId = createBlankChannel("W: "+whisperTarget);
         var chan = channels[localId];
-        // TODO: Insert player and whisperTarget
-        //chan.players = []
+        chan.players = [whisperTarget, playerName];
+        chan.players.sort();
         chan.pm = whisperTarget;
-        
+        // NOTE: This is only done once -- here
+        renderWhisperOnlineList(localId);
         return localId;
     }
-    
+
     /**
      * Join a channel using the server channel ID
      * 
@@ -1102,7 +1169,7 @@ var Chat = (function(window, $) {
             switchChannel(chanId);
             return;
         }
-        
+
         // selfJoin Hook
         var ctx = {
             channelId: chanServerId,
@@ -1121,7 +1188,7 @@ var Chat = (function(window, $) {
         getOnline(localId);
         switchChannel(localId);
     }
-    
+
     /**
      * Switches the active channel to the one provided
      * @param {int} chanId The internal ID of the channel to switch to
@@ -1152,19 +1219,19 @@ var Chat = (function(window, $) {
 
     /**
      * Removes a channel from the tab list (as well as all of its elements)
-     * @param {int} chanId The internal ID of the channel
+     * @param {Number} chanId The internal ID of the channel
      */
     function removeChannel(chanId) {
         if(chanId === 0) {
             return; // No leaving Lodge!
         }
-        
+
         //var chan = channels[chanId];
         // If selected channel, move to Lodge
         if(selectedChannel === chanId) {
             switchChannel(0);
         }
-        
+
         // Clear it from the array
         //channels.splice(chanId, 1);
         channels[chanId] = null;
@@ -1175,7 +1242,11 @@ var Chat = (function(window, $) {
         // Clear the tag
         $('#chat-tab-'+chanId).remove();
     }
-    
+
+    /**
+     * Changes whether system messages are shown or hidden in chat
+     * @returns {undefined}
+     */
     function toggleSysMsgVisibility() {
         if(settings.showSysMessages) {
             $('.systemMsg').hide();
@@ -1184,21 +1255,29 @@ var Chat = (function(window, $) {
         }
         changeSetting('showSysMessages', !settings.showSysMessages);
     }
-    
+
+    /**
+     * Changes how many lines of chat history are shown when entering chat (prompt)
+     * @returns {undefined}
+     */
     function changeLoginHistory() {
         var result = window.prompt('How many lines of chat history should show on entry?\n(Enter a number less than 0 to reset to default)', settings.chatHistoryLogin);
         // If empty, assume they want to leave it the same
         if(!result || result === "") {
             return;
         }
-        
+
         if(result < 0) {
             result = 20;
         }
-        
+
         changeSetting("chatHistoryLogin", result);
     }
-    
+
+    /**
+     * Handles creation of the channel dropdown
+     * @returns {undefined}
+     */
     function renderChannelList() {
         $channelSelect.empty();
         $channelSelect.append("<option value='' selected>-- Channels --</option>\n");
@@ -1207,7 +1286,12 @@ var Chat = (function(window, $) {
             $channelSelect.append("<option value='"+c.id+"'>"+c.name+"</option>\n");
         }
     }
-    
+
+    /**
+     * Adds a root menu object to the chat header
+     * @param {Menu} menu The root menu object
+     * @returns {undefined}
+     */
     function addMenu(menu) {
         $menu.removeClass("headerMenu");
         $menu.append(menu.getRoot());
@@ -1215,13 +1299,13 @@ var Chat = (function(window, $) {
             $(document).one('click', function() {
                 menu.closeMenu();
             });
-            
+
             menu.toggle();
             this.blur();
             return false;
         });
     }
-    
+
     /**
      * Queues a plugin for registration if init() hasn't been called
      * TODO: Load settings before init() is called so that there's no need for this (since plugin registration relies on settings.disabledPlugins)
@@ -1237,7 +1321,7 @@ var Chat = (function(window, $) {
             return true;
         }
     }
-    
+
     function init() {
         // Don't start twice
         if(initiated === true) {
@@ -1249,7 +1333,7 @@ var Chat = (function(window, $) {
         Smilies.init();
         _insertNewChannel(0, 'Lodge');
         selectedChannel = 0;
-        
+
         $input = $('#chatInput');
         $tabContainer = $('#tabList');
         $onlineContainer = $('#onlineList');
@@ -1257,14 +1341,14 @@ var Chat = (function(window, $) {
         $channelSelect = $('#channel');
         $menu = $('#mainMenu');
         $invasion = $('#invasionStatus');
-        
+
         // For Firefox users (or browsers that support the spellcheck attribute)
         if("spellcheck" in document.createElement('input')) {
             $input.attr('spellcheck', 'true');
         }
 
         var chan = channels[selectedChannel];
-        
+
         _createChannelElem(selectedChannel, chan.name);
         _makeChannelActive(selectedChannel);
 
@@ -1371,7 +1455,7 @@ var Chat = (function(window, $) {
                 }
             }
         });
-        
+
         var settingMenu = new MenuList({
             toggleSys: {
                 text: "System Messages ["+ (settings.showSysMessages ? "on" : "off") +"]",
@@ -1396,9 +1480,9 @@ var Chat = (function(window, $) {
                 description: "Automatically detect the available channels",
                 action: function() {
                     var newVal = !settings.detectChannels;
-                    
+
                     settingMenu.modifyEntry("detectChannel", "Detect Channels ["+ (newVal ? "on" : "off") +"]");
-                    
+
                     changeSetting("detectChannels", newVal);
                     // TODO: If changed to true, attempt to load the channels
                     return false;
@@ -1406,7 +1490,7 @@ var Chat = (function(window, $) {
             }
         });
         mainMenu.addMenu("settings", settingMenu);
-        
+
         addMenu(mainMenu);
 
         // Keybinding
@@ -1449,7 +1533,7 @@ var Chat = (function(window, $) {
                 }
                 var endPos = namePart.length;
                 var namePart = namePart.substring(lastSpace, endPos);
-                
+
                 var match = _matchPlayers(namePart);
                 if(match !== '') {
                     // TODO: Location aware replace based on preference
@@ -1464,7 +1548,7 @@ var Chat = (function(window, $) {
             }
             else if(key === 38) { // Up arrow key
                 var chan = channels[selectedChannel];
-                
+
                 if(chan.bufferPointer > 1) {
                     --chan.bufferPointer;
                 } else if(chan.bufferPointer === 0) {
@@ -1472,25 +1556,25 @@ var Chat = (function(window, $) {
                     // Store current val
                     chan.buffer[0] = $input.val();
                 }
-                
+
                 $input.val(chan.buffer[chan.bufferPointer]);
             } else if(key === 40) { // Down arrow key
                 var chan = channels[selectedChannel];
-                
+
                 if(chan.bufferPointer === 0) { // Can only get as low as current
                     return;
                 }
-                
+
                 if(chan.bufferPointer < (chan.buffer.length - 1)) {
                     ++chan.bufferPointer;
                 } else if(chan.bufferPointer === (chan.buffer.length - 1)) {
                     chan.bufferPointer = 0;
                 }
-                
+
                 $input.val(chan.buffer[chan.bufferPointer]);
             }
         });
-        
+
         // Event Handlers
         $('#chatInputForm').submit(function() {
            sendChat(); 
@@ -1500,9 +1584,9 @@ var Chat = (function(window, $) {
            var chanServerId = $chanSel.val();
            if(chanServerId === '')
                return;
-           
+
            joinServerChannel(chanServerId, $chanSel.html());
-           
+
            $channelSelect.children('option:eq(0)').prop('selected', true);
            $chanSel.prop('selected', false);
         });
@@ -1517,7 +1601,6 @@ var Chat = (function(window, $) {
             } else {
                 $cWin.addClass('historyShade');
             }
-
         });
 
         // Timers (Times are default from NEaB)
@@ -1530,7 +1613,7 @@ var Chat = (function(window, $) {
         var onlineHeartBeat = setInterval(getAllOnline, 16000);
         // Start Checking for Invasions
         var invasionHeartBeat = setInterval(getInvasionStatus, 20000);
-        
+
         // This is a special call to joinChat that can't be canceled, it's the initial join
         var ctx = {
             channelId: chan.id,
@@ -1538,7 +1621,7 @@ var Chat = (function(window, $) {
             firstJoin: true
         };
         PluginManager.runHook('joinChat', ctx);
-        
+
         renderChannelList();
         if(settings.detectChannels === true) {
             $.ajax({
@@ -1566,7 +1649,7 @@ var Chat = (function(window, $) {
             });
         }
     }
-    
+
     return {
         'init': function() {
             init();

@@ -589,7 +589,7 @@ ol.onlinePlayerList li {
     position: relative;
     border-top: 1px solid white;
     border-bottom: 1px solid white;
-    transition: border 0.6s;
+    transition: border 0.6s, box-shadow 0.6s, margin-bottom 0.6s;
 }
 
 /* This is the away sign image */
@@ -675,7 +675,9 @@ li.playerMenuShown a:hover {
 
 li.playerMenuShown {
     border-top: 1px solid gray !important;
-    border-bottom: 1px solid gray !important;
+    box-shadow: 0 0.1em 0.1em 0.1em gray;
+    margin-bottom: 3px;
+    z-index: 2;
 }
 
 li.playerMenuShown ol {
@@ -683,6 +685,15 @@ li.playerMenuShown ol {
     max-height: 20em; /* Tricky way to make it animate to an auto height, animate the max-height */
 }
 
+/* Whisper Tabs */
+li.onlineListTextOnly a {
+    margin-top: 0.4em;
+    padding-left: 1.5em;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+}
+
+/* Away Players */
 .dimText {
     color: #777777;
 }
