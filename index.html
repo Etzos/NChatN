@@ -31,13 +31,13 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h3>
-<a name="neab-chat-next-nchatn" class="anchor" href="#neab-chat-next-nchatn"><span class="octicon octicon-link"></span></a>NEaB Chat Next (NChatN)</h3>
+        <h1>
+<a name="neab-chat-next-nchatn" class="anchor" href="#neab-chat-next-nchatn"><span class="octicon octicon-link"></span></a>NEaB Chat Next (NChatN)</h1>
 
 <p>This is the home for NChatN. If you haven't played <a href="http://nowhere-else.org/">Nowhere-Else and Beyond</a> then you probably won't really care much about this little project. If you do play NEaB then you may want to take a quick look at this chat client, because it offers some cool improvements over the standard chat client.</p>
 
-<h3>
-<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h3>
+<h2>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h2>
 
 <p>NChatN should have fewer bugs (at least fewer visible bugs), be more efficient, and should be able to emulate most features of the regular NEaB chat. There are currently a few missing features that I may add in the future, but if they're something you rely on, you may be better off with the old chat. They are:</p>
 
@@ -45,8 +45,8 @@
 <li>No tab completion box is shown (tab completion for usernames works, however the box that says "Tab for: " doesn't show up)</li>
 <li>There is no "Away" button (you can use the <code>/away</code> or <code>/afk</code> commands though`)</li>
 <li>Tab completion of usernames and adding smileys through the smiley box have a different way of spacing compared to the old chat (this is my preference, however I may add a configuration option for it later)</li>
-</ul><h3>
-<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h3>
+</ul><h2>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
 
 <p>Some of the features that set NChatN apart from the standard NEaB client are:</p>
 
@@ -58,42 +58,96 @@
 <li>Better scrolling support (no longer jerks down when someone says something in chat, and keeps your position when resizing the window)</li>
 <li>Visual indicator shows when scrolling up into chat history</li>
 <li>Ability to have more than four chat channels open at once (not that anyone needs that ability with NEaB's chat)</li>
-</ul><h3>
-<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
+</ul><h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
 
 <p>Installing NChatN has become much easier since the switch to a GreaseMonkey/TamperMonkey script. However, it still has a few steps you have to go through.
 Please note that this chat is only tested in the latest versions of Firefox and Chrome! If you would like to help make it work in another browser, jump down to the "Contributing" section. </p>
 
-<h2>
-<a name="firefox" class="anchor" href="#firefox"><span class="octicon octicon-link"></span></a>Firefox</h2>
+<h3>
+<a name="firefox" class="anchor" href="#firefox"><span class="octicon octicon-link"></span></a>Firefox</h3>
 
 <ol>
 <li>Install <a href="https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/">GreaseMonkey</a>
 </li>
 <li>After you have GreaseMonkey installed simply click on the link right <a href="https://rawgithub.com/Etzos/NChatN/master/public_html/bin/GMShim.user.js">here</a> and install the script</li>
 <li>Load (or reload) NEaB's chat window</li>
-</ol><h2>
-<a name="chrome" class="anchor" href="#chrome"><span class="octicon octicon-link"></span></a>Chrome</h2>
+</ol><h3>
+<a name="chrome" class="anchor" href="#chrome"><span class="octicon octicon-link"></span></a>Chrome</h3>
 
 <ol>
 <li>Install <a href="https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en">TamperMonkey</a>
 </li>
 <li>After you have TamperMonkey installed click on the link right <a href="https://rawgithub.com/Etzos/NChatN/master/public_html/bin/GMShim.user.js">here</a> and select the option to install it as a TamperMonkey script (important step!)</li>
 <li>Load (or reload) NEaB's chat window</li>
-</ol><h3>
-<a name="updating" class="anchor" href="#updating"><span class="octicon octicon-link"></span></a>Updating</h3>
+</ol><h2>
+<a name="updating" class="anchor" href="#updating"><span class="octicon octicon-link"></span></a>Updating</h2>
 
 <p>There should be no need to update anything. The script is setup to update all on its own when a new release is available!</p>
 
-<h3>
-<a name="rules" class="anchor" href="#rules"><span class="octicon octicon-link"></span></a>Rules</h3>
+<h2>
+<a name="rules" class="anchor" href="#rules"><span class="octicon octicon-link"></span></a>Rules</h2>
 
 <p>I have spent quite a bit of time trying to make sure that NChatN follows the rules and guidelines of NEaB, as well as preventing an easy vector for abuse or other rule-breaking action. If you find a bug that allows for such a thing to take place, please file a bug report here about it immediately or let me know in chat! </p>
 
 <p>Similarly, I will not accept any code contributions that exploit game bugs or are contrary to the game's spirit.</p>
 
+<h2>
+<a name="release-notes" class="anchor" href="#release-notes"><span class="octicon octicon-link"></span></a>Release Notes</h2>
+
 <h3>
-<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h3>
+<a name="version-20" class="anchor" href="#version-20"><span class="octicon octicon-link"></span></a>Version 2.0</h3>
+
+<p>This version brings about a few very fundamental changes to the way NChatN functions. This also forces its deviation from the original function of the original NEaB chat client, so you may have to learn to do things a bit differently with NChatN now.
+Changes:</p>
+
+<ul>
+<li>Whispers are now shown in tabs instead of inline!
+
+<ul>
+<li>The tab will display "W: " to indicate that it is a whisper-tab instead of a regular channel</li>
+</ul>
+</li>
+<li>The online player list has changed appearance and function considerably
+
+<ul>
+<li>Player names turn gray when they go away (in addition to the old "Away" sign over their avatar)</li>
+<li>A fancy new (animated!) menu appears when you click on a player in a non-whisper channel</li>
+<li>The player name dropdown isn't there anymore, instead click on the player you want to whisper to and select "Private Chat"</li>
+<li>In order to get the player info for someone in chat click on the player you want to view the info of and select "Whois"</li>
+</ul>
+</li>
+<li>Channel tabs look a bit different now
+
+<ul>
+<li>Edges are rounded and a drop shadow has been applied to the text</li>
+<li>The selected tab appears darker and is a larger appearing tab now</li>
+<li>Channels with very long names are now displayed properly (The name is clipped, and hovering over the tab shows the full name, i.e. "Very Long Channel Name" would be something like "Very Long Cha..." and hovering over the tab would show the full name)</li>
+<li>Because so many tabs can be open now (becuase of whisper in tab) the tab area should automatically show a scrollbar when there are too many tabs to fit on the screen</li>
+<li>Closing tabs that you're not currently in no longer places you in a non-existant channel</li>
+</ul>
+</li>
+<li>The chat interface has gotten slimmer and cleaner
+
+<ul>
+<li>The header is smaller (the connection status light has moved into the "Messages" bar)</li>
+<li>All elements should be pixel-perfect aligned with other elements</li>
+<li>The scroll-up indicator (the blue glow at the bottom of chat when you scroll up into chat history) should now fit in the chat window properly</li>
+</ul>
+</li>
+<li>Added a new popup that appears when NChatN has updated
+
+<ul>
+<li>This feature can be turned off by going to Menu -&gt; Settings -&gt; Update Messages</li>
+</ul>
+</li>
+</ul><p>Issues:</p>
+
+<ul>
+<li>Whisper tabs only show players name in the online list no titles or avatars and clicking on a player's name brings up the player info window, not the new fancy menu</li>
+<li>Still no custom user scripts allowed (Sorry about that)</li>
+</ul><h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
 
 <p>Want to contribute to this project? Here are a few things you should know first.
 (Sorry, this section is currently under construction)</p>
