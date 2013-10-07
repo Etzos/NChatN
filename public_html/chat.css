@@ -555,6 +555,7 @@ img {
     font-weight: bold;
     font-style: italic;
     animation: tabFlash 2s ease-in 0s infinite alternate;
+    -webkit-animation: tabFlash 2s ease-in 0s infinite alternate;
 }
 
 /* The span holds the closing link */
@@ -699,6 +700,17 @@ li.onlineListTextOnly a {
 }
 
 @keyframes tabFlash {
+    from {
+        background-color: #666;
+        text-shadow: 1px 1px 2px blue;
+    }
+    to {
+        background-color: #DDD;
+        text-shadow: 1px 1px 2px black;
+    }
+}
+
+@-webkit-keyframes tabFlash {
     from {
         background-color: #666;
         text-shadow: 1px 1px 2px blue;
