@@ -552,9 +552,9 @@ img {
 
 /* Only target the first a element, not the close link */
 #tabList .newMessageTab > a {
-    text-shadow: 1px 1px 2px blue;
     font-weight: bold;
     font-style: italic;
+    animation: tabFlash 2s ease-in 0s infinite alternate;
 }
 
 /* The span holds the closing link */
@@ -696,4 +696,15 @@ li.onlineListTextOnly a {
 /* Away Players */
 .dimText {
     color: #777777;
+}
+
+@keyframes tabFlash {
+    from {
+        background-color: #666;
+        text-shadow: 1px 1px 2px blue;
+    }
+    to {
+        background-color: #DDD;
+        text-shadow: 1px 1px 2px black;
+    }
 }
