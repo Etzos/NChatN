@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var Chat = (function(window, $) {
+    var version = "1.9";
+
     var URL = {
       'send': 'sendchat.php',
       'receive': 'lastchat.php',
@@ -52,6 +54,7 @@ var Chat = (function(window, $) {
         chatHistoryLogin: 20,       // The number of history lines shown on entry
         maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
         detectChannels: true,       // Attempt to guess which channels (other than the defaults) can be joined
+        versionPopup: true,         // Whether to show the version popup when NChatN updates or not
         disabledPlugins: [          // A list of the names of plugins to disable
             'Smiley Replace'        // This plugin is more of a test than an actual plugin, so disable it
         ]
@@ -1322,6 +1325,86 @@ var Chat = (function(window, $) {
         }
     }
 
+    /**
+     * Returns a tokenized version of a version string
+     * 
+     * Version string format is: major.minor[.release]<br>
+     * Where: major = Integer, minor/release = Integer[String]<br>
+     * If release is omitted it is assumed to always be 0.<br>
+     * Valid version strings:<br>
+     * 1.0, 1.2, 1.2a, 1.20.1b
+     * @example Version string '1.10' gives {major: 1, minor: 10, minorStr: "", release: 0, releaseStr: ""}
+     * @example Version string '1.3.6a' gives {major: 1, minor: 3, minorStr: "", release: 6, releaseStr: "1"}
+     * @param {String} str The version string to be tokenized
+     * @returns {Object} An object containing the major, minor, release, minorStr, and releaseStr properties reflecting the given version string
+     */
+    function splitVersionString(str) {
+        var tok = /(\d*)\.(\d*)(\w*)(?:\.)?(\d*)(\w*)/i.exec(str);
+        if(tok) {
+            var major = (tok[1] !== "") ? parseInt(tok[1], 10) : 0,
+                minor = (tok[2] !== "") ? parseInt(tok[2], 10) : 0,
+                release = (tok[4] !== "") ? parseInt(tok[4], 10) : 0;
+            return {
+                major: major,
+                minor: minor,
+                minorStr: tok[3],
+                release: release,
+                releaseStr: tok[5]
+            };
+        }
+        return {major: 0, minor: 0, minorStr: "", release: 0, releaseStr: ""};
+    }
+
+    /**
+     * Compares two version strings and returns whether they are the same, the first is greater, or the second is greater
+     * @param {String} versionOne First version string
+     * @param {String} versionTwo Second version string
+     * @returns {Number|int} Returns 0 if versions match, -1 if version one is lesser, and 1 if version one is greater
+     */
+    function versionCompare(versionOne, versionTwo) {
+        var vOne = splitVersionString(versionOne),
+            vTwo = splitVersionString(versionTwo);
+
+        if(vOne.major > vTwo.major) {
+            return 1;
+        } else if(vTwo.major > vOne.major) {
+            return -1;
+        }
+
+        if(vOne.minor > vTwo.minor) {
+            return 1;
+        } else if(vTwo.minor > vOne.minor) {
+            return -1;
+        }
+        if(vOne.minorStr > vTwo.minorStr) {
+            return 1;
+        } else if(vTwo.minorStr > vOne.minorStr) {
+            return -1;
+        }
+
+        if(vOne.release > vTwo.release) {
+            return 1;
+        } else if(vTwo.release > vOne.release) {
+            return -1;
+        }
+        if(vOne.releaseStr > vTwo.releaseStr) {
+            return 1;
+        } else if(vTwo.releaseStr > vOne.releaseStr) {
+            return -1;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Turns a version string into a GitHub Pages friendly anchor target
+     * @param {String} versionStr The version string to convert
+     * @returns {String} The resulting GH-Pages friendly anchor target
+     */
+    function versionToAnchor(versionStr) {
+        return "#version-" + versionStr.replace(".", "");
+    }
+
     function init() {
         // Don't start twice
         if(initiated === true) {
@@ -1393,7 +1476,7 @@ var Chat = (function(window, $) {
 
         var aboutDialog = new Dialog({
             title: "About NChatNext",
-            content: 'NEaB Chat Next (NChatN) Copyright 2013 Kevin Ott<br><br>' +
+            content: 'NEaB Chat Next (NChatN) version ' + version + ' Copyright 2013 Kevin Ott<br><br>' +
                      'NChatN is licensed under the GNU Public License version 3.<br>' +
                      'A copy of the license is available at ' +
                      '&lt;<a href="http://www.gnu.org/licenses/" target="_blank">http://www.gnu.org/licenses/</a>&gt;.<br><br>' +
@@ -1402,6 +1485,13 @@ var Chat = (function(window, $) {
                      '<script data-gittip-username="Etzos" data-gittip-widget="button" src="//gttp.co/v1.js"></script><br>' +
                      'Do both, one, or none!<br>No matter which you pick, I appreciate you giving my chat client a try!' +
                      '</span>'
+        });
+
+        var newVersionDialog = new Dialog({
+            title: "New Version",
+            content: "You are now using NChatN version <b>" + version + "</b>!<br><br>" +
+                     "To see a list of changes go to the <a href='http://etzos.github.io/NChatN/" + versionToAnchor(version) + "' target='_blank'>Release Notes</a> page.<br>" +
+                     "To disable these messages when NChatN updates, go to <b>Menu -&gt; Settings -&gt; Update Messages</b>"
         });
         // Fill in the Menu
         $menu.html('');
@@ -1453,6 +1543,12 @@ var Chat = (function(window, $) {
                     return false;
                 }
             },
+            showVersion: {
+                text: "Show Version Popup",
+                action: function() {
+                    newVersionDialog.openDialog();
+                }
+            },
             about: {
                 text: "About",
                 action: function() {
@@ -1491,6 +1587,16 @@ var Chat = (function(window, $) {
 
                     changeSetting("detectChannels", newVal);
                     // TODO: If changed to true, attempt to load the channels
+                    return false;
+                }
+            },
+            versionPopup: {
+                text: "Update Messages [" + (settings.versionPopup ? "on" : "off") + "]",
+                description: "Turn the popup off/on when NChatN updates",
+                action: function() {
+                    var newVal = !settings.versionPopup;
+                    settingMenu.modifyEntry("versionPopup", "Update Messages [" + (newVal ? "on" : "off") + "]");
+                    changeSetting("versionPopup", newVal);
                     return false;
                 }
             }
@@ -1627,6 +1733,22 @@ var Chat = (function(window, $) {
             firstJoin: true
         };
         PluginManager.runHook('joinChat', ctx);
+
+        // Check versions
+        if(localStorageSupport) {
+            var pastVersion = localStorage.getItem("NChatN-version");
+            if(!pastVersion) {
+                pastVersion = "0.0";
+            }
+            var versionAge = versionCompare(version, pastVersion);
+            // Current version is newer than the stored one
+            if(versionAge > 0) {
+                localStorage.setItem("NChatN-version", version);
+                if(settings.versionPopup === true) {
+                    newVersionDialog.openDialog();
+                }
+            }
+        }
 
         renderChannelList();
         if(settings.detectChannels === true) {

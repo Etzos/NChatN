@@ -93,7 +93,7 @@ var Dialog = function(content) {
             }, 1);
         },
         closeDialog: function() {
-            closeDialogIn();
+            closeDialog();
         }
     };
 };
