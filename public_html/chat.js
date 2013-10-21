@@ -465,6 +465,7 @@ var Chat = (function(window, $) {
                         if(msg === '') {
                             continue;
                         }
+                        msg = unescape(msg);
 
                         var isScript = scriptRegex.test(msg);
                         whisperTarget = whisperRegex.exec(msg);
