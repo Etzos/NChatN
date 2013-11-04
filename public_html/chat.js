@@ -465,6 +465,8 @@ var Chat = (function(window, $) {
                         if(msg === '') {
                             continue;
                         }
+                        // Fix the href attributes
+                        msg = msg.replace(/href=(.+?) /i, "href=\"$1\" ");
                         msg = unescape(msg);
 
                         var isScript = scriptRegex.test(msg);
