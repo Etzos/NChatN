@@ -55,6 +55,7 @@ var Chat = (function(window, $) {
         maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
         detectChannels: true,       // Attempt to guess which channels (other than the defaults) can be joined
         versionPopup: true,         // Whether to show the version popup when NChatN updates or not
+        forceDown: false,           // Whether to just force the chat to bottom when a new message is added
         disabledPlugins: [          // A list of the names of plugins to disable
             'Smiley Replace'        // This plugin is more of a test than an actual plugin, so disable it
         ]
@@ -842,7 +843,7 @@ var Chat = (function(window, $) {
             $('.systemMsg').hide();
         }
 
-        if(isBottom) {
+        if(isBottom || settings.forceDown) {
             $cc.scrollTop( $cc.prop('scrollHeight') );
         }
 
@@ -1573,12 +1574,6 @@ var Chat = (function(window, $) {
                     return false;
                 }
             },
-            showVersion: {
-                text: "Show Version Popup",
-                action: function() {
-                    newVersionDialog.openDialog();
-                }
-            },
             about: {
                 text: "About",
                 action: function() {
@@ -1607,19 +1602,6 @@ var Chat = (function(window, $) {
                     return false;
                 }
             },
-            detectChannel: {
-                text: "Detect Channels ["+ (settings.detectChannels ? "on" : "off") +"]",
-                description: "Automatically detect the available channels",
-                action: function() {
-                    var newVal = !settings.detectChannels;
-
-                    settingMenu.modifyEntry("detectChannel", "Detect Channels ["+ (newVal ? "on" : "off") +"]");
-
-                    changeSetting("detectChannels", newVal);
-                    // TODO: If changed to true, attempt to load the channels
-                    return false;
-                }
-            },
             versionPopup: {
                 text: "Update Messages [" + (settings.versionPopup ? "on" : "off") + "]",
                 description: "Turn the popup off/on when NChatN updates",
@@ -1629,8 +1611,48 @@ var Chat = (function(window, $) {
                     changeSetting("versionPopup", newVal);
                     return false;
                 }
+            },
+            advanced: {
+                text: "Advanced Settings",
+                description: "Settings you probably shouldn't mess around with.",
+                action: function() {
+                    return false;
+                }
             }
         });
+
+        var advSettingMenu = new MenuList({
+            detectChannel: {
+                text: "Detect Channels ["+ (settings.detectChannels ? "on" : "off") +"]",
+                description: "Automatically detect the available channels",
+                action: function() {
+                    var newVal = !settings.detectChannels;
+
+                    advSettingMenu.modifyEntry("detectChannel", "Detect Channels ["+ (newVal ? "on" : "off") +"]");
+
+                    changeSetting("detectChannels", newVal);
+                    // TODO: If changed to true, attempt to load the channels
+                    return false;
+                }
+            },
+            forceDown: {
+                text: "Force to Bottom [" + (settings.forceDown ? "on" : "off") + "]",
+                description: "Force the current chat window down to the bottom when new messages are posted",
+                action: function() {
+                    var newVal = !settings.forceDown;
+                    advSettingMenu.modifyEntry("forceDown", "Force Chat to Bottom [" + (newVal ? "on" : "off") + "]");
+                    changeSetting("forceDown", newVal);
+                    return false;
+                }
+            },
+            showVersion: {
+                text: "Show Version Popup",
+                action: function() {
+                    newVersionDialog.openDialog();
+                }
+            }
+        });
+        settingMenu.addMenu("advanced", advSettingMenu);
         mainMenu.addMenu("settings", settingMenu);
 
         addMenu(mainMenu);
