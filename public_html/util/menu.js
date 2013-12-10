@@ -95,7 +95,7 @@ var MenuList = function(entryList) {
         $e.on("mouseover", function() {
             var loc = $e.parent().position();
             var menuWidth = $menu.width();
-            entry.child.pos(loc.top, menuWidth-1); // Move it back 1 pixel to cover the border
+            entry.child.pos(Math.round(loc.top), menuWidth-1); // Move it back 1 pixel to cover the border, avoid sub-pixel align
             
             entry.child.openMenu();
             
