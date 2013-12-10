@@ -1368,29 +1368,44 @@ var Chat = (function(window, $) {
         var vOne = splitVersionString(versionOne),
             vTwo = splitVersionString(versionTwo);
 
+        // Major
         if(vOne.major > vTwo.major) {
             return 1;
         } else if(vTwo.major > vOne.major) {
             return -1;
         }
 
+        // Minor
         if(vOne.minor > vTwo.minor) {
             return 1;
         } else if(vTwo.minor > vOne.minor) {
             return -1;
         }
-        if(vOne.minorStr > vTwo.minorStr) {
+
+        // Minor String
+        if(vOne.minorStr === "" && vTwo.minorStr !== "") {
+            return 1;
+        } else if(vTwo.minorStr === "" && vOne.minorStr !== "") {
+            return -1;
+        } else if(vOne.minorStr > vTwo.minorStr) {
             return 1;
         } else if(vTwo.minorStr > vOne.minorStr) {
             return -1;
         }
 
+        // Release
         if(vOne.release > vTwo.release) {
             return 1;
         } else if(vTwo.release > vOne.release) {
             return -1;
         }
-        if(vOne.releaseStr > vTwo.releaseStr) {
+
+        // Release String
+        if(vOne.releaseStr === "" && vTwo.releaseStr !== "") {
+            return 1;
+        } else if(vTwo.releaseStr === "" && vOne.releaseStr !== "") {
+            return -1;
+        } else if(vOne.releaseStr > vTwo.releaseStr) {
             return 1;
         } else if(vTwo.releaseStr > vOne.releaseStr) {
             return -1;
