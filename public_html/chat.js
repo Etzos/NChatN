@@ -146,6 +146,9 @@ var Chat = (function(window, $) {
             // Action context
             sendMessage: function(message) {
                 sendChat(message);
+            },
+            isCurrentChannel: function(channelId) {
+                return channelId === selectedChannel;
             }
         };
 
@@ -495,7 +498,11 @@ var Chat = (function(window, $) {
                             var hook = PluginManager.runHook('receive', {
                                 'isInit': isInit,
                                 'message': msg,
-                                'channel': chan
+                                'channel': chan,
+                                'channelID': (whisperTarget) ? _getIdFromWhisperTarget(whisperTarget[2]) : chanId
+                                // NOTE: channelID as defined here is correct.
+                                //       That is, it's not the channel polled, but the one the message belongs in.
+                                //       However, channel does *not* have this benefit!
                             });
 
                             if(hook.stopEvent) {
