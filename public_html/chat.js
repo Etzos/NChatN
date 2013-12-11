@@ -1948,6 +1948,71 @@ Chat.addPlugin({
     }
 });
 
+Chat.addPlugin({
+    name: "Image Preview",
+    description: "Makes links to images show a small preview when hovered over",
+    author: "Etzos",
+    license: "GPLv3",
+    hooks: {
+        receive: function(e) {
+            var $msg = $(e.message);
+            var $anchors = $msg.filter("a");
+            var imageExtensionReg = /\.(png|jpeg|jpg|gif)$/i
+            $anchors.each(function() {
+                var $this = $(this);
+                var location = $this.attr("href");
+                if(imageExtensionReg.test(location)) {
+                    $this.hover(function(e) {
+                        // In
+                        var $img = $("<img></img>").attr("src", location);
+                        $img.on("load", function() {
+                            var $parent = $img.parent();
+                            var top = parseInt($parent.css("top"));
+                            var height = parseInt($img.css("height"));
+                            if((top + height) > document.body.clientHeight) {
+                                top = Math.floor(top - height - $this.height());
+                            }
+                            $parent.css({
+                                "width": $img.css("width"),
+                                "height": height,
+                                "visibility": "visible",
+                                "top": top + "px"
+                            });
+
+                        }).on("error", function() {
+                            $("#customImageLoader").remove();
+                        });
+
+                        $img.css({"max-height": "200px", "max-width":"200px"});
+                        var linkPos = $this.offset();
+                        var $div = $("<div></div>")
+                        .css({
+                            "position":"absolute",
+                            "height": "150px",
+                            "width": "150px",
+                            "top": Math.floor(linkPos.top + $this.height()) + "px",
+                            "left": Math.floor(linkPos.left) + "px",
+                            "background-color": "lightblue",
+                            "overflow": "hidden",
+                            "border": "1px solid black",
+                            "visibility": "hidden",
+                            "box-shadow": "0 0 1em gray"
+                            })
+                        .attr("id", "customImageLoader")
+                        .append($img);
+                        $("body").append($div);
+                    }, function() {
+                        // Out
+                        $("#customImageLoader").remove();
+                    });
+                }
+            });
+
+            e.message = $msg;
+        }
+    }
+});
+
 /*Chat.addPlugin({
     name: "Smiley Replace",
     description: "Replaces smilies with their text equivalent",
