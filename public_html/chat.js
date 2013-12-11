@@ -1795,11 +1795,13 @@ var Chat = (function(window, $) {
             var versionAge = versionCompare(version, pastVersion);
             // Current version is newer than the stored one
             if(versionAge > 0) {
-                localStorage.setItem("NChatN-version", version);
-                if(settings.versionPopup === true) {
+                if(settings.versionPopup == true) {
                     newVersionDialog.openDialog();
                 }
             }
+
+            // Always set the version, just to be sure
+            localStorage.setItem("NChatN-version", version);
         }
 
         renderChannelList();
