@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var Chat = (function(window, $) {
-    var version = "2.0.3";
+    var version = "2.0.4";
 
     var URL = {
       'send': 'sendchat.php',
@@ -1955,7 +1955,7 @@ Chat.addPlugin({
     license: "GPLv3",
     hooks: {
         receive: function(e) {
-            var $msg = $(e.message);
+            var $msg = $($.parseHTML(e.message));
             var $anchors = $msg.filter("a");
             var imageExtensionReg = /\.(png|jpeg|jpg|gif)$/i
             $anchors.each(function() {
