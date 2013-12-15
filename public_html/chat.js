@@ -1974,18 +1974,19 @@ Chat.addPlugin({
     description: "Makes links to images show a small preview when hovered over",
     author: "Etzos",
     license: "GPLv3",
-    hooks: {
-        receive: function(e) {
-            var $msg = $($.parseHTML(e.message));
-            var $anchors = $msg.filter("a");
-            var imageExtensionReg = /\.(png|jpeg|jpg|gif)$/i
+    globals: {
+        /**
+         * Expects a jQuery object of anchors returns the modified object
+         */
+        bindAnchors: function($anchors) {
+            var imageExtensionReg = /\.(png|jpeg|jpg|gif)$/i;
             $anchors.each(function() {
                 var $this = $(this);
-                var location = $this.attr("href");
+                var location = $this.prop("href");
                 if(imageExtensionReg.test(location)) {
-                    $this.hover(function(e) {
-                        // In
-                        var $img = $("<img></img>").attr("src", location);
+                    // Mouse in
+                    $this.on("mouseenter.NChatNPlugin-ImagePreview", function(e) {
+                        var $img = $("<img></img>").prop("src", location);
                         $img.on("load", function() {
                             var $parent = $img.parent();
                             var top = parseInt($parent.css("top"));
@@ -1996,15 +1997,15 @@ Chat.addPlugin({
                             $parent.css({
                                 "width": $img.css("width"),
                                 "height": height,
-                                "visibility": "visible",
-                                "top": top + "px"
+                                "top": top + "px";
+                                "visibility": "visible"
                             });
 
                         }).on("error", function() {
                             $("#customImageLoader").remove();
                         });
 
-                        $img.css({"max-height": "200px", "max-width":"200px"});
+                        $img.css({"max-height": "240px", "max-width":"240px"});
                         var linkPos = $this.offset();
                         var $div = $("<div></div>")
                         .css({
@@ -2022,15 +2023,31 @@ Chat.addPlugin({
                         .attr("id", "customImageLoader")
                         .append($img);
                         $("body").append($div);
-                    }, function() {
-                        // Out
+                    })
+                    // Mouse out
+                    .on("mouseleave.NChatNPlugin-ImagePreview", function() {
                         $("#customImageLoader").remove();
                     });
                 }
             });
-
+            return $anchors;
+        }
+    },
+    hooks: {
+        receive: function(e) {
+            var $msg = $($.parseHTML(e.message));
+            var $anchors = $msg.find("a").addBack().filter("a");
+            this.bindAnchors($anchors);
             e.message = $msg;
         }
+    },
+    onEnable: function() {
+        var $anchors = $("#chat").find("a").addBack().filter("a");
+        this.bindAnchors($anchors);
+    },
+    onDisable: function() {
+        $("#chat").find("a").addBack().filter("a").off("mouseenter.NChatNPlugin-ImagePreview mouseleave.NChatNPlugin-ImagePreview");
+        // TODO: Make sure all extra elements are removed
     }
 });
 
