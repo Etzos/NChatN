@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var Chat = (function(window, $) {
-    var version = "2.0.4";
+    var version = "2.0.5";
 
     var URL = {
       'send': 'sendchat.php',
@@ -34,7 +34,7 @@ var Chat = (function(window, $) {
 
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
-    var whisperRegex = /(to|from) ([\w\-]+)(<\/I> \&gt;|\&gt;<\/I>)/i;
+    var whisperRegex = /(to|from) ([\w\-]+)(\&gt;|<\/I>\&gt;)/i;
 
     var channels = [],              // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -1433,7 +1433,7 @@ var Chat = (function(window, $) {
      * @returns {String} The resulting GH-Pages friendly anchor target
      */
     function versionToAnchor(versionStr) {
-        return "#version-" + versionStr.replace(".", "");
+        return "#version-" + versionStr.replace(/\./g, "");
     }
 
     function init() {
