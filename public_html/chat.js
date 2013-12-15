@@ -199,8 +199,15 @@ var Chat = (function(window, $) {
                 if(!runningHook.active) {
                     continue;
                 }
-                runningHook.fn.apply(thisCtx, [eventContext]);
 
+                var plugin = pluginList[runningHook.plugin];
+                var runningContext = createContext(thisCtx, plugin.globals);
+                try {
+                    runningHook.fn.apply(runningContext, [eventContext]);
+                } catch(e) {
+                    e.message = pluginTag(plugin) + e.message;
+                    console.error(e);
+                }
                 if(eventContext.stopEventNow === true) {
                     eventContext.stopEvent = true;
                     break;
@@ -278,7 +285,10 @@ var Chat = (function(window, $) {
                 license: (plugin.license) ? plugin.license : null,
                 author: (plugin.author) ? plugin.author : null,
                 active: defaultActive,
-                hooks: registeredHooks
+                globals: (plugin.globals) ? plugin.globals : {},
+                hooks: registeredHooks,
+                onEnable: (plugin.onEnable) ? plugin.onEnable : null,
+                onDisable: (plugin.onDisable) ? plugin.onDisable : null
             };
             return true;
         }
@@ -305,6 +315,17 @@ var Chat = (function(window, $) {
             } else {
                 if(plugin.active === active) {
                     return false;
+                }
+            }
+
+            // Run the plugin's enabled/disabled function (if it has one)
+            if(active) {
+                if(plugin.hasOwnProperty("onEnable")) {
+                    plugin.onEnable.apply(plugin.globals);
+                }
+            } else {
+                if(plugin.hasOwnProperty("onDisable")) {
+                    plugin.onDisable.apply(plugin.globals);
                 }
             }
 
