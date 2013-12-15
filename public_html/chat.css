@@ -475,7 +475,11 @@ img {
 .chatLineName {
     color: inherit;
     font-weight: inherit;
-    text-decoration: underline;
+    transition: text-shadow 0.3s;
+}
+
+.chatLineName:hover {
+    text-shadow: rgba(17, 180, 186, 1) 0 0 3px;
 }
 
 /** Channel Tabs **/

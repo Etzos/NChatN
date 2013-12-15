@@ -1963,7 +1963,10 @@ Chat.addPlugin({
             // Check for actions and joins ('** <username> <whatever>' and '-- <username> <whatever>') [TODO]
             // Check what's said (<username>&gt;)
             // Check against online players [TODO]
-            msg = msg.replace(/<B>*([\w\-]+)(\&gt;)<\/B>*/i, "<b><a href='#' class='chatLineName' onclick='openWhoWindow(\"$1\"); return false;'>$1</a>$2</b>");
+            // Person doing /pop or /afk
+            //msg = msg.replace(/<FONT COLOR=#AA0070><B><I>\*\* /i);
+            // Person speaking
+            msg = msg.replace(/(?=<B>.*?<\/B> .*?)<B(.*>(?:to |from )?)([\w\-]+)(.*?(?=\&gt;).*?)<\/B>/i, "<b$1<a href='#' class='chatLineName' onclick='openWhoWindow(\"$2\"); this.blur(); return false;'>$2</a>$3</b>");
             e.message = msg;
         }
     }
