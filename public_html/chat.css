@@ -135,7 +135,19 @@ img {
 }
 
 #onlineListContainer {
+    left: 0px;
     width: 215px;
+
+    transition: left 0.6s;
+}
+
+/* Hidden Player List */
+section.noPlayers #onlineListContainer {
+    left: -215px;
+}
+
+section.noPlayers #chatContainer {
+    left: 0px;
 }
 
 #onlineList {
@@ -152,6 +164,8 @@ img {
     margin-left: 2px;
 
     min-width: 350px;
+
+    transition: left 0.6s;
 }
 
 #chat {

@@ -1625,6 +1625,22 @@ var Chat = (function(window, $) {
                     return false;
                 }
             },
+            hideOnlineList: {
+                text: "Show/Hide Online List",
+                decsription: "Shows or hides the online player list",
+                action: function() {
+                    var $cc = $("#channelContainer");
+                    if($cc.hasClass()) {
+                        setTimeout(10000, function() {
+                            $cc.hide();
+                        });
+                    } else {
+                        $cc.show();
+                    }
+                    $cc.toggleClass("noPlayers");
+                    return false;
+                }
+            },
             versionPopup: {
                 text: "Update Messages [" + (settings.versionPopup ? "on" : "off") + "]",
                 description: "Turn the popup off/on when NChatN updates",
@@ -2016,7 +2032,7 @@ Chat.addPlugin({
                             $parent.css({
                                 "width": $img.css("width"),
                                 "height": height,
-                                "top": top + "px";
+                                "top": top + "px",
                                 "visibility": "visible"
                             });
 
