@@ -1747,14 +1747,16 @@ var Chat = (function(window, $) {
                     lastSpace++;
                 }
                 var endPos = namePart.length;
-                var namePart = namePart.substring(lastSpace, endPos);
+                namePart = namePart.substring(lastSpace, endPos);
+                // Disinclude non-username characters from the search
+                var startPos = namePart.search(/[\w\-]+/);
+                namePart = namePart.substring(startPos, endPos);
+                var fullStartPos = lastSpace + startPos;
 
                 var match = _matchPlayers(namePart);
                 if(match !== '') {
-                    // TODO: Location aware replace based on preference
-                    $input.val( val.substring(0, lastSpace) + match + val.substring(endPos, val.length) );
-                    // TODO: Make this optional, putting the cursor at the end of the line can be handy
-                    var newCursorPos = lastSpace+match.length;
+                    $input.val( val.substring(0, fullStartPos) + match + val.substring(endPos, val.length) );
+                    var newCursorPos = fullStartPos+match.length;
                     $input[0].setSelectionRange(newCursorPos, newCursorPos);
                     $input.focus();
                 }
