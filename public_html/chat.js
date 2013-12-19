@@ -34,7 +34,7 @@ var Chat = (function(window, $) {
 
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
-    var whisperRegex = /(to|from) ([\w\-]+)(\&gt;|<\/I>\&gt;)/i;
+    var whisperRegex = /(to |from )([\w\- ]+)(>)/i;
 
     var channels = [],              // Contains all of the (joined) channels
         selectedChannel,            // The currently selected and visible channel
@@ -499,10 +499,12 @@ var Chat = (function(window, $) {
                         }
 
                         msg = unescape(msg);
-
-                        whisperTarget = whisperRegex.exec(msg);
-
                         msg += '<br>';
+
+                        msg = $($.parseHTML(msg));
+
+                        var tmp = msg.filter("span.username").text();
+                        whisperTarget = whisperRegex.exec(tmp);
 
                         if(isInit) {
                             // Ignore old scripts
@@ -510,8 +512,8 @@ var Chat = (function(window, $) {
                                 continue;
                             }
                             if(i === (end-1)) {
-                                // Expensive operation, thankfully only done once
-                                msg = msg.slice(0, msg.length-4) + "<hr>";
+                                msg = msg.last().remove().end().add("<hr></hr>");
+                                // TODO: Just make this add an <hr> to all the tabs
                             }
                         }
 
@@ -2038,7 +2040,7 @@ Chat.addPlugin({
     },
     hooks: {
         receive: function(e) {
-            var $msg = $($.parseHTML(e.message));
+            var $msg = e.message;
             var $anchors = $msg.find("a").addBack().filter("a");
             this.bindAnchors($anchors);
             e.message = $msg;
