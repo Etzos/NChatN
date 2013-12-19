@@ -62,7 +62,11 @@ var Loader = (function(document) {
 })(document);
 
 Loader.onComplete(function() {
-    Chat.init();
+    try {
+        Chat.init();
+    } catch(e) {
+        console.error(e);
+    }
 });
 
 Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', '../chat.js']);
