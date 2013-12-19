@@ -1961,16 +1961,30 @@ Chat.addPlugin({
     license: "GPLv3",
     hooks: {
         receive: function(e) {
-            var msg = e.message;
-            // Check for actions and joins ('** <username> <whatever>' and '-- <username> <whatever>') [TODO]
-            // Check what's said (<username>&gt;)
+            var $msg = e.message;
+            var self = this;
             // Check against online players [TODO]
             // Person doing /pop or /afk
-            //msg = msg.replace(/<FONT COLOR=#AA0070><B><I>\*\* /i);
-            // Person speaking
-            msg = msg.replace(/(?=<B>.*?<\/B> .*?)<B(.*>(?:to |from )?)([\w\-]+)(.*?(?=\&gt;).*?)<\/B>/i, "<b$1<a href='#' class='chatLineName' onclick='openWhoWindow(\"$2\"); this.blur(); return false;'>$2</a>$3</b>");
-            e.message = msg;
+            $msg.filter("span.popin, span.back, span.away, span.action, span.hugs").not(".bot").each(function() {
+                self.makeClickable(self.actionPopReg, $(this));
+            });
+
+            $msg.filter("span.username").not(".bot").each(function() {
+                self.makeClickable(self.messageReg, $(this));
+            });
+            e.message = $msg;
         }
+    },
+    globals: {
+        makeClickable: function(reg, $obj) {
+            //var parts = reg.exec($obj.html());
+            //var content = ((parts[1]) ? parts[1] : "") + "<a href='#' class='chatLineName' onClick='openWhoWindow(\"" + parts[2] + "\"); this.blur(); return false;'>" + parts[2] + "</a>" + ((parts[3]) ? parts[3] : "");
+            var content = $obj.html().replace(reg, "$1<a href='#' class='chatLineName' onClick='openWhoWindow(\"$2\"); this.blur(); return false;'>$2</a>$3");
+            $obj.html(content);
+        },
+        messageReg: /(to |from )?([\w\- ]+)(\&gt;)/i,
+        // Yep, I'm ignoring spaces here because there's no way to know where the username ends and the rest of the popin/action ends
+        actionPopReg: /(\*\* |\-\- )([\w\-]+)( )/i
     }
 });
 
