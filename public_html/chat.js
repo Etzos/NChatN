@@ -300,7 +300,7 @@ var Chat = (function(window, $) {
          * @param {string} pluginName The name of the plugin to enable or disable
          * @param {bool} active [Optional] Whether to enable (true) or disable (false) the plugin (Default: toggle
          * current state)
-         * @returns {Boolean} Returns true if the plugin has been enabled or disabled, returns false if the plugin is
+         * @returns {bool} Returns true if the plugin has been enabled or disabled, returns false if the plugin is
          * already enabled/disabled and told to enable or disable respectively
          */
         function changePluginStatus(pluginName, active) {
@@ -1760,8 +1760,7 @@ var Chat = (function(window, $) {
                 }
                 e.preventDefault();
                 e.stopPropagation();
-            }
-            else if(key === 38) { // Up arrow key
+            } else if(key === 38) { // Up arrow key
                 var chan = channels[selectedChannel];
 
                 if(chan.bufferPointer > 1) {
@@ -1915,25 +1914,6 @@ var Chat = (function(window, $) {
  */
 function toggleHelp() {
     $('#chatHelp').toggle();
-}
-
-/**
- * Selects the text (and other contents) of an element
- * @param {DOMNode} elem The DOM Node to select the contents of
- */
-function selectElement(elem) {
-    // Heavily influenced by http://stackoverflow.com/a/2838358
-    if (window.getSelection && document.createRange) {
-        var sel = window.getSelection();
-        var range = document.createRange();
-        range.selectNodeContents(elem);
-        sel.removeAllRanges();
-        sel.addRange(range);
-    } else if (document.body.createTextRange) {
-        var range = document.body.createTextRange();
-        range.moveToElementText(elem);
-        range.select();
-    }
 }
 
 /**
