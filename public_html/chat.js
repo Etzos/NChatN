@@ -47,7 +47,8 @@ var Chat = (function(window, $) {
             {"id": 6, "name": "Trade Channel"}
         ],
         initiated = false,          // True when init() has been run, false otherwise
-        queuedPlugins = [];         // Stop-gap container for plugins that have to wait for init()
+        queuedPlugins = [],         // Stop-gap container for plugins that have to wait for init()
+        queryTimeout = 4 * 1000;    // Value to use for timeouts (4 seconds)
 
     var settings = {
         showSysMessages: true,      // Whether or not to show system messages
@@ -438,7 +439,15 @@ var Chat = (function(window, $) {
             URL.send,
             'CHANNEL='+targetChannel+'&TO='+to+'&RND='+rand+'&TEXT='+text
         );
-        // TODO: Check for failure. If there is a failure, store the message
+        $.ajax({
+            url: URL.send,
+            data: "CHANNEL=" + targetChannel + "&TO=" + to + "&RND=" + rand + "&TEXT=" + text,
+            type: "GET",
+            timeout: queryTimeout,
+            error: function() {
+                // TODO: Store message
+            }
+        });
         // TODO: PostSend Hook
     }
 
@@ -460,6 +469,7 @@ var Chat = (function(window, $) {
             data: 'CHANNEL='+chan.id+'&RND='+_getTime()+'&ID='+chan.lastId,
             type: 'GET',
             context: this,
+            timeout: queryTimeout,
             success: function(result) {
                 if(result === '')
                     return;
@@ -569,6 +579,7 @@ var Chat = (function(window, $) {
             data: 'CHANNEL='+chan.id,
             type: 'GET',
             context: this,
+            timeout: queryTimeout,
             success: function(result) {
                 var oldPlayerList = $.merge([], chan.players);
 
@@ -741,6 +752,7 @@ var Chat = (function(window, $) {
             data: 'RND='+_getTime(),
             type: 'GET',
             context: this,
+            timeout: queryTimeout,
             success: function(result) {
                 var imageId = result.charAt(0);
                 var message = result.substring(1);
