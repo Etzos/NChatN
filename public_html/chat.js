@@ -435,10 +435,6 @@ var Chat = (function(window, $) {
         // Process text (escape and replace +)
         text = escape(text).replace(/\+/g, '%2B');
 
-        $.get(
-            URL.send,
-            'CHANNEL='+targetChannel+'&TO='+to+'&RND='+rand+'&TEXT='+text
-        );
         $.ajax({
             url: URL.send,
             data: "CHANNEL=" + targetChannel + "&TO=" + to + "&RND=" + rand + "&TEXT=" + text,
