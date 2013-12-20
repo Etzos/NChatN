@@ -653,7 +653,11 @@ var Chat = (function(window, $) {
                 var $this = $(this);
                 $this.on('click', function() {
                     if(i === 0) {
-                        var chan = _createWhisperChannel(value.name);
+                        var chan = _getIdFromWhisperTarget(value.name);
+                        // If there is no existing tab, create it
+                        if(chan < 0) {
+                            chan = _createWhisperChannel(value.name);
+                        }
                         switchChannel(chan);
                     } else if(i === 1) {
                         openWhoWindow(value.name);
