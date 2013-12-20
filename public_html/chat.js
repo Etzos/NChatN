@@ -26,10 +26,10 @@ var Chat = (function(window, $) {
 
     var INVASION_STATUS = {
         // I'm guessing for these, since there seems to be some duplication
-        '1': {'msg': 'No Invasion', 'color': 'greenText'},          // No invasion. Not sure where this is used
-        '2': {'msg': 'Invasion!', 'color': 'redText'},              // An active invasion
-        '3': {'msg': 'Previous Invasion', 'color': 'greenText'},    // An invasion happened earlier in the day
-        '4': {'msg': 'No Invasion', 'color': 'greenText'}           // Default state, no invasion has happened yet today
+        '1': {'msg': 'Unknown', 'color': 'greenText'},            // Default (unknown) value
+        '2': {'msg': 'Invasion!', 'color': 'redText'},            // An active invasion
+        '3': {'msg': 'Possible Invasion', 'color': 'yellowText'}, // An invasion either will happen or has already happened today
+        '4': {'msg': 'No Invasion', 'color': 'greenText'}         // No invasions today
     };
 
     var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
