@@ -468,8 +468,12 @@ section.noPlayers #chatContainer {
 
 .dialogTitle a {
     float: right;
-    color: rgb(0, 170, 255);
     margin-right: 3px;
+
+    color: red;
+    font-weight: bold;
+    font-style: normal;
+    text-shadow: 0px 1px 1px darkred;
 }
 
 .dialogContent {
