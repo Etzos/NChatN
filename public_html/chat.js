@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var Chat = (function (window, $) {
-    var version = "2.1a";
+    var version = "2.1b";
 
     var URL = {
         send: 'sendchat.php',
@@ -33,11 +33,11 @@ var Chat = (function (window, $) {
     };
 
     var localStorageSupport = window.hasOwnProperty('localStorage') && window.localStorage !== null;
-    var scriptRegex = /<script>[^]*?<\/script>/gi;
+    var scriptRegex = /<script>[\^]*?<\/script>/gi;
     var whisperRegex = /(to |from )([\w\- ]+)(>)/i;
 
-    var channels = [],              // Contains all of the (joined) channels
-        selectedChannel,            // The currently selected and visible channel
+    var channelMeta = {},           // Contains metadata on channels that have been joined
+        focusedChannel,             // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
         lastConnection,             // The time it took for the last connection to go through
         playerName,                 // The player's name
@@ -49,8 +49,6 @@ var Chat = (function (window, $) {
         initiated = false,          // True when init() has been run, false otherwise
         queuedPlugins = [],         // Stop-gap container for plugins that have to wait for init()
         queryTimeout = 4 * 1000;    // Value to use for timeouts (4 seconds)
-    var channelMeta = {};           // New channel container
-    var focusedChannel = null;
 
     var settings = {
         showSysMessages: true,      // Whether or not to show system messages
@@ -60,7 +58,7 @@ var Chat = (function (window, $) {
         versionPopup: true,         // Whether to show the version popup when NChatN updates or not
         forceDown: false,           // Whether to just force the chat to bottom when a new message is added
         disabledPlugins: [          // A list of the names of plugins to disable
-            'Smiley Replace'        // This plugin is more of a test than an actual plugin, so disable it
+            "Smiley Replace"        // This plugin is more of a test than an actual plugin, so disable it
         ]
     };
 
@@ -151,8 +149,8 @@ var Chat = (function (window, $) {
             sendMessage: function(message) {
                 sendMessage(message);
             },
-            isCurrentChannel: function(channelId) {
-                return channelId === selectedChannel;
+            isCurrentChannel: function(channel) {
+                return channel === channelMeta[focusedChannel];
             }
         };
 
@@ -1107,7 +1105,7 @@ var Chat = (function (window, $) {
             return;
         }
         var currentFocus = currentExists ? channelMeta[focusedChannel] : null;
-        
+
         // Tab Change Hook
         var ctx = {
             newChannel: newFocus,
@@ -1135,7 +1133,7 @@ var Chat = (function (window, $) {
         }
         $(newFocus.elem.tab).addClass("selectedTab").removeClass("newMessageTab");
         $input.val(newFocus.input).focus();
-        
+
         focusedChannel = tag;
     }
 
@@ -1149,7 +1147,7 @@ var Chat = (function (window, $) {
         }
         return false;
     }
-    
+
     function closeChannel(type, id) {
         if(type === "server" && id === 0) {
             return; // Leaving Lodge is not allowed
@@ -1166,7 +1164,7 @@ var Chat = (function (window, $) {
         $(chan.elem.online).hide();
         $(chan.elem.tab).hide();
     }
-    
+
     function openChannel(channel) {
         if(channel.active) {
             return;
@@ -1174,7 +1172,7 @@ var Chat = (function (window, $) {
         channel.active = true;
         $(channel.elem.tab).show();
     }
-    
+
     function scrollCheck(channel) {
         var $chatWin = $(channel.elem.chat);
         var atBottom = channel.atBottom;
