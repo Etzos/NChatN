@@ -1042,7 +1042,7 @@ var Chat = (function (window, $) {
                     })
                 );
         }
-        $("<li>", {
+        var $tab = $("<li>", {
             id: chan.elem.tab.substring(1)
         }).append(
             $("<a>", {
@@ -1053,7 +1053,12 @@ var Chat = (function (window, $) {
                 focusChannel(chan.type, chan.id);
                 return false;
             }).append("<span class='tabName'>" + chan.name + "</span>").append($del)
-        ).appendTo($tabContainer);
+        );
+        // Hackery to animate things
+        $tab.appendTo($tabContainer);
+        var width = $tab.css("width");
+        $tab.css({width: "0px"});
+        $tab.animate({width: width}, 300);
         return chan;
     }
 
@@ -1171,7 +1176,12 @@ var Chat = (function (window, $) {
         }
         $chatWin.hide();
         $(chan.elem.online).hide();
-        $(chan.elem.tab).hide();
+        var $tab = $(chan.elem.tab);
+        $tab.animate({width: "toggle"}, 300, function() {
+            $tab.hide();
+            // Move to the front so that it doesn't break CSS
+            $tab.prependTo("#tabList");
+        });
     }
 
     function openChannel(channel) {
@@ -1183,6 +1193,10 @@ var Chat = (function (window, $) {
             // Since local channels don't rely on server, append this now.
             $(channel.elem.chat).append("<hr>");
         }
+        var $tab = $(channel.elem.tab);
+        var width = $tab.css("width");
+        $tab.css({width: "0px"});
+        $tab.appendTo("#tabList").show().animate({width: width}, 300);
     }
 
     function scrollCheck(channel) {
