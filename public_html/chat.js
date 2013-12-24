@@ -26,18 +26,18 @@ var Chat = (function (window, $) {
 
     var INVASION_STATUS = {
         // I'm guessing for these, since there seems to be some duplication
-        '1': {'msg': 'Unknown', 'color': 'greenText'},            // Default (unknown) value
-        '2': {'msg': 'Invasion!', 'color': 'redText'},            // An active invasion
-        '3': {'msg': 'Possible Invasion', 'color': 'yellowText'}, // An invasion either will happen or has already happened today
-        '4': {'msg': 'No Invasion', 'color': 'greenText'}         // No invasions today
+        "1": {msg: "Unknown", color: "greenText"},            // Default (unknown) value
+        "2": {msg: "Invasion!", color: "redText"},            // An active invasion
+        "3": {msg: "Possible Invasion", color: "yellowText"}, // An invasion either will happen or has already happened today
+        "4": {msg: "No Invasion", color: "greenText"}         // No invasions today
     };
 
-    var localStorageSupport = window.hasOwnProperty('localStorage') && window.localStorage !== null;
+    var localStorageSupport = window.hasOwnProperty("localStorage") && window.localStorage !== null;
     var scriptRegex = /<script>[\^]*?<\/script>/gi;
     var whisperRegex = /(to |from )([\w\- ]+)(>)/i;
 
     var channelMeta = {},           // Contains metadata on channels that have been joined
-        focusedChannel,             // The currently selected and visible channel
+        focusedChannel = null,      // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
         lastConnection,             // The time it took for the last connection to go through
         playerName,                 // The player's name
@@ -409,8 +409,8 @@ var Chat = (function (window, $) {
     function getInvasionStatus() {
         $.ajax({
             url: URL.invasion,
-            data: 'RND='+_getTime(),
-            type: 'GET',
+            data: "RND=" + _getTime(),
+            type: "GET",
             context: this,
             timeout: queryTimeout,
             success: function(result) {
@@ -427,21 +427,21 @@ var Chat = (function (window, $) {
      * @returns {undefined}
      */
     function updateTickClock() {
-        var lightClass = 'greenLight';
-        var text = 'Delay: '+(lastConnection/1000)+' sec';
+        var lightClass = "greenLight";
+        var text = "Delay: " + (lastConnection/1000) + " sec";
         if(numTimeouts === 1) {
-            lightClass = 'yellowLight';
-            text = 'Timeout: 1';
+            lightClass = "yellowLight";
+            text = "Timeout: 1";
         } else if(numTimeouts > 1) {
-            lightClass = 'redLight';
-            text = 'Timeout: '+numTimeouts;
+            lightClass = "redLight";
+            text = "Timeout: " + numTimeouts;
         } else if(lastConnection > 1000) {
-            lightClass = 'yellowLight';
-            text = 'High Delay ('+(lastConnection/1000)+' sec)';
+            lightClass = "yellowLight";
+            text = "High Delay (" + (lastConnection/1000) + " sec)";
         }
 
-        var $light = $('#mainLight').children().first();
-        $light.removeClass('greenLight yellowLight redLight')
+        var $light = $("#mainLight").children().first();
+        $light.removeClass("greenLight yellowLight redLight")
             .addClass(lightClass)
             .hover(function(event) {
                 Tooltip.on(text, event.pageX+100, event.pageY+50);
@@ -494,7 +494,7 @@ var Chat = (function (window, $) {
      * @returns {Boolean} True if the given element is scrolled all the way down, false otherwise
      */
     function _isAtBottom($elem) {
-        return ($elem.prop('scrollHeight') - $elem.prop('scrollTop') === $elem.prop('clientHeight'));
+        return ($elem.prop("scrollHeight") - $elem.prop("scrollTop") === $elem.prop("clientHeight"));
     }
 
     function _arrSub(first, second) {
@@ -698,7 +698,7 @@ var Chat = (function (window, $) {
                             insertMessage(channel, msg, false);
                         }
                     }
-                    if(isInit) {
+                    if(isInit && channel.id === 0) {
                         // Add a visual cue of messages past
                         $("div.chatWindow").append("<hr></hr>");
                     }
@@ -1010,8 +1010,8 @@ var Chat = (function (window, $) {
         // TODO: Add some form of the joinChat hook
         // Chat History
         $("<div>", {
-            "id": chan.elem.chat.substring(1),
-            "class": "chatWindow inactive"
+            id: chan.elem.chat.substring(1),
+            class: "chatWindow inactive"
         }).scroll(function() {
             //Check to see if it's at the bottom
             scrollCheck(chan);
@@ -1019,8 +1019,8 @@ var Chat = (function (window, $) {
 
         // Online Window
         $("<ol>", {
-            "id": chan.elem.online.substring(1),
-            "class": "onlineWindow onlinePlayerList inactive"
+            id: chan.elem.online.substring(1),
+            class: "onlineWindow onlinePlayerList inactive"
         }).appendTo($onlineContainer);
 
         // Chat Tab
@@ -1030,7 +1030,7 @@ var Chat = (function (window, $) {
                 .addClass("tabClose")
                 .append(
                     $("<a>", {
-                        "href": "#"
+                        href: "#"
                     })
                     .html("X")
                     .click(function(e) {
@@ -1041,12 +1041,12 @@ var Chat = (function (window, $) {
                 );
         }
         $("<li>", {
-            "id": chan.elem.tab.substring(1)
+            id: chan.elem.tab.substring(1)
         }).append(
             $("<a>", {
-                "href": "#",
-                "class": "tabLink",
-                "title": chan.name
+                href: "#",
+                class: "tabLink",
+                title: chan.name
             }).click(function() {
                 focusChannel(chan.type, chan.id);
                 return false;
@@ -1267,7 +1267,7 @@ var Chat = (function (window, $) {
      * @returns {undefined}
      */
     function changeLoginHistory() {
-        var result = window.prompt('How many lines of chat history should show on entry?\n(Enter a number less than 0 to reset to default)', settings.chatHistoryLogin);
+        var result = window.prompt("How many lines of chat history should show on entry?\n(Enter a number less than 0 to reset to default)", settings.chatHistoryLogin);
         // If empty, assume they want to leave it the same
         if(!result || result === "") {
             return;
@@ -1301,8 +1301,8 @@ var Chat = (function (window, $) {
     function addMenu(menu) {
         $menu.removeClass("headerMenu");
         $menu.append(menu.getRoot());
-        $('#menuLink').click(function() {
-            $(document).one('click', function() {
+        $("#menuLink").click(function() {
+            $(document).one("click", function() {
                 menu.closeMenu();
             });
 
@@ -1433,17 +1433,17 @@ var Chat = (function (window, $) {
         Tooltip.init();
         Smilies.init();
 
-        $input = $('#chatInput');
-        $tabContainer = $('#tabList');
-        $onlineContainer = $('#onlineList');
-        $chatContainer = $('#chat');
-        $channelSelect = $('#channel');
-        $menu = $('#mainMenu');
-        $invasion = $('#invasionStatus');
+        $input = $("#chatInput");
+        $tabContainer = $("#tabList");
+        $onlineContainer = $("#onlineList");
+        $chatContainer = $("#chat");
+        $channelSelect = $("#channel");
+        $menu = $("#mainMenu");
+        $invasion = $("#invasionStatus");
 
         // For Firefox users (or browsers that support the spellcheck attribute)
-        if("spellcheck" in document.createElement('input')) {
-            $input.attr('spellcheck', 'true');
+        if("spellcheck" in document.createElement("input")) {
+            $input.prop("spellcheck", "true");
         }
 
         createChannel("server", 0, "Lodge");
@@ -1463,9 +1463,9 @@ var Chat = (function (window, $) {
 
         var $container = $("<span></span>");
         PluginManager.forEachPlugin(function(plugin) {
-            var $inpt = $('<input type="checkbox" '+((plugin.active) ? "checked=checked" : "")+'>');
+            var $inpt = $('<input type="checkbox" ' + ((plugin.active) ? "checked=checked" : "") + '>');
             $inpt.change(function() {
-                var checked = $(this).prop('checked');
+                var checked = $(this).prop("checked");
                 if(!checked) {
                     settings.disabledPlugins.push(plugin.name);
                     _saveSettings();
@@ -1522,7 +1522,7 @@ var Chat = (function (window, $) {
                     // TODO: Include the stylesheets
                     var raw = $(channel.elem.chat).html();
                     raw = Smilies.replaceTagsWithText(raw);
-                    var blob = new Blob([raw], {type: 'application/octet-stream'});
+                    var blob = new Blob([raw], {type: "application/octet-stream"});
                     var src = window.URL.createObjectURL(blob);
                     this.href = src;
 
@@ -1659,18 +1659,18 @@ var Chat = (function (window, $) {
         // Keybinding
         // Input Enter key pressed
         $(window).keydown(function(e) {
-            var isInputFocused = $input.is(':focus');
+            var isInputFocused = $input.is(":focus");
             if(!isInputFocused) {
                 return;
             }
             var key = e.keyCode ? e.keyCode : e.which;
             if(key === 13) { // Enter key
                 // Check focus
-                var $focus = $(this).filter(':focus');
+                var $focus = $(this).filter(":focus");
                 if($focus.length >= 1) {
-                    var id = $focus.attr('id');
-                    if($input.attr('id') === id) {
-                        $('#chatInputForm').submit();
+                    var id = $focus.attr("id");
+                    if($input.attr("id") === id) {
+                        $("#chatInputForm").submit();
                     }
                 }
             } else if(key === 9) { // Tab Key
@@ -1678,7 +1678,7 @@ var Chat = (function (window, $) {
                 if(val.length < 1) {
                     return;
                 }
-                var cursorPos = $input.prop('selectionEnd');
+                var cursorPos = $input.prop("selectionEnd");
                 // TODO: Do something about names with spaces
                 // If the cursor is on a non-name character (letters and '-'), then there is nothing to complete
                 if(!(/[\w\-]/).test(val.charAt(cursorPos-1))) {
@@ -1687,7 +1687,7 @@ var Chat = (function (window, $) {
                 // Cut off anything on the right hand side of cursor
                 var namePart = val.substring(0, cursorPos);
                 // And everything on the left hand side to the previous space
-                var lastSpace = namePart.lastIndexOf(' ');
+                var lastSpace = namePart.lastIndexOf(" ");
                 if(lastSpace < 0) {
                     lastSpace = 0;
                 } else {
@@ -1702,7 +1702,7 @@ var Chat = (function (window, $) {
                 var fullStartPos = lastSpace + startPos;
 
                 var match = matchPlayerName(namePart);
-                if(match !== '') {
+                if(match !== "") {
                     $input.val( val.substring(0, fullStartPos) + match + val.substring(endPos, val.length) );
                     var newCursorPos = fullStartPos+match.length;
                     $input[0].setSelectionRange(newCursorPos, newCursorPos);
@@ -1740,11 +1740,11 @@ var Chat = (function (window, $) {
         });
 
         // Event Handlers
-        $('#chatInputForm').submit(function() {
+        $("#chatInputForm").submit(function() {
             sendMessage();
         });
         $channelSelect.change(function() {
-            var $chanSel = $channelSelect.children('option:selected');
+            var $chanSel = $channelSelect.children("option:selected");
             var chanServerId = $chanSel.val();
             if(chanServerId === '')
                 return;
@@ -1753,8 +1753,8 @@ var Chat = (function (window, $) {
             } catch(e) {
                 console.error(e);
             }
-            $channelSelect.children('option:eq(0)').prop('selected', true);
-            $chanSel.prop('selected', false);
+            $channelSelect.children("option:eq(0)").prop("selected", true);
+            $chanSel.prop("selected", false);
         });
         // Track page resizing for scroll
         $(window).resize(function() {
@@ -1782,7 +1782,7 @@ var Chat = (function (window, $) {
             channel: channel,
             firstJoin: true
         };
-        PluginManager.runHook('joinChat', ctx);
+        PluginManager.runHook("joinChat", ctx);
 
         // Check versions
         if(localStorageSupport) {
@@ -1805,9 +1805,9 @@ var Chat = (function (window, $) {
         renderChannelList();
         if(settings.detectChannels === true) {
             $.ajax({
-                url: 'general_chat.php',
-                data: 'CHANNEL=0&TAB=0',
-                type: 'GET',
+                url: "general_chat.php",
+                data: "CHANNEL=0&TAB=0",
+                type: "GET",
                 context: this,
                 success: function(result) {
                     var r = /\<option[ selected]* value=(\d+)\>([A-Za-z0-9 ]+)\n/gi;
@@ -1822,7 +1822,7 @@ var Chat = (function (window, $) {
                     // So that's why we're skipping 3 instead of the usual 1
                     availChannels = [];
                     for(var i = 0; i < tmp.length; i+=3) {
-                        availChannels.push({"id": parseInt(tmp[i]), "name": tmp[i+1]});
+                        availChannels.push({id: parseInt(tmp[i]), name: tmp[i+1]});
                     }
                     renderChannelList();
                 }
@@ -1831,25 +1831,25 @@ var Chat = (function (window, $) {
     }
 
     return {
-        'init': function() {
+        init: function() {
             init();
         },
-        'joinChannel': function(chanServerId, name) {
+        joinChannel: function(chanServerId, name) {
             joinServerChannel(chanServerId, name);
         },
-        'leaveChannel': function(chanId) {
+        leaveChannel: function(chanId) {
             removeChannel(chanId);
         },
-        'selectChannel': function(id) {
+        selectChannel: function(id) {
             switchChannel(id);
         },
-        'insertInputText': function(text, focus) {
+        insertInputText: function(text, focus) {
             $input.val($input.val() + text);
             if(typeof focus === 'undefined' || focus !== false) {
                 $input.focus();
             } 
         },
-        'addPlugin': function(plugin) {
+        addPlugin: function(plugin) {
             //return PluginManager.registerPlugin(plugin);
             return queuePlugin(plugin);
         }
@@ -1861,7 +1861,7 @@ var Chat = (function (window, $) {
  * Toggles the visibility of the help menu
  */
 function toggleHelp() {
-    $('#chatHelp').toggle();
+    $("#chatHelp").toggle();
 }
 
 /**
@@ -1870,11 +1870,11 @@ function toggleHelp() {
  * @returns {String} The resulting padded number
  */
 function numPad(num) {
-    return num < 10 ? '0'+num : num;
+    return num < 10 ? "0" + num : num;
 }
 
 function openWhoWindow(player) {
-    window.open('player_info.php?SEARCH='+escape(player), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+    window.open("player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
     return false;
 }
 
@@ -1884,11 +1884,11 @@ Chat.addPlugin({
     author: "Etzos",
     license: "GPLv3",
     hooks: {
-        'send': function(e) {
+        send: function(e) {
             var line = e.text;
-            if(line.indexOf('/who') === 0 || line.indexOf('/whois') === 0) {
-                var textPiece = line.split(' ').splice(1).join('_');
-                window.open('player_info.php?SEARCH='+escape(textPiece), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+            if(line.indexOf("/who") === 0 || line.indexOf("/whois") === 0) {
+                var textPiece = line.split(" ").splice(1).join("_");
+                window.open("player_info.php?SEARCH=" + escape(textPiece), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
                 e.clearInput = true;
                 e.stopEventNow = true;
             }
@@ -1902,7 +1902,7 @@ Chat.addPlugin({
     author: "Etzos",
     license: "GPLv3",
     hooks: {
-        'joinChat': function(e) {
+        joinChat: function(e) {
             if(e.firstJoin === true) {
                 this.sendMessage("/pop");
             }
