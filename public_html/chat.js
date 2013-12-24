@@ -519,7 +519,7 @@ var Chat = (function (window, $) {
      * @returns {Mixed} Returns an empty string if none found, a string containing the one name matched, or an array of matches
      */
     function matchPlayerName(fragment) {
-        var players = channelMeta[focusedChannel].players;
+        var players = channelMeta[focusedChannel].playerList;
         var matches = [];
 
         fragment = fragment.toLowerCase();
@@ -1732,8 +1732,8 @@ var Chat = (function (window, $) {
                     $input.val( val.substring(0, fullStartPos) + match + val.substring(endPos, val.length) );
                     var newCursorPos = fullStartPos+match.length;
                     $input[0].setSelectionRange(newCursorPos, newCursorPos);
-                    $input.focus();
                 }
+                $input.focus();
                 e.preventDefault();
                 e.stopPropagation();
             } else if(key === 38) { // Up arrow key
