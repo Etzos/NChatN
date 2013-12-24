@@ -251,6 +251,7 @@ section.noPlayers #chatContainer {
     position: absolute;
     bottom: 28px;
     right: 5px;
+    margin-left: 3px;
 
     border: 1px solid black;
     padding: 2px;
