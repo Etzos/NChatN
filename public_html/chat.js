@@ -921,6 +921,7 @@ var Chat = (function (window, $) {
         scrollCheck(channel);
         // Update tabs (if working on a tab that's not focused)
         if(!isSelected && (!isSys || (isSys && settings.showSysMessages))) {
+            channel.newMessage = true;
             $(channel.elem.tab).addClass("newMessageTab");
         }
     }
@@ -1127,7 +1128,9 @@ var Chat = (function (window, $) {
         // Old focus
         if(currentExists) {
             currentFocus.input = $input.val();
-            currentFocus.atBottom = _isAtBottom( $(currentFocus.elem.chat) );
+            var $currentChatWin = $(currentFocus.elem.chat);
+            currentFocus.atBottom = _isAtBottom($currentChatWin);
+            $currentChatWin.find("hr.lastSeen").remove().end().append("<hr class='lastSeen'>");
             $(currentFocus.elem.tab).removeClass("selectedTab");
         }
 
@@ -1137,6 +1140,12 @@ var Chat = (function (window, $) {
         $(newFocus.elem.online).show().siblings().hide();
         if(newFocus.atBottom === true) {
             $chatWin.scrollTop($chatWin.prop("scrollHeight"));
+        }
+        if(newFocus.newMessage) {
+            newFocus.newMessage = false;
+        } else {
+            // If there are no new messages, don't show an indicator
+            $chatWin.find("hr.lastSeen").remove();
         }
         $(newFocus.elem.tab).addClass("selectedTab").removeClass("newMessageTab");
         $input.val(newFocus.input).focus();
