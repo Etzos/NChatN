@@ -700,7 +700,9 @@ var Chat = (function (window, $) {
                     }
                     if(isInit && channel.id === 0) {
                         // Add a visual cue of messages past
-                        $("div.chatWindow").append("<hr></hr>");
+                        $("div.chatWindow").append("<hr>");
+                    } else if(isInit) {  // NOTE: This means isInit && channel.id != 0
+                        $(channel.elem.chat).append("<hr>");
                     }
                 }
             }
@@ -1160,7 +1162,14 @@ var Chat = (function (window, $) {
 
         var chan = channelMeta[tag];
         chan.active = false;
-        $(chan.elem.chat).hide();
+        var $chatWin = $(chan.elem.chat);
+        if(chan.type === "server") {
+            $chatWin.empty();
+            chan.lastMessageID = 0;
+        } else if(chan.type === "local") {
+            $chatWin.find("hr").remove();
+        }
+        $chatWin.hide();
         $(chan.elem.online).hide();
         $(chan.elem.tab).hide();
     }
@@ -1170,7 +1179,10 @@ var Chat = (function (window, $) {
             return;
         }
         channel.active = true;
-        $(channel.elem.tab).show();
+        if(channel.type === "local") {
+            // Since local channels don't rely on server, append this now.
+            $(channel.elem.chat).append("<hr>");
+        }
     }
 
     function scrollCheck(channel) {
