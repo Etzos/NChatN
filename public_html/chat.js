@@ -1180,7 +1180,7 @@ var Chat = (function (window, $) {
         $tab.animate({width: "toggle"}, 300, function() {
             $tab.hide();
             // Move to the front so that it doesn't break CSS
-            $tab.prependTo("#tabList");
+            $tab.prependTo($tabContainer);
         });
     }
 
@@ -1196,7 +1196,7 @@ var Chat = (function (window, $) {
         var $tab = $(channel.elem.tab);
         var width = $tab.css("width");
         $tab.css({width: "0px"});
-        $tab.appendTo("#tabList").show().animate({width: width}, 300);
+        $tab.appendTo($tabContainer).show().animate({width: width}, 300);
     }
 
     function scrollCheck(channel) {
