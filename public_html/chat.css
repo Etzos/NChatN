@@ -622,10 +622,20 @@ ol.onlinePlayerList img:nth-child(2) {
     left: 3px;
 }
 
-ol.onlinePlayerList span {
+ol.onlinePlayerList span.player-name {
     position: absolute;
     left: 0px;
     margin-left: 50px;
+}
+
+ol.onlinePlayerList span.player-icon {
+    display: inline-block;
+    width: 40px;
+}
+
+ol.onlinePlayerList span.player-icon img {
+    display: block;
+    margin: 0px auto;
 }
 
 ol.onlinePlayerList a {

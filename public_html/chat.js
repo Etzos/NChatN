@@ -394,8 +394,8 @@ var Chat = (function (window, $) {
 
         return "<li id='player-list-player-"+id+"' class=''>" +
                "<a href='#'>" +
-               "<img src='" + icon + "'><img src='images/away.gif' class='" + awayClass + "'>" +
-               "<span class='" + spanAwayClass + "'>" + name + "</span>" +
+               "<span class='player-icon'><img src='" + icon + "'></span><img src='images/away.gif' class='" + awayClass + "'>" +
+               "<span class='player-name " + spanAwayClass + "'>" + name + "</span>" +
                "</a>" +
                "<ol class='inactive'><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
                "</li>";
