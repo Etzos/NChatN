@@ -8,6 +8,10 @@ body {
     overflow: hidden;
 }
 
+input, select {
+    font-size: 1.1em;
+}
+
 td {
     font-size: 12px;
 }
