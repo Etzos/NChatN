@@ -1636,6 +1636,17 @@ var Chat = (function (window, $) {
                 action: function() {
                     var $cc = $("#channelContainer");
                     if($cc.hasClass("noPlayers")) {
+                        // If at bottom, attempt to restore that
+                        var $chatWin = $(channelMeta[focusedChannel].elem.chat);
+                        var atBottom = _isAtBottom($chatWin);
+                        if(atBottom) {
+                            $cc.on("transitionend.NChatNonline", function(e) {
+                                if(e.originalEvent.propertyName === "left") {
+                                    $chatWin.scrollTop($chatWin.prop("scrollHeight"));
+                                    $cc.off("transitionend.NChatNonline");
+                                }
+                            });
+                        }
                         $onlineContainer.show();
                         setTimeout(function() {
                             $cc.removeClass("noPlayers");
