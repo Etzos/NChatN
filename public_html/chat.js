@@ -1692,6 +1692,7 @@ var Chat = (function (window, $) {
                 text: "Show Version Popup",
                 action: function() {
                     newVersionDialog.openDialog();
+                    return false;
                 }
             }
         });
