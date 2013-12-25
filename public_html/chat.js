@@ -1044,7 +1044,8 @@ var Chat = (function (window, $) {
                 );
         }
         var $tab = $("<li>", {
-            id: chan.elem.tab.substring(1)
+            id: chan.elem.tab.substring(1),
+            class: "closedTab"
         }).append(
             $("<a>", {
                 href: "#",
@@ -1057,9 +1058,9 @@ var Chat = (function (window, $) {
         );
         // Hackery to animate things
         $tab.appendTo($tabContainer);
-        var width = $tab.css("width");
-        $tab.css({width: "0px"});
-        $tab.animate({width: width}, 300);
+        setTimeout(function() {
+            $tab.removeClass("closedTab");
+        }, 10);
         return chan;
     }
 
@@ -1186,11 +1187,14 @@ var Chat = (function (window, $) {
         $chatWin.hide();
         $(chan.elem.online).hide();
         var $tab = $(chan.elem.tab);
-        $tab.animate({width: "toggle"}, 300, function() {
-            $tab.hide();
-            // Move to the front so that it doesn't break CSS
-            $tab.prependTo($tabContainer);
-        });
+        var listenEvent = function(e) {
+            if(e.propertyName === "width") {
+                $tab.hide().prependTo($tabContainer);
+                this.removeEventListener("transitionend", listenEvent, true);
+            }
+        };
+        $tab[0].addEventListener("transitionend", listenEvent, true);
+        $tab.addClass("closedTab");
     }
 
     function openChannel(channel) {
@@ -1203,9 +1207,10 @@ var Chat = (function (window, $) {
             $(channel.elem.chat).append("<hr>");
         }
         var $tab = $(channel.elem.tab);
-        var width = $tab.css("width");
-        $tab.css({width: "0px"});
-        $tab.appendTo($tabContainer).show().animate({width: width}, 300);
+        $tab.show().appendTo($tabContainer);
+        setTimeout(function() {
+            $tab.removeClass("closedTab");
+        }, 1);
     }
 
     function scrollCheck(channel) {

@@ -542,8 +542,10 @@ section.noPlayers #chatContainer {
     display: inline-block;
     vertical-align: top;
     background-color: #666666;
+    overflow: hidden;
 
     padding: 1px;
+    width: 120px;
 
     border-left: 1px solid black;
     border-bottom: 1px solid black;
@@ -552,7 +554,7 @@ section.noPlayers #chatContainer {
     /* Move the tab over the previous tab's border */
     margin-left: -1px;
 
-    transition: background-color 0.2s, padding 0.2s;
+    transition: background-color 0.2s, padding 0.2s, width 0.2s;
 }
 
 #tabList li.selectedTab {
@@ -566,6 +568,10 @@ section.noPlayers #chatContainer {
     border-bottom-right-radius: 3px;
 
     box-shadow: 0px 5px 5px -2px gray;
+}
+
+#tabList li.closedTab {
+    width: 0px !important;
 }
 
 #tabList li:last-child:not(.selectedTab) {
