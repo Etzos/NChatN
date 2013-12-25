@@ -1217,8 +1217,9 @@ var Chat = (function (window, $) {
         var $chatWin = $(channel.elem.chat);
         var atBottom = channel.atBottom;
         if(channel === channelMeta[focusedChannel]) {
-            _isAtBottom($chatWin);
+            atBottom = _isAtBottom($chatWin);
         }
+        channel.atBottom = atBottom;
 
         if(atBottom) {
             $chatWin.removeClass("historyShade");
