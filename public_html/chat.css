@@ -572,9 +572,13 @@ section.noPlayers #chatContainer {
     border-bottom-right-radius: 6px;
 }
 
-#tabList li:first-child:not(.selectedTab) {
+/* Nasty hack to curve the first tab since CSS has no other good way to do it */
+#chat-tab-server-0 {
     border-bottom-left-radius: 6px;
 }
+/*#tabList li:first-child:not(.selectedTab) {
+    border-bottom-left-radius: 6px;
+}*/
 
 /* .tabLink is the link that sets the body of the tab */
 #tabList .tabLink {
