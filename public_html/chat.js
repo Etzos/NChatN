@@ -700,9 +700,11 @@ var Chat = (function (window, $) {
                     }
                     if(isInit && channel.id === 0) {
                         // Add a visual cue of messages past
-                        $("div.chatWindow").append("<hr>");
+                        for(var chan in channelMeta) {
+                            insertMessage(channelMeta[chan], "<hr>");
+                        }
                     } else if(isInit) {  // NOTE: This means isInit && channel.id != 0
-                        $(channel.elem.chat).append("<hr>");
+                        insertMessage(channel, "<hr>");
                     }
                 }
             }
