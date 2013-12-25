@@ -216,6 +216,8 @@ section.noPlayers #chatContainer {
     padding: 0.2em;
     font-size: 9pt;
     line-height: 16px;
+
+    transition: box-shadow 0.3s;
 }
 
 .chatWindow img {
@@ -442,7 +444,7 @@ section.noPlayers #chatContainer {
 
 /** Chat History Coloring **/
 .historyShade {
-    box-shadow: inset 0em -4em 3em -3em lightblue;
+    box-shadow: inset 0em -6em 3em -3em lightblue;
 }
 
 /** Dialog Coloring **/
