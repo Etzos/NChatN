@@ -17,7 +17,7 @@
 var Dialog = function(content) {
     var dialogContent = {};
     var $dialog = $("<div class='dialog'> <div class='dialogContent'>This is a default dialog</div></div>");
-    var $dialogTitle = $("<div class='dialogTitle'><span class='dialogTitleContent'>Default Title</span> <a href='#'>[X]</a></div>");
+    var $dialogTitle = $("<div class='dialogTitle'><span class='dialogTitleContent'>Default Title</span> <a href='#'>X</a></div>");
     
     $dialogTitle.mousedown(function(event) {
         var mainPos = $dialog.offset();

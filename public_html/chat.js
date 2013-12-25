@@ -13,31 +13,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-var Chat = (function(window, $) {
-    var version = "2.0.6";
+var Chat = (function (window, $) {
+    var version = "2.1";
 
     var URL = {
-      'send': 'sendchat.php',
-      'receive': 'lastchat.php',
-      'online': 'rs/online.php',
-      'invasion': 'check_invasions.php',
-      'player': 'player_info.php'
+        send: 'sendchat.php',
+        receive: 'lastchat.php',
+        online: 'rs/online.php',
+        invasion: 'check_invasions.php',
+        player: 'player_info.php'
     };
 
     var INVASION_STATUS = {
         // I'm guessing for these, since there seems to be some duplication
-        '1': {'msg': 'No Invasion', 'color': 'greenText'},          // No invasion. Not sure where this is used
-        '2': {'msg': 'Invasion!', 'color': 'redText'},              // An active invasion
-        '3': {'msg': 'Previous Invasion', 'color': 'greenText'},    // An invasion happened earlier in the day
-        '4': {'msg': 'No Invasion', 'color': 'greenText'}           // Default state, no invasion has happened yet today
+        "1": {msg: "Unknown", color: "greenText"},            // Default (unknown) value
+        "2": {msg: "Invasion!", color: "redText"},            // An active invasion
+        "3": {msg: "Possible Invasion", color: "yellowText"}, // An invasion either will happen or has already happened today
+        "4": {msg: "No Invasion", color: "greenText"}         // No invasions today
     };
 
-    var localStorageSupport = 'localStorage' in window && window['localStorage'] !== null;
-    var scriptRegex = /<script>[^]*?<\/script>/gi;
-    var whisperRegex = /(to|from) ([\w\-]+)(\&gt;|<\/I>\&gt;)/i;
+    var localStorageSupport = "localStorage" in window && window.localStorage !== null;
+    var scriptRegex = /<script>[\^]*?<\/script>/gi;
+    var whisperRegex = /(to |from )([\w\- ]+)(>)/i;
 
-    var channels = [],              // Contains all of the (joined) channels
-        selectedChannel,            // The currently selected and visible channel
+    var channelMeta = {},           // Contains metadata on channels that have been joined
+        focusedChannel = null,      // The currently selected and visible channel
         numTimeouts,                // The number of times the connection has timed out
         lastConnection,             // The time it took for the last connection to go through
         playerName,                 // The player's name
@@ -47,7 +47,8 @@ var Chat = (function(window, $) {
             {"id": 6, "name": "Trade Channel"}
         ],
         initiated = false,          // True when init() has been run, false otherwise
-        queuedPlugins = [];         // Stop-gap container for plugins that have to wait for init()
+        queuedPlugins = [],         // Stop-gap container for plugins that have to wait for init()
+        queryTimeout = 4 * 1000;    // Value to use for timeouts (4 seconds)
 
     var settings = {
         showSysMessages: true,      // Whether or not to show system messages
@@ -57,7 +58,7 @@ var Chat = (function(window, $) {
         versionPopup: true,         // Whether to show the version popup when NChatN updates or not
         forceDown: false,           // Whether to just force the chat to bottom when a new message is added
         disabledPlugins: [          // A list of the names of plugins to disable
-            'Smiley Replace'        // This plugin is more of a test than an actual plugin, so disable it
+            "Smiley Replace"        // This plugin is more of a test than an actual plugin, so disable it
         ]
     };
 
@@ -116,7 +117,7 @@ var Chat = (function(window, $) {
             isJoinMessage: function(str) {
                 return str.test(/color="\#AA0070"/ig);
             },
-            isPlayerAction: function(str) {
+            isPlayerAction: function (str) {
                 // Stub
                 return false;
             },
@@ -146,17 +147,17 @@ var Chat = (function(window, $) {
             },
             // Action context
             sendMessage: function(message) {
-                sendChat(message);
+                sendMessage(message);
             },
-            isCurrentChannel: function(channelId) {
-                return channelId === selectedChannel;
+            isCurrentChannel: function(channel) {
+                return channel === channelMeta[focusedChannel];
             }
         };
 
         // The actual event context
         var eventCtx = {
-            'stopEvent': false,     // Stops the event (can be overridden by a plugin called later)
-            'stopEventNow': false   // Stops the event immediately (prevents other plugins from running)
+            stopEvent: false,     // Stops the event (can be overridden by a plugin called later)
+            stopEventNow: false   // Stops the event immediately (prevents other plugins from running)
         };
 
         // TODO: Expose more of the 'global' chat context for each event, like online players and such
@@ -172,7 +173,7 @@ var Chat = (function(window, $) {
             // Add the merge in (be careful not to overwrite)
             for(var prop in toMerge) {
                 if(obj.hasOwnProperty(prop)) {
-                    console.error("Improper hook register! Trying to add preexisting property: "+prop);
+                    console.error("Improper hook register! Trying to add preexisting property: " + prop);
                     continue;
                 }
                 obj[prop] = toMerge[prop];
@@ -182,7 +183,7 @@ var Chat = (function(window, $) {
         }
 
         function runHook(hookName, additionalContext, ignoreStop) {
-            if(typeof ignoreStop === 'undefined') {
+            if(typeof ignoreStop === "undefined") {
                 ignoreStop = false;
             }
             if(!newHooks.hasOwnProperty(hookName)) {
@@ -199,8 +200,15 @@ var Chat = (function(window, $) {
                 if(!runningHook.active) {
                     continue;
                 }
-                runningHook.fn.apply(thisCtx, [eventContext]);
 
+                var plugin = pluginList[runningHook.plugin];
+                var runningContext = createContext(thisCtx, plugin.globals);
+                try {
+                    runningHook.fn.apply(runningContext, [eventContext]);
+                } catch(e) {
+                    e.message = pluginTag(plugin) + e.message;
+                    console.error(e);
+                }
                 if(eventContext.stopEventNow === true) {
                     eventContext.stopEvent = true;
                     break;
@@ -224,7 +232,7 @@ var Chat = (function(window, $) {
         }
 
         function checkPluginValidity(plugin) {
-            if(!plugin.hasOwnProperty('name')) {
+            if(!plugin.hasOwnProperty("name")) {
                 console.error("Plugin does not have a name property. Unable to register.");
                 return false;
             } else if(!plugin.hasOwnProperty('hooks')) {
@@ -237,13 +245,13 @@ var Chat = (function(window, $) {
                     console.error(pluginTag(plugin)+"Unknown hook '"+prop+"'. Plugin may not function properly.");
                     continue;
                 }
-                if(typeof plugin.hooks[prop] !== 'function') {
+                if(typeof plugin.hooks[prop] !== "function") {
                     console.error(pluginTag(plugin)+"Hook '"+prop+"' is not a function. Plugin may not function properly.");
                     continue;
                 }
             }
 
-            if(!plugin.hasOwnProperty('description')) {
+            if(!plugin.hasOwnProperty("description")) {
                 console.warn("Plugin should have a description property to describe its purpose.");
             }
             return true;
@@ -266,7 +274,11 @@ var Chat = (function(window, $) {
 
             var registeredHooks = [];
             for(var prop in plugin.hooks) {
-                var hookObj = {'plugin': "plugin"+pluginId, 'fn': plugin.hooks[prop], 'active': defaultActive};
+                var hookObj = {
+                    plugin: "plugin" + pluginId,
+                    fn: plugin.hooks[prop],
+                    active: defaultActive
+                };
                 newHooks[prop].push(hookObj);
                 registeredHooks.push(hookObj);
             }
@@ -278,7 +290,10 @@ var Chat = (function(window, $) {
                 license: (plugin.license) ? plugin.license : null,
                 author: (plugin.author) ? plugin.author : null,
                 active: defaultActive,
-                hooks: registeredHooks
+                globals: (plugin.globals) ? plugin.globals : {},
+                hooks: registeredHooks,
+                onEnable: (plugin.onEnable) ? plugin.onEnable : null,
+                onDisable: (plugin.onDisable) ? plugin.onDisable : null
             };
             return true;
         }
@@ -289,22 +304,33 @@ var Chat = (function(window, $) {
          * @param {string} pluginName The name of the plugin to enable or disable
          * @param {bool} active [Optional] Whether to enable (true) or disable (false) the plugin (Default: toggle
          * current state)
-         * @returns {Boolean} Returns true if the plugin has been enabled or disabled, returns false if the plugin is
+         * @returns {bool} Returns true if the plugin has been enabled or disabled, returns false if the plugin is
          * already enabled/disabled and told to enable or disable respectively
          */
         function changePluginStatus(pluginName, active) {
             var pluginTag = getPluginIdByName(pluginName);
-            if(pluginTag === '') {
+            if(pluginTag === "") {
                 console.warn("Unable to find plugin '"+pluginName+"'");
                 return false;
             }
             var plugin = pluginList[pluginTag];
 
-            if(typeof active === 'undefined') {
+            if(typeof active === "undefined") {
                 active = !plugin.active;
             } else {
                 if(plugin.active === active) {
                     return false;
+                }
+            }
+
+            // Run the plugin's enabled/disabled function (if it has one)
+            if(active) {
+                if(plugin.hasOwnProperty("onEnable")) {
+                    plugin.onEnable.apply(plugin.globals);
+                }
+            } else {
+                if(plugin.hasOwnProperty("onDisable")) {
+                    plugin.onDisable.apply(plugin.globals);
                 }
             }
 
@@ -317,7 +343,7 @@ var Chat = (function(window, $) {
 
         function unregisterPlugin(pluginName) {
             var plugin = getPluginIdByName(pluginName);
-            if(plugin === '') {
+            if(plugin === "") {
                 return false;
             }
 
@@ -362,349 +388,17 @@ var Chat = (function(window, $) {
         };
     })();
 
-    function sendChat(msg) {
-        var text = $input.val();
-
-        if(typeof msg !== 'undefined') {
-            text = msg;
-        }
-
-        if(text === '')
-            return;
-
-        var chan = channels[selectedChannel];
-
-        // PreSend Hook
-        var ctx = {
-            'channel': chan,
-            'text': text,
-            'clearInput': true
-        };
-        var hook = PluginManager.runHook('send', ctx);
-
-        // This should be done *first* because even a stopped event should be able to control the input value
-        if(hook.clearInput) {
-            $input.val('');
-        }
-
-        if(hook.stopEvent) {
-            return;
-        }
-        // End PreSend Hook
-
-        // If the buffer is too large, trim it (current 5 at a time to reduce the number of times this needs to be done)
-        if(chan.buffer.length > 55) {
-            chan.buffer = chan.buffer.splice(49);
-        }
-
-        // Stick the input into the buffer
-        chan.buffer.push(text);
-
-        // Clear out anything in the saved buffer and reset the pointer
-        chan.buffer[0] = '';
-        chan.bufferPointer = 0;
-
-        // All whisper channels are directed to Lodge (to make it viewer-friendly for non NChatN users)
-        var targetChannel = chan.isServer ? chan.id : 0;
-        // Whisper target for whisper channels should come from the chan.pm (since it's permanent)
-        var to = chan.isServer ? '*' : chan.pm;
-        var rand = _getTime();
-
-        // Process text (escape and replace +)
-        text = escape(text).replace(/\+/g, '%2B');
-
-        $.get(
-            URL.send,
-            'CHANNEL='+targetChannel+'&TO='+to+'&RND='+rand+'&TEXT='+text
-        );
-        // TODO: Check for failure. If there is a failure, store the message
-        // TODO: PostSend Hook
-    }
-
-    function getMessage(chanId) {
-        var chan = channels[chanId];
-
-        // Skip non-server channels
-        if(!chan.isServer) {
-            return;
-        }
-
-        // Check connection speed only for Lodge (for now)
-        if(chanId === 0) {
-            var timeStart = Date.now();
-        }
-
-        $.ajax({
-            url: URL.receive,
-            data: 'CHANNEL='+chan.id+'&RND='+_getTime()+'&ID='+chan.lastId,
-            type: 'GET',
-            context: this,
-            success: function(result) {
-                if(result === '')
-                    return;
-
-                if(chanId === 0) {
-                    // Update last connection
-                    lastConnection = Date.now() - timeStart;
-                    // Clear any timeouts
-                    numTimeouts = 0;
-                }
-
-                var splitLoc = result.indexOf('\n');
-                var last = parseInt(result.substring(0, splitLoc));
-
-                if(last !== chan.lastId) {
-                    var msgArr = result.substring(splitLoc+1, result.length).split('<BR>');
-
-                    var isInit = (chan.lastId === 0);
-                    // Init has an extra <BR> tag that should be avoided
-                    var end = (isInit) ? msgArr.length-1 : msgArr.length;
-                    // Only reset the begining if it's needed (init and the sent messages are too long)
-                    var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
-
-                    var whisperTarget = null;
-                    // Insert each message in order
-                    for(var i = begin; i < end; i++) {
-                        var msg = msgArr[i];
-                        if(msg === '') {
-                            continue;
-                        }
-                        // Fix the href attributes
-                        msg = msg.replace(/href=(?!")(.+?) /i, "href=\"$1\" ");
-                        var isScript = scriptRegex.test(msg);
-                        // Remove any attempts at inserting script tags a player may have used
-                        if(!isScript) {
-                            msg = msg.replace(/\%3C/ig, "&lt;").replace(/\%3E/ig, "&gt;");
-                        }
-
-                        msg = unescape(msg);
-
-                        whisperTarget = whisperRegex.exec(msg);
-
-                        msg += '<br>';
-
-                        if(isInit) {
-                            // Ignore old scripts
-                            if(isScript) {
-                                continue;
-                            }
-                            if(i === (end-1)) {
-                                // Expensive operation, thankfully only done once
-                                msg = msg.slice(0, msg.length-4) + "<hr>";
-                            }
-                        }
-
-                        // No one is allowed to circumvent scripts running
-                        if(!isScript) {
-                            var hook = PluginManager.runHook('receive', {
-                                'isInit': isInit,
-                                'message': msg,
-                                'channel': chan,
-                                'channelID': (whisperTarget) ? _getIdFromWhisperTarget(whisperTarget[2]) : chanId
-                                // NOTE: channelID as defined here is correct.
-                                //       That is, it's not the channel polled, but the one the message belongs in.
-                                //       However, channel does *not* have this benefit!
-                            });
-
-                            if(hook.stopEvent) {
-                                continue;
-                            }
-
-                            if(whisperTarget) {
-                                _insertWhisper(whisperTarget[2], hook.message);
-                            } else {
-                                _insertMessage(chanId, hook.message);
-                            }
-                        } else {
-                            _insertMessage(chanId, msg);
-                        }
-                    }
-                    chan.lastId = last;
-                }
-            }
-        })
-        .fail(function() {
-            if(chanId === 0)
-                numTimeouts++;
-        })
-        .always(function() {
-            if(chanId === 0) {
-                updateTickClock();
-            }
-        });
-    }
-
-    function getOnline(chanId) {
-        var chan = channels[chanId];
-        // Skip non-server channels, they should be handled by their channel creation method
-        if(!chan.isServer) {
-            return;
-        }
-
-        $.ajax({
-            url: URL.online,
-            data: 'CHANNEL='+chan.id,
-            type: 'GET',
-            context: this,
-            success: function(result) {
-                var oldPlayerList = $.merge([], chan.players);
-
-                chan.players = [];
-                // Add bots
-                $.each(result.bots, function(i, data) {
-                    chan.players.push(data.name);
-                });
-                // Add players (as well as changing the way they're stored)
-                $.each(result.players, function(i, data) {
-                    chan.players.push(data.name);
-                });
-                // Note: I'm ignoring guests on purpose as that function isn't possible anymore (as far as I know)
-
-                // TODO: This doesn't really check if it's when first entering the chat room, although that's probably not an issue
-                if(oldPlayerList.length > 0) {
-                    var entered = _arrSub(chan.players, oldPlayerList);
-                    for(var i=0; i<entered.length; i++) {
-                        _insertMessage(chanId, _formatSystemMsg('-- '+entered[i]+' joins --'), true);
-                    }
-                    // old - new = leave
-                    var left = _arrSub(oldPlayerList, chan.players);
-                    for(var i=0; i<left.length; i++) {
-                        _insertMessage(chanId, _formatSystemMsg('-- '+left[i]+' departs --'), true);
-                    }
-                }
-
-                chan.playerInfo = result;
-                renderOnlineList(chanId);
-            }
-        });
-    }
-
     function templateOnlinePlayerRow(id, name, icon, isAway) {
-        var awayClass = (isAway === "true") ? '' : 'inactive';
-        var spanAwayClass = (isAway === "true") ? 'dimText' : '';
+        var awayClass = (isAway === "true") ? "" : "inactive";
+        var spanAwayClass = (isAway === "true") ? "dimText" : '';
 
         return "<li id='player-list-player-"+id+"' class=''>" +
                "<a href='#'>" +
-               "<img src='" + icon + "'><img src='images/away.gif' class='" + awayClass + "'>" +
-               "<span class='" + spanAwayClass + "'>" + name + "</span>" +
+               "<span class='player-icon'><img src='" + icon + "'></span><img src='images/away.gif' class='" + awayClass + "'>" +
+               "<span class='player-name " + spanAwayClass + "'>" + name + "</span>" +
                "</a>" +
                "<ol class='inactive'><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
                "</li>";
-    }
-
-    function renderOnlineList(chanId) {
-        var stuff = channels[chanId].playerInfo;
-        var playerGuests = $.merge($.merge([], stuff.players), stuff.guests);
-
-        var $html = $();
-        $.each(stuff.bots, function(key, value) {
-            var $row = $( templateOnlinePlayerRow(value.name, value.title + " " + value.name, value.icon, "false") );
-            $row.find('ol li a').each(function(i) {
-                var $this = $(this);
-                $this.on('click', function() {
-                    if(i === 0) {
-                        var chan = _createWhisperChannel(value.name);
-                        switchChannel(chan);
-                    } else if(i === 1) {
-                        alert(value.name + " is a chat bot. He doesn't have any stats.");
-                    }
-                    return false;
-                });
-            });
-            if($html.length < 1) {
-                $html = $row;
-            } else {
-                $html = $html.add($row);
-            }
-        });
-        $.each(playerGuests, function(key, value) {
-            var $row = $( templateOnlinePlayerRow(value.id, value.title + " " + value.name, "players_small/" + value.icon, value.away) );
-            $row.find('ol li a').each(function(i) {
-                var $this = $(this);
-                $this.on('click', function() {
-                    if(i === 0) {
-                        var chan = _createWhisperChannel(value.name);
-                        switchChannel(chan);
-                    } else if(i === 1) {
-                        openWhoWindow(value.name);
-                    }
-                    return false;
-                });
-            });
-            if($html.length < 1) {
-                $html = $row;
-            } else {
-                $html = $html.add($row);
-            }
-        });
-
-        var $olWin = $("#online-window-"+chanId);
-        // Before replacing, check for a selected element
-        var $found = $olWin.find('.playerMenuShown');
-        var selectedID = '';
-        if($found.length > 0) {
-            selectedID = $found.attr('id');
-        }
-
-        $html.each(function() {
-            var $this = $(this);
-            var $toHide = $this.find('ol');
-
-            var hideFunc = function() {
-                $toHide.one('transitionend', function() {
-                    $toHide.hide();
-                });
-                $this.removeClass('playerMenuShown');
-            };
-
-            if($this.attr('id') === selectedID) {
-                $this.addClass('playerMenuShown');
-                $(document).one('click', hideFunc);
-                $this.find('ol a').one('click', hideFunc);
-            }
-
-            $this.find('a:first').on('click', function() {
-                $this.siblings().removeClass('playerMenuShown');
-                $toHide.show();
-
-                $(document).one('click', hideFunc);
-                $this.find('ol a').one('click', hideFunc);
-
-                // We have to wait for it to be added before showing
-                setTimeout(function() {
-                    $this.toggleClass('playerMenuShown');
-                }, 1);
-                return false;
-            });
-        });
-
-        $olWin.empty().append($html);
-    }
-
-    /**
-     * Renders the online player list for whisper channels
-     * 
-     * Because of the way NEaB handles the list of online players and querying for them, it is impossible to get correct
-     * information to display a full online list, so we use what is always available: their names.
-     * @param {Number} chanId The local ID of the channel
-     * @returns {undefined}
-     */
-    function renderWhisperOnlineList(chanId) {
-        var chan = channels[chanId];
-        var $olWin = $("#online-window-"+chanId);
-        $.each(chan.players, function(i, value) {
-            var $elem = $("<li class='onlineListTextOnly'><a href='#'>" + value + "</a></li>");
-            $elem.find('a').on('click', function() {
-                // This is a really bad way to do this, but there's no other way I can think of that's efficient
-                if(value === 'Glum') {
-                    alert('Glum is a bot.');
-                } else {
-                    openWhoWindow(value);
-                }
-                return false;
-            });
-            $elem.appendTo($olWin);
-        });
     }
 
     /**
@@ -715,9 +409,10 @@ var Chat = (function(window, $) {
     function getInvasionStatus() {
         $.ajax({
             url: URL.invasion,
-            data: 'RND='+_getTime(),
-            type: 'GET',
+            data: "RND=" + _getTime(),
+            type: "GET",
             context: this,
+            timeout: queryTimeout,
             success: function(result) {
                 var imageId = result.charAt(0);
                 var message = result.substring(1);
@@ -726,45 +421,27 @@ var Chat = (function(window, $) {
         });
     }
 
-    function getAllOnline() {
-        for(var i=0; i<channels.length; i++) {
-            if(!channels[i]) {
-                continue;
-            }
-            getOnline(i);
-        }
-    }
-
-    function getAllMessages() {
-        for(var i=0; i<channels.length; i++) {
-            if(!channels[i]) {
-                continue;
-            }
-            getMessage(i);
-        }
-    }
-
     /**
      * Updates the connection status light
      * 
      * @returns {undefined}
      */
     function updateTickClock() {
-        var lightClass = 'greenLight';
-        var text = 'Delay: '+(lastConnection/1000)+' sec';
+        var lightClass = "greenLight";
+        var text = "Delay: " + (lastConnection/1000) + " sec";
         if(numTimeouts === 1) {
-            lightClass = 'yellowLight';
-            text = 'Timeout: 1';
+            lightClass = "yellowLight";
+            text = "Timeout: 1";
         } else if(numTimeouts > 1) {
-            lightClass = 'redLight';
-            text = 'Timeout: '+numTimeouts;
+            lightClass = "redLight";
+            text = "Timeout: " + numTimeouts;
         } else if(lastConnection > 1000) {
-            lightClass = 'yellowLight';
-            text = 'High Delay ('+(lastConnection/1000)+' sec)';
+            lightClass = "yellowLight";
+            text = "High Delay (" + (lastConnection/1000) + " sec)";
         }
 
-        var $light = $('#mainLight').children().first();
-        $light.removeClass('greenLight yellowLight redLight')
+        var $light = $("#mainLight").children().first();
+        $light.removeClass("greenLight yellowLight redLight")
             .addClass(lightClass)
             .hover(function(event) {
                 Tooltip.on(text, event.pageX+100, event.pageY+50);
@@ -787,7 +464,7 @@ var Chat = (function(window, $) {
         }
         var invStatus = INVASION_STATUS[status];
         // Create the new elements
-        var $span = $('<span></span>')
+        var $span = $("<span></span>")
             .addClass(invStatus.color)
             .html(invStatus.msg)
             .hover(function(event) {
@@ -817,153 +494,13 @@ var Chat = (function(window, $) {
      * @returns {Boolean} True if the given element is scrolled all the way down, false otherwise
      */
     function _isAtBottom($elem) {
-        return ($elem.prop('scrollHeight') - $elem.prop('scrollTop') === $elem.prop('clientHeight'));
-    }
-
-    /**
-     * Appends a message to the defined channel
-     * 
-     * @param {int} chanId The local ID of the channel to append a message
-     * @param {string} message The message to be appended
-     * @param {bool} isSys [Optional] If true, the message will be treated as a message from the chat client (Default: false) 
-     * @returns {undefined}
-     */
-    function _insertMessage(chanId, message, isSys) {
-        if(typeof isSys === 'undefined') {
-            isSys = false;
-        }
-        var $cc = $('#chat-window-'+chanId);
-
-        var isSelected = (chanId === selectedChannel);
-        var isBottom = (isSelected)? _isAtBottom($cc) : channels[chanId].atBottom;
-
-        $cc.append(message);
-
-        if(isSys && !settings.showSysMessages) {
-            $('.systemMsg').hide();
-        }
-
-        if(isBottom || settings.forceDown) {
-            $cc.scrollTop( $cc.prop('scrollHeight') );
-        }
-
-        // Check scroll
-        doScrollCheck(chanId);
-        // Update tabs (if not active tab)
-        if(!isSelected && (!isSys || (isSys && settings.showSysMessages))) {
-            $('#chat-tab-'+chanId).addClass('newMessageTab');
-        }
+        return ($elem.prop("scrollHeight") - $elem.prop("scrollTop") === $elem.prop("clientHeight"));
     }
 
     function _arrSub(first, second) {
         return $.grep(first, function(x) {
             return $.inArray(x, second) < 0;
         });
-    }
-
-    /**
-     * Checks to see if the given chat is at the bottom or not and handles all modifiers
-     * @param {int} localId The local id for the channel
-     */
-    function doScrollCheck(localId) {
-        var $cWin = $('#chat-window-'+localId);
-        // Don't poll to see if the element is at the bottom if it's not the active tab (it will return bogus info)
-        var atBottom = (localId === selectedChannel)? _isAtBottom( $cWin ) : channels[localId].atBottom;
-        channels[localId].atBottom = atBottom;
-        
-        if(atBottom) {
-            $cWin.removeClass('historyShade');
-        } else {
-            $cWin.addClass('historyShade');
-        }
-    }
-        
-    /**
-     * Creates the various HTML elements for the given channel ID
-     * @param {int} chanId The internal ID of the channel
-     * @param {string} chanName The name of the channel
-     */
-    function _createChannelElem(chanId, chanName) {
-        // Create chat window
-        if( $('#chat-window-'+chanId).length === 0 ) {
-            $('<div>', {
-                'id': 'chat-window-'+chanId,
-                'class': 'chatWindow inactive'
-            }).scroll(function() {
-                // Check to see if it's at the bottom
-                doScrollCheck(chanId);
-            }).appendTo($chatContainer);
-        }
-        
-        // Create online window
-        if( $('#online-window-'+chanId).length === 0 ) {
-            $('<ol>', {
-                'id': 'online-window-'+chanId,
-                'class': 'onlineWindow onlinePlayerList inactive'
-            }).appendTo($onlineContainer);
-        }
-        
-        // Add tab
-        if( $('#chat-tab-'+chanId).length === 0 ) {
-            var $del = '';
-            if(chanId !== 0) { // Only display the close option for channels that aren't Lodge
-                $del = $('<span>')
-                .addClass('tabClose')
-                .append(
-                    $('<a>', {
-                        'href': '#'
-                    })
-                    .html("X")
-                    .click(function(e) {
-                        removeChannel(chanId);
-                        e.stopImmediatePropagation();
-                        return false;
-                    })
-                );
-            }
-            
-            $('<li>', {
-                'id': 'chat-tab-'+chanId
-            })
-            .append(
-                $('<a>', {
-                    'href': '#',
-                    'class': 'tabLink',
-                    'title': chanName
-                })
-                .click(function() {
-                    switchChannel(chanId);
-                    return false;
-                })
-                .append("<span class='tabName'>"+chanName+"</span>")
-                .append($del)
-            )
-            .appendTo($tabContainer);
-        }
-    }
-
-    /**
-     * Makes an existing channel (i.e. one already open) the active one
-     * 
-     * @param {int} chanId The internal ID of the channel to make active
-     */
-    function _makeChannelActive(chanId) {
-        // Get the position of the scroll bar, so it can be restored later
-        channels[selectedChannel].atBottom = _isAtBottom( $('#chat-window-'+selectedChannel) );
-
-        var $chatWindow = $('#chat-window-'+chanId);
-        $chatWindow.show().siblings().hide();
-        $('#online-window-'+chanId).show().siblings().hide();
-        // Restore the position of the scroll bar
-        if(channels[chanId].atBottom === true) {
-            $chatWindow.scrollTop( $chatWindow.prop('scrollHeight') );
-        }
-
-        // Update the tabs
-        $('#chat-tab-'+selectedChannel).removeClass('selectedTab'); // This MUST come first for init()
-        $('#chat-tab-'+chanId).addClass('selectedTab').removeClass('newMessageTab');
-
-        selectedChannel = chanId;
     }
 
     /**
@@ -981,96 +518,726 @@ var Chat = (function(window, $) {
      * @param {String} fragment The player name fragment to attempt to find a match for
      * @returns {Mixed} Returns an empty string if none found, a string containing the one name matched, or an array of matches
      */
-    function _matchPlayers(fragment) {
-        var players = channels[selectedChannel].players;
-        var matches = new Array();
+    function matchPlayerName(fragment) {
+        var players = channelMeta[focusedChannel].playerList;
+        var matches = [];
 
         fragment = fragment.toLowerCase();
-
-        for(var i=0; i<players.length; i++) {
+        for(var i = 0; i < players.length; i++) {
             var player = players[i];
-            if(player.toLowerCase().indexOf(fragment) === 0)
+            if(player.toLowerCase().indexOf(fragment) === 0) {
                 matches.push(player);
+            }
         }
 
-        if(matches.length === 1)
+        if(matches.length === 1) {
             return matches[0];
-
+        }
         return "";
     }
 
-    /**
-     * Given a channel's server ID attempt to locate the local ID in the channels array
-     * @param {Number} chanServerId Server ID of the channel
-     * @returns {Number} The local ID of the given server ID if a match is found, otherwise -1.
-     */
-    function _getIdFromServerId(chanServerId) {
-        chanServerId = parseInt(chanServerId, 10);
-        for(var i=0; i<channels.length; i++) {
-            if(!channels[i]) {
-                continue;
-            }
-            if(channels[i].id === chanServerId)
-                return i;
+    // -- Server Methods -- //
+    function sendMessage(message, channel) {
+        var text;
+        var isFromInput = true;
+        if(typeof message === "undefined") {
+            text = $input.val();
+        } else {
+            text = message;
+            isFromInput = false;
         }
-        return -1;
-    }
-
-    /**
-     * Given a whisper target attempt to locate the local ID in the channels array
-     * @param {String} whisperTarget Whisper target's name
-     * @returns {Number} The local ID of the given whisper target if a match is found, otherwise -1.
-     */
-    function _getIdFromWhisperTarget(whisperTarget) {
-        for(var i = 0; i < channels.length; i++) {
-            if(!channels[i]) {
-                continue;
-            }
-            if(channels[i].pm === whisperTarget) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Safely inserts a whisper (makes sure the channel exists first)
-     * @param {String} whisperTarget The target of the whisper (either from or to)
-     * @param {String} message The message to be whisper
-     */
-    function _insertWhisper(whisperTarget, message) {
-        var localId = _getIdFromWhisperTarget(whisperTarget);
-        if(localId < 0) {
-            localId = _createWhisperChannel(whisperTarget);
+        var chan;
+        if(typeof channel === "undefined") {
+            chan = channelMeta[focusedChannel];
+        } else {
+            chan = channel;
         }
 
-        _insertMessage(localId, message, false);
-    }
+        // PreSend Hook
+        var ctx = {
+            channel: chan,
+            text: text,
+            clearInput: true
+        };
+        var hook = PluginManager.runHook("send", ctx);
 
-    /**
-     * Inserts a new channel into the channels array with the given name
-     * @param {Number} chanServerId The channel's corresponding server ID, if there is no server ID this should be -1
-     * @param {String} name The name of the channel
-     * @returns {Number} The local ID of the newly inserted channel
-     */
-    function _insertNewChannel(chanServerId, name) {
-        var len = channels.push({
-            'id': parseInt(chanServerId, 10),  // Server ID of the channel (For non-server channels this should be -1)
-            'name': name,                      // Name of the channel
-            'lastId': 0,                       // The ID of the last message sent from the server
-            'input': '',                       // The contents of the input bar (Used when switching tabs)
-            'players': new Array(),            // The list of players currently in the channel
-            'playerHash': '',                  // The last hash sent with the player list from the server
-            'playerInfo': [],                  // This contains information gleaned about each player
-            'isServer': true,                  // Whether the channel is a server channel or a custom one (used for whisper)
-            'pm': '*',                         // The selected whisper target for this channel
-            'newMessage': false,               // Whether there is a new (unread) message in this channel
-            'atBottom': true,                  // Whether the chat window was scrolled to the bottom (only used when switching tabs)
-            'buffer': new Array(),             // The last n messages the player has sent to this channel
-            'bufferPointer': 0                 // Where in the buffer array the player has last been
+        if(isFromInput && hook.clearInput) {
+            $input.val("");
+        }
+        if(hook.stopEvent) {
+            return;
+        }
+        text = hook.text;
+
+        // Trim input buffer back if it's large (give it some headroom too)
+        if(chan.buffer.length > 55) {
+            chan.buffer = chan.buffer.splice(49);
+        }
+
+        // Push this entry into the buffer
+        chan.buffer.push(text);
+        // And clear any leftovers
+        chan.buffer[0] = "";
+        chan.bufferPointer = 0;
+
+        var isServer = (chan.type === "server");
+        // Target whisper channels to lodge (to remain consistent)
+        var targetChannel = isServer ? chan.id : 0;
+        var to = isServer ? "*" : chan.pm;
+        var rand = _getTime();
+
+        // Process text for transmission
+        text = escape(text).replace(/\+/g, "%2B");
+
+        // Send the message
+        $.ajax({
+            url: URL.send,
+            data: "CHANNEL=" + targetChannel + "&TO=" + to + "&RND=" + rand + "&TEXT=" + text,
+            type: "GET",
+            timeout: queryTimeout,
+            error: function() {
+                // TODO: Store message
+            }
         });
-        channels[(len-1)].buffer.push('');     // channels.buffer[0] is used for the current input
-        return len-1;
+        // TODO: PostSend Hook
+    }
+
+    function retrieveMessage(channel) {
+        // Skip non-server channels
+        if(channel.type !== "server") {
+            return;
+        }
+
+        // Check connection speed only for Lodge (for now)
+        if(channel.id === 0) {
+            var timeStart = Date.now();
+        }
+
+        $.ajax({
+            url: URL.receive,
+            data: "CHANNEL=" + channel.id + "&RND=" + _getTime() + "&ID=" + channel.lastMessageID,
+            type: "GET",
+            context: this,
+            timeout: queryTimeout,
+            success: function(result) {
+                if(result === "")
+                    return;
+
+                if(channel.id === 0) {
+                    // Update last connection
+                    lastConnection = Date.now() - timeStart;
+                    // Clear any timeouts
+                    numTimeouts = 0;
+                }
+
+                var splitLoc = result.indexOf("\n");
+                var last = parseInt(result.substring(0, splitLoc));
+
+                if(last !== channel.lastMessageID) {
+                    var isInit = (channel.lastMessageID === 0);
+                    channel.lastMessageID = last;
+
+                    var msgArr = result.substring(splitLoc+1, result.length).split("<BR>");
+                    // Init has an extra <BR> tag that should be avoided
+                    var end = (isInit) ? msgArr.length-1 : msgArr.length;
+                    // Only reset the begining if it's needed (init and the sent messages are too long)
+                    var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
+
+                    var whisperTarget = null;
+                    // Insert each message in order
+                    for(var i = begin; i < end; i++) {
+                        var msg = msgArr[i];
+                        if(msg === "") {
+                            continue;
+                        }
+                        // Fix the href attributes
+                        msg = msg.replace(/href=(?!")(.+?) /i, "href=\"$1\" ");
+                        var isScript = scriptRegex.test(msg);
+                        // Remove any attempts at inserting script tags a player may have used
+                        if(!isScript) {
+                            msg = msg.replace(/\%3C/ig, "&lt;").replace(/\%3E/ig, "&gt;");
+                        }
+
+                        msg = unescape(msg);
+                        msg += "<br>";
+
+                        msg = $($.parseHTML(msg));
+
+                        var tmp = msg.filter("span.username,span.bot.whisper").text();
+                        whisperTarget = whisperRegex.exec(tmp);
+
+                        // Old scripts shouldn't run during init
+                        if(isInit && isScript) {
+                            continue;
+                        }
+
+                        // No one is allowed to circumvent scripts running
+                        if(!isScript) {
+                            var hook = PluginManager.runHook("receive", {
+                                isInit: isInit,
+                                message: msg,
+                                channel: channel
+                            });
+
+                            if(hook.stopEvent) {
+                                continue;
+                            }
+
+                            if(whisperTarget) {
+                                var whisperChannel;
+                                if(!inChannel("local", whisperTarget[2], true)) {
+                                    whisperChannel = createWhisperChannel(whisperTarget[2], true);
+                                } else {
+                                    whisperChannel = channelMeta[getTag("local", whisperTarget[2])];
+                                }
+                                insertMessage(whisperChannel, hook.message);
+                            } else {
+                                insertMessage(channel, hook.message, false);
+                            }
+                        } else {
+                            insertMessage(channel, msg, false);
+                        }
+                    }
+                    if(isInit && channel.id === 0) {
+                        // Add a visual cue of messages past
+                        for(var chan in channelMeta) {
+                            insertMessage(channelMeta[chan], "<hr>");
+                        }
+                    } else if(isInit) {  // NOTE: This means isInit && channel.id != 0
+                        insertMessage(channel, "<hr>");
+                    }
+                }
+            }
+        })
+        .fail(function() {
+            if(channel.id === 0)
+                numTimeouts++;
+        })
+        .always(function() {
+            if(channel.id === 0) {
+                updateTickClock();
+            }
+        });
+    }
+
+    function retrieveAllMessages() {
+        var channel;
+        for(var tag in channelMeta) {
+            channel = channelMeta[tag];
+            if(channel.type !== "server" || !channel.active) {
+                continue;
+            }
+            try {
+                retrieveMessage(channel);
+            } catch(e) {
+                console.error(e);
+            }
+        }
+    }
+
+    function retrieveOnline(channel) {
+        if(channel.type !== "server") {
+            return;
+        }
+
+        $.ajax({
+            url: URL.online,
+            data: "CHANNEL=" + channel.id,
+            type: "GET",
+            context: this,
+            timeout: queryTimeout,
+            success: function(result) {
+                var oldPlayerList = $.merge([], channel.playerList);
+
+                channel.playerList = [];
+                // Add bots
+                $.each(result.bots, function(i, data) {
+                    channel.playerList.push(data.name);
+                });
+                // Add players (as well as changing the way they're stored)
+                $.each(result.players, function(i, data) {
+                    channel.playerList.push(data.name);
+                });
+                // Note: I'm ignoring guests on purpose as that function isn't possible anymore (as far as I know)
+
+                // TODO: This doesn't really check if it's when first entering the chat room, although that's probably not an issue
+                if(oldPlayerList.length > 0) {
+                    var entered = _arrSub(channel.playerList, oldPlayerList);
+                    for(var i = 0; i < entered.length; i++) {
+                        insertMessage(channel, _formatSystemMsg("-- " + entered[i] + " joins --"), true);
+                    }
+                    // old - new = leave
+                    var left = _arrSub(oldPlayerList, channel.playerList);
+                    for(var i = 0; i < left.length; i++) {
+                        insertMessage(channel, _formatSystemMsg("-- " + left[i] + " departs --"), true);
+                    }
+                }
+
+                channel.players = result;
+                redrawOnlineList(channel);
+            }
+        });
+    }
+
+    function retrieveAllOnline() {
+        var channel;
+        for(var tag in channelMeta) {
+            channel = channelMeta[tag];
+            if(channel.type !== "server" || !channel.active) {
+                continue;
+            }
+            try {
+                retrieveOnline(channel);
+            } catch(e) {
+                console.error(e);
+            }
+        }
+    }
+
+    // -- Online Player Util Methods -- //
+    function redrawOnlineList(channel) {
+        // TODO: Include guests
+        var players = channel.players;
+
+        // Build the contents
+        var $html = $();
+        $.each(players.bots, function(key, value) {
+            var $row = $( templateOnlinePlayerRow(value.name, value.title + " " + value.name, value.icon, "false") );
+            $row.find("ol li a").each(function(i) {
+                var $this = $(this);
+                $this.on("click", function() {
+                    if(i === 0) {
+                        createWhisperChannel(value.name);
+                    } else if(i === 1) {
+                        alert(value.name + " is a chat bot. He doesn't have any stats.");
+                    }
+                    return false;
+                });
+            });
+            if($html.length < 1) {
+                $html = $row;
+            } else {
+                $html = $html.add($row);
+            }
+        });
+        $.each(players.players, function(key, value) {
+            var $row = $( templateOnlinePlayerRow(value.id, value.title + " " + value.name, "players_small/" + value.icon, value.away) );
+            $row.find("ol li a").each(function(i) {
+                var $this = $(this);
+                $this.on("click", function() {
+                    if(i === 0) {
+                        createWhisperChannel(value.name);
+                    } else if(i === 1) {
+                        openWhoWindow(value.name);
+                    }
+                    return false;
+                });
+            });
+            if($html.length < 1) {
+                $html = $row;
+            } else {
+                $html = $html.add($row);
+            }
+        });
+
+        var $onlineWin = $(channel.elem.online);
+        // Remember any opened players
+        var $found = $onlineWin.find(".playerMenuShown");
+        var selectedID = "";
+        if($found.length > 0) {
+            selectedID = $found.attr("id");
+        }
+
+        // Add transition and other handy effects to the built content
+        $html.each(function() {
+            var $this = $(this);
+            var $toHide = $this.find("ol");
+
+            var hideFunc = function() {
+                $toHide.one("transitionend", function() {
+                    $toHide.hide();
+                });
+                $this.removeClass("playerMenuShown");
+            };
+
+            if($this.attr("id") === selectedID) {
+                $this.addClass("playerMenuShown");
+                $(document).one("click", hideFunc);
+                $this.find("ol a").one("click", hideFunc);
+            }
+
+            $this.find("a:first").on("click", function() {
+                $this.siblings().removeClass("playerMenuShown");
+                $toHide.show();
+
+                $(document).one("click", hideFunc);
+                $this.find("ol a").one("click", hideFunc);
+
+                // We have to wait for it to be added before showing
+                setTimeout(function() {
+                    $this.toggleClass("playerMenuShown");
+                }, 1);
+                return false;
+            });
+        });
+
+        $onlineWin.empty().append($html);
+    }
+
+    function redrawWhisperOnlineList(channel) {
+        var $onlineWin = $(channel.elem.online);
+        $.each(channel.playerList, function(index, value) {
+            var $elem = $("<li class='onlineListTextOnly'><a href='#'>" + value + "</a></li>");
+            $elem.find("a").on("click", function() {
+                // TODO: Find a better way to figure out which is a bot
+                if(value === "Glum") {
+                    alert("Glum is a bot and doesn't have any stats.");
+                } else {
+                    openWhoWindow(value);
+                }
+                return false;
+            });
+            $elem.appendTo($onlineWin);
+        });
+    }
+
+    // -- Channel Methods -- //
+    function insertMessage(channel, message, isSys) {
+        if(typeof isSys === "undefined") {
+            isSys = false;
+        }
+
+        var $chatWin = $(channel.elem.chat);
+        var isSelected = (channel === channelMeta[focusedChannel]);
+        var isBottom = (isSelected) ? _isAtBottom($chatWin) : channel.atBottom;
+
+        $chatWin.append(message);
+
+        if(isSys && !settings.showSysMessages) {
+            $(".systemMsg").hide();
+        }
+        if(isBottom || settings.forceDown) {
+            // TODO: Attempt to animate this
+            $chatWin.scrollTop($chatWin.prop("scrollHeight"));
+        }
+        scrollCheck(channel);
+        // Update tabs (if working on a tab that's not focused)
+        if(!isSelected && (!isSys || (isSys && settings.showSysMessages))) {
+            channel.newMessage = true;
+            $(channel.elem.tab).addClass("newMessageTab");
+        }
+    }
+
+    function getTag(type, id) {
+        id = (typeof id === "string") ? id.toLowerCase() : id;
+        return type.toLowerCase() + "-" + id;
+    }
+
+    function addChannelMeta(type, id, name) {
+        if(!type in ["server", "local"]) {
+            throw Error("Bad channel type '" + type + "'");
+            return null;
+        }
+        if(typeof id === "undefined") {
+            throw Error("ID must be given! (Int for server type, String for whisper type)");
+            return null;
+        }
+
+        var tag = getTag(type, id);
+        // Don't allow recreation of existing channels
+        if(channelMeta.hasOwnProperty(tag)) {
+            return channelMeta[tag];
+        }
+        var chan = {
+            type: type,             // Type of channel (server or local)
+            id: id,                 // ID of channel (an int for a server channel and a string for a local channel)
+            active: true,           // True if the channel is active (open) and false if not (closed)
+            elem: {                 // The element IDs of the channel (for the chat, online, and tab elements)
+                chat: "#chat-window-" + tag,
+                online: "#online-window-" + tag,
+                tab: "#chat-tab-" + tag
+            },
+
+            name: name,             // The name of the channel
+            lastMessageID: 0,       // [Server] The ID of the last message received from the server
+            input: "",              // The current input (only valid when the channel isn't focused)
+            players: [],            // [Server] A list of players
+            lastPlayerHash: "",     // [Server] The last player hash sent by the server
+            playerList: [],         // A list of players currently in the channel (used for tab-completion)
+            pm: "*",                // [Local] The current private message target
+            newMessage: false,      // Whether there are new unread messages in this channel
+            atBottom: true,         // Whether the player is scrolled all the way to the bottom of chat history (only valid on non-focus)
+            buffer: [],             // A buffer of the last messages sent to this channel
+            bufferPointer: 0        // Where in the buffer the player is viewing currently
+        };
+        channelMeta[tag] = chan;
+        return chan;
+    }
+
+    /**
+     * Joins a given channel
+     * @param {type} type
+     * @param {type} id
+     * @returns {unresolved}
+     */
+    function joinChannel(type, id) {
+        var chan;
+        if(inChannel(type, id, true)) {
+            chan = channelMeta[getTag(type, id)];
+            // Force the channel to be active again (if it wasn't already)
+            if(!chan.active) {
+                chan.active = true;
+            }
+        } else {
+            var name = "";
+            if(type === "server") {
+                name = "";
+            } else {
+                name = "W: " + id;
+            }
+            chan = createChannel(type, id, name);
+            // Make sure the target is set for a whisper channel
+            if(type === "local") {
+                chan.pm = id;
+            }
+        }
+        focusChannel(type, id);
+        return chan;
+    }
+
+    // NOTE: I made this because joinChannel() may not be the only one creating channels (e.g. plugins)
+    function createChannel(type, id, name) {
+        var tag = getTag(type, id);
+        if(channelMeta.hasOwnProperty(tag)) {
+            return null;
+        }
+        var chan = addChannelMeta(type, id, name);
+        // TODO: Add some form of the joinChat hook
+        // Chat History
+        $("<div>", {
+            id: chan.elem.chat.substring(1),
+            class: "chatWindow inactive"
+        }).scroll(function() {
+            //Check to see if it's at the bottom
+            scrollCheck(chan);
+        }).appendTo($chatContainer);
+
+        // Online Window
+        $("<ol>", {
+            id: chan.elem.online.substring(1),
+            class: "onlineWindow onlinePlayerList inactive"
+        }).appendTo($onlineContainer);
+
+        // Chat Tab
+        var $del = '';
+        if(chan.id !== 0) {
+            $del = $("<span>")
+                .addClass("tabClose")
+                .append(
+                    $("<a>", {
+                        href: "#"
+                    })
+                    .html("X")
+                    .click(function(e) {
+                        closeChannel(type, id);
+                        e.stopImmediatePropagation();
+                        return false;
+                    })
+                );
+        }
+        var $tab = $("<li>", {
+            id: chan.elem.tab.substring(1),
+            class: "closedTab"
+        }).append(
+            $("<a>", {
+                href: "#",
+                class: "tabLink",
+                title: chan.name
+            }).click(function() {
+                focusChannel(chan.type, chan.id);
+                return false;
+            }).append("<span class='tabName'>" + chan.name + "</span>").append($del)
+        );
+        // Hackery to animate things
+        $tab.appendTo($tabContainer);
+        setTimeout(function() {
+            $tab.removeClass("closedTab");
+        }, 10);
+        return chan;
+    }
+
+    function createServerChannel(id, name, noFocus) {
+        var shouldFocus = (typeof noFocus === "undefined") ? true : !noFocus;
+        var channel = createChannel("server", id, name);
+        if(channel === null) {
+            var chan = channelMeta[getTag("server", id)];
+            openChannel(chan);
+            if(shouldFocus) {
+                focusChannel("server", id);
+            }
+            return chan;
+        }
+        retrieveOnline(channel);
+        if(shouldFocus) {
+            focusChannel("server", id);
+        }
+        return channel;
+    }
+
+    function createWhisperChannel(player, noFocus) {
+        var shouldFocus = (typeof noFocus === "undefined") ? true : !noFocus;
+        var normalizedPlayer = player.toLowerCase();
+        var channel = createChannel("local", normalizedPlayer, "W: " + player);
+        if(channel === null) {
+            var chan = channelMeta[getTag("local", normalizedPlayer)];
+            openChannel(chan);
+            if(shouldFocus) {
+                focusChannel("local", normalizedPlayer);
+            }
+            return chan;
+        }
+        channel.pm = player; // TODO: Replace spaces with underlines
+        channel.playerList = [playerName, player];
+        channel.playerList.sort();
+        // Whisper channels only do one render of online list
+        redrawWhisperOnlineList(channel);
+        if(shouldFocus) {
+            focusChannel("local", normalizedPlayer);
+        }
+        return channel;
+    }
+
+    function focusChannel(type, id) {
+        var tag = getTag(type, id);
+        var currentExists = (focusedChannel !== null);
+        var newFocus = channelMeta[tag];
+        // Non-active tabs cannot be focused
+        if(!newFocus.active) {
+            return;
+        }
+        var currentFocus = currentExists ? channelMeta[focusedChannel] : null;
+
+        // Tab Change Hook
+        var ctx = {
+            newChannel: newFocus,
+            oldChannel: currentFocus
+        };
+        var hook = PluginManager.runHook("tabChange", ctx);
+        if(hook.stopEvent) {
+            return;
+        }
+        // End Tab Change Hook
+
+        // Old focus
+        if(currentExists) {
+            currentFocus.input = $input.val();
+            var $currentChatWin = $(currentFocus.elem.chat);
+            currentFocus.atBottom = _isAtBottom($currentChatWin);
+            $currentChatWin.find("hr.lastSeen").remove().end().append("<hr class='lastSeen'>");
+            $(currentFocus.elem.tab).removeClass("selectedTab");
+        }
+
+        // New focus
+        var $chatWin = $(newFocus.elem.chat);
+        $chatWin.show().siblings().hide();
+        $(newFocus.elem.online).show().siblings().hide();
+        if(newFocus.atBottom === true) {
+            $chatWin.scrollTop($chatWin.prop("scrollHeight"));
+        }
+        if(newFocus.newMessage) {
+            newFocus.newMessage = false;
+        } else {
+            // If there are no new messages, don't show an indicator
+            $chatWin.find("hr.lastSeen").remove();
+        }
+        $(newFocus.elem.tab).addClass("selectedTab").removeClass("newMessageTab");
+        $input.val(newFocus.input).focus();
+
+        focusedChannel = tag;
+    }
+
+    function inChannel(type, id, ignoreActive) {
+        var tag = getTag(type, id);
+        ignoreActive = (typeof ignoreActive === "undefined") ? false : ignoreActive;
+        if(channelMeta.hasOwnProperty(tag)) {
+            if(!ignoreActive || channelMeta[tag].active) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function closeChannel(type, id) {
+        if(type === "server" && id === 0) {
+            return; // Leaving Lodge is not allowed
+        }
+
+        var tag = getTag(type, id);
+        if(focusedChannel === tag) {
+            focusChannel("server", 0);
+        }
+
+        var chan = channelMeta[tag];
+        chan.active = false;
+        var $chatWin = $(chan.elem.chat);
+        if(chan.type === "server") {
+            $chatWin.empty();
+            chan.lastMessageID = 0;
+        } else if(chan.type === "local") {
+            $chatWin.find("hr").remove();
+        }
+        $chatWin.hide();
+        $(chan.elem.online).hide();
+        var $tab = $(chan.elem.tab);
+        var listenEvent = function(e) {
+            if(e.propertyName === "width") {
+                $tab.hide().prependTo($tabContainer);
+                this.removeEventListener("transitionend", listenEvent, true);
+            }
+        };
+        $tab[0].addEventListener("transitionend", listenEvent, true);
+        $tab.addClass("closedTab");
+    }
+
+    function openChannel(channel) {
+        if(channel.active) {
+            return;
+        }
+        channel.active = true;
+        if(channel.type === "local") {
+            // Since local channels don't rely on server, append this now.
+            $(channel.elem.chat).append("<hr>");
+        }
+        var $tab = $(channel.elem.tab);
+        $tab.show().appendTo($tabContainer);
+        setTimeout(function() {
+            $tab.removeClass("closedTab");
+        }, 1);
+    }
+
+    function scrollCheck(channel) {
+        var $chatWin = $(channel.elem.chat);
+        var atBottom = channel.atBottom;
+        if(channel === channelMeta[focusedChannel]) {
+            atBottom = _isAtBottom($chatWin);
+        }
+        channel.atBottom = atBottom;
+
+        if(atBottom) {
+            $chatWin.removeClass("historyShade");
+        } else {
+            $chatWin.addClass("historyShade");
+        }
+    }
+
+    function getChannelFromTarget(target) {
+        for(var prop in channelMeta) {
+            var chan = channelMeta[prop];
+            if(chan.type === "local" && chan.pm.toLowerCase() === target.toLowerCase()) {
+                return chan;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1126,153 +1293,16 @@ var Chat = (function(window, $) {
     }
 
     /**
-     * Checks if a given server channel ID is in the list of active channels
-     * @param {type} chanServerId
-     * @returns {Boolean}
-     */
-    function inChannel(chanServerId) {
-        chanServerId = parseInt(chanServerId, 10);
-        if(chanServerId < 0) {
-            return false;
-        }
-        for(var i=0; i<channels.length; i++) {
-            if(!channels[i]) {
-                continue;
-            }
-            if(channels[i].id === chanServerId) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Creates a "channel stub": A blank channel, and returns the internal ID
-     * @param {string} name The name to give the new channel
-     * @returns {int} The local ID of the newly created channel
-     */
-    function createBlankChannel(name) {
-        var localId = _insertNewChannel(-1, name);
-        channels[localId].isServer = false;
-        _createChannelElem(localId, name);
-        return localId;
-    }
-
-    /**
-     * Handles creation of a new whisper channel
-     * @param {String} whisperTarget The whisper target of the channel
-     * @returns {Number|int} The local ID of the new channel
-     */
-    function _createWhisperChannel(whisperTarget) {
-        var localId = createBlankChannel("W: "+whisperTarget);
-        var chan = channels[localId];
-        chan.players = [whisperTarget, playerName];
-        chan.players.sort();
-        chan.pm = whisperTarget;
-        // NOTE: This is only done once -- here
-        renderWhisperOnlineList(localId);
-        return localId;
-    }
-
-    /**
-     * Join a channel using the server channel ID
-     * 
-     * This method is a convience method to provide a quick way to join a channel without having to manually translate
-     * a server ID into a local ID.
-     * @param {int} chanServerId The server ID of the channel to join
-     * @param {string} name The name to give the channel if it needs to be created
-     */
-    function joinServerChannel(chanServerId, name) {
-        if(inChannel(chanServerId)) {
-            var chanId = _getIdFromServerId(chanServerId);
-            switchChannel(chanId);
-            return;
-        }
-
-        // selfJoin Hook
-        var ctx = {
-            channelId: chanServerId,
-            channel: name,
-            firstJoin: false
-        };
-        var res = PluginManager.runHook('joinChat', ctx);
-        if(res.stopEvent) {
-            return;
-        }
-        // End selfJoin Hook
-        _insertNewChannel(chanServerId, name);
-        var localId = _getIdFromServerId(chanServerId);
-        _createChannelElem(localId, name);
-        getMessage(localId);
-        getOnline(localId);
-        switchChannel(localId);
-    }
-
-    /**
-     * Switches the active channel to the one provided
-     * @param {int} chanId The internal ID of the channel to switch to
-     */
-    function switchChannel(chanId) {
-        // Switch the input over
-        var chan = channels[selectedChannel];
-
-        // changeTab Hook
-        var ctx = {
-            'channel': chanId,
-            'previousChannel': selectedChannel
-        };
-        var hook = PluginManager.runHook('tabChange', ctx);
-
-        if(hook.stopEvent) {
-            return;
-        }
-        // End changeTab Hook
-
-        chan.input = $input.val();
-
-        _makeChannelActive(chanId);
-
-        var newChan = channels[chanId];
-        $input.val(newChan.input).focus();
-    }
-
-    /**
-     * Removes a channel from the tab list (as well as all of its elements)
-     * @param {Number} chanId The internal ID of the channel
-     */
-    function removeChannel(chanId) {
-        if(chanId === 0) {
-            return; // No leaving Lodge!
-        }
-
-        //var chan = channels[chanId];
-        // If selected channel, move to Lodge
-        if(selectedChannel === chanId) {
-            switchChannel(0);
-        }
-
-        // Clear it from the array
-        //channels.splice(chanId, 1);
-        channels[chanId] = null;
-        // Clear the chat
-        $('#chat-window-'+chanId).remove();
-        // Clear the online
-        $('#online-window-'+chanId).remove();
-        // Clear the tag
-        $('#chat-tab-'+chanId).remove();
-    }
-
-    /**
      * Changes whether system messages are shown or hidden in chat
      * @returns {undefined}
      */
     function toggleSysMsgVisibility() {
         if(settings.showSysMessages) {
-            $('.systemMsg').hide();
+            $(".systemMsg").hide();
         } else {
-            $('.systemMsg').show();
+            $(".systemMsg").show();
         }
-        changeSetting('showSysMessages', !settings.showSysMessages);
+        changeSetting("showSysMessages", !settings.showSysMessages);
     }
 
     /**
@@ -1280,7 +1310,7 @@ var Chat = (function(window, $) {
      * @returns {undefined}
      */
     function changeLoginHistory() {
-        var result = window.prompt('How many lines of chat history should show on entry?\n(Enter a number less than 0 to reset to default)', settings.chatHistoryLogin);
+        var result = window.prompt("How many lines of chat history should show on entry?\n(Enter a number less than 0 to reset to default)", settings.chatHistoryLogin);
         // If empty, assume they want to leave it the same
         if(!result || result === "") {
             return;
@@ -1314,8 +1344,8 @@ var Chat = (function(window, $) {
     function addMenu(menu) {
         $menu.removeClass("headerMenu");
         $menu.append(menu.getRoot());
-        $('#menuLink').click(function() {
-            $(document).one('click', function() {
+        $("#menuLink").click(function() {
+            $(document).one("click", function() {
                 menu.closeMenu();
             });
 
@@ -1445,26 +1475,27 @@ var Chat = (function(window, $) {
         // Start other required tools
         Tooltip.init();
         Smilies.init();
-        _insertNewChannel(0, 'Lodge');
-        selectedChannel = 0;
 
-        $input = $('#chatInput');
-        $tabContainer = $('#tabList');
-        $onlineContainer = $('#onlineList');
-        $chatContainer = $('#chat');
-        $channelSelect = $('#channel');
-        $menu = $('#mainMenu');
-        $invasion = $('#invasionStatus');
+        $input = $("#chatInput");
+        $tabContainer = $("#tabList");
+        $onlineContainer = $("#onlineList");
+        $chatContainer = $("#chat");
+        $channelSelect = $("#channel");
+        $menu = $("#mainMenu");
+        $invasion = $("#invasionStatus");
 
-        // For Firefox users (or browsers that support the spellcheck attribute)
-        if("spellcheck" in document.createElement('input')) {
-            $input.attr('spellcheck', 'true');
+        if(!localStorageSupport) {
+            alert("NChatN will not function properly without localStorage support. Please enable it!");
         }
 
-        var chan = channels[selectedChannel];
+        // For Firefox users (or browsers that support the spellcheck attribute)
+        if("spellcheck" in document.createElement("input")) {
+            $input.prop("spellcheck", "true");
+        }
 
-        _createChannelElem(selectedChannel, chan.name);
-        _makeChannelActive(selectedChannel);
+        createChannel("server", 0, "Lodge");
+        focusChannel("server", 0);
+        var channel = channelMeta[focusedChannel];
 
         // Load settings
         _loadSettings();
@@ -1479,9 +1510,9 @@ var Chat = (function(window, $) {
 
         var $container = $("<span></span>");
         PluginManager.forEachPlugin(function(plugin) {
-            var $inpt = $('<input type="checkbox" '+((plugin.active) ? "checked=checked" : "")+'>');
+            var $inpt = $('<input type="checkbox" ' + ((plugin.active) ? "checked=checked" : "") + '>');
             $inpt.change(function() {
-                var checked = $(this).prop('checked');
+                var checked = $(this).prop("checked");
                 if(!checked) {
                     settings.disabledPlugins.push(plugin.name);
                     _saveSettings();
@@ -1533,20 +1564,19 @@ var Chat = (function(window, $) {
                 text: "Download Chat",
                 description: "Download the current chat history to a file",
                 action: function() {
-                    var chan = channels[selectedChannel];
+                    var channel = channelMeta[focusedChannel];
 
-                    // TODO: Fix smilies and bad styles
-                    // This download method only works on recent version of Firefox and Chrome
-                    var raw = $('#chat-window-'+selectedChannel).html();
+                    // TODO: Include the stylesheets
+                    var raw = $(channel.elem.chat).html();
                     raw = Smilies.replaceTagsWithText(raw);
-                    var blob = new Blob([raw], {type: 'application/octet-stream'});
+                    var blob = new Blob([raw], {type: "application/octet-stream"});
                     var src = window.URL.createObjectURL(blob);
                     this.href = src;
 
                     var time = new Date();
                     // Format: 2013-06-23
                     var timeStr = time.getFullYear() + "-" + numPad(time.getMonth()+1) + "-" + numPad(time.getDate());
-                    this.download = "NEaB Chat - "+chan.name+" ["+timeStr+"].html";
+                    this.download = "NEaB Chat - "+channel.name+" ["+timeStr+"].html";
 
                     // Note: This should be allowed to bubble (apparently, haven't tested)
                     //return false;
@@ -1556,7 +1586,7 @@ var Chat = (function(window, $) {
                 text: "Update Online Players",
                 description: "Manually refreshes the online player list",
                 action: function() {
-                    getOnline(selectedChannel);
+                    retrieveOnline(channelMeta[focusedChannel]);
                     // TODO: Prevent spamming this
                     return false;
                 }
@@ -1599,6 +1629,39 @@ var Chat = (function(window, $) {
                 description: "Change the amount of chat history shown upon entering",
                 action: function() {
                     changeLoginHistory();
+                    return false;
+                }
+            },
+            hideOnlineList: {
+                text: "Show/Hide Online List",
+                decsription: "Shows or hides the online player list",
+                action: function() {
+                    var $cc = $("#channelContainer");
+                    if($cc.hasClass("noPlayers")) {
+                        // If at bottom, attempt to restore that
+                        var $chatWin = $(channelMeta[focusedChannel].elem.chat);
+                        var atBottom = _isAtBottom($chatWin);
+                        if(atBottom) {
+                            $cc.on("transitionend.NChatNonline", function(e) {
+                                if(e.originalEvent.propertyName === "left") {
+                                    $chatWin.scrollTop($chatWin.prop("scrollHeight"));
+                                    $cc.off("transitionend.NChatNonline");
+                                }
+                            });
+                        }
+                        $onlineContainer.show();
+                        setTimeout(function() {
+                            $cc.removeClass("noPlayers");
+                        }, 1);
+                    } else {
+                        $cc.on("transitionend.NChatNonline", function(e) {
+                            if(e.originalEvent.propertyName === "left") {
+                                $onlineContainer.hide();
+                                $cc.off("transitionend.NChatNonline");
+                            }
+                        });
+                        $cc.addClass("noPlayers");
+                    }
                     return false;
                 }
             },
@@ -1649,6 +1712,7 @@ var Chat = (function(window, $) {
                 text: "Show Version Popup",
                 action: function() {
                     newVersionDialog.openDialog();
+                    return false;
                 }
             }
         });
@@ -1660,18 +1724,18 @@ var Chat = (function(window, $) {
         // Keybinding
         // Input Enter key pressed
         $(window).keydown(function(e) {
-            var isInputFocused = $input.is(':focus');
+            var isInputFocused = $input.is(":focus");
             if(!isInputFocused) {
                 return;
             }
             var key = e.keyCode ? e.keyCode : e.which;
             if(key === 13) { // Enter key
                 // Check focus
-                var $focus = $(this).filter(':focus');
+                var $focus = $(this).filter(":focus");
                 if($focus.length >= 1) {
-                    var id = $focus.attr('id');
-                    if($input.attr('id') === id) {
-                        $('#chatInputForm').submit();
+                    var id = $focus.attr("id");
+                    if($input.attr("id") === id) {
+                        $("#chatInputForm").submit();
                     }
                 }
             } else if(key === 9) { // Tab Key
@@ -1679,7 +1743,7 @@ var Chat = (function(window, $) {
                 if(val.length < 1) {
                     return;
                 }
-                var cursorPos = $input.prop('selectionEnd');
+                var cursorPos = $input.prop("selectionEnd");
                 // TODO: Do something about names with spaces
                 // If the cursor is on a non-name character (letters and '-'), then there is nothing to complete
                 if(!(/[\w\-]/).test(val.charAt(cursorPos-1))) {
@@ -1688,7 +1752,7 @@ var Chat = (function(window, $) {
                 // Cut off anything on the right hand side of cursor
                 var namePart = val.substring(0, cursorPos);
                 // And everything on the left hand side to the previous space
-                var lastSpace = namePart.lastIndexOf(' ');
+                var lastSpace = namePart.lastIndexOf(" ");
                 if(lastSpace < 0) {
                     lastSpace = 0;
                 } else {
@@ -1696,95 +1760,94 @@ var Chat = (function(window, $) {
                     lastSpace++;
                 }
                 var endPos = namePart.length;
-                var namePart = namePart.substring(lastSpace, endPos);
+                namePart = namePart.substring(lastSpace, endPos);
+                // Disinclude non-username characters from the search
+                var startPos = namePart.search(/[\w\-]+/);
+                namePart = namePart.substring(startPos, endPos);
+                var fullStartPos = lastSpace + startPos;
 
-                var match = _matchPlayers(namePart);
-                if(match !== '') {
-                    // TODO: Location aware replace based on preference
-                    $input.val( val.substring(0, lastSpace) + match + val.substring(endPos, val.length) );
-                    // TODO: Make this optional, putting the cursor at the end of the line can be handy
-                    var newCursorPos = lastSpace+match.length;
+                var match = matchPlayerName(namePart);
+                if(match !== "") {
+                    $input.val( val.substring(0, fullStartPos) + match + val.substring(endPos, val.length) );
+                    var newCursorPos = fullStartPos+match.length;
                     $input[0].setSelectionRange(newCursorPos, newCursorPos);
-                    $input.focus();
                 }
+                $input.focus();
                 e.preventDefault();
                 e.stopPropagation();
-            }
-            else if(key === 38) { // Up arrow key
-                var chan = channels[selectedChannel];
+            } else if(key === 38) { // Up arrow key
+                var channel = channelMeta[focusedChannel];
 
-                if(chan.bufferPointer > 1) {
-                    --chan.bufferPointer;
-                } else if(chan.bufferPointer === 0) {
-                    chan.bufferPointer = (chan.buffer.length - 1);
+                if(channel.bufferPointer > 1) {
+                    --channel.bufferPointer;
+                } else if(channel.bufferPointer === 0) {
+                    channel.bufferPointer = (channel.buffer.length - 1);
                     // Store current val
-                    chan.buffer[0] = $input.val();
+                    channel.buffer[0] = $input.val();
                 }
 
-                $input.val(chan.buffer[chan.bufferPointer]);
+                $input.val(channel.buffer[channel.bufferPointer]);
             } else if(key === 40) { // Down arrow key
-                var chan = channels[selectedChannel];
+                var channel = channelMeta[focusedChannel];
 
-                if(chan.bufferPointer === 0) { // Can only get as low as current
+                if(channel.bufferPointer === 0) { // Can only get as low as current
                     return;
                 }
 
-                if(chan.bufferPointer < (chan.buffer.length - 1)) {
-                    ++chan.bufferPointer;
-                } else if(chan.bufferPointer === (chan.buffer.length - 1)) {
-                    chan.bufferPointer = 0;
+                if(channel.bufferPointer < (channel.buffer.length - 1)) {
+                    ++channel.bufferPointer;
+                } else if(channel.bufferPointer === (channel.buffer.length - 1)) {
+                    channel.bufferPointer = 0;
                 }
 
-                $input.val(chan.buffer[chan.bufferPointer]);
+                $input.val(channel.buffer[channel.bufferPointer]);
             }
         });
 
         // Event Handlers
-        $('#chatInputForm').submit(function() {
-           sendChat(); 
+        $("#chatInputForm").submit(function() {
+            sendMessage();
         });
         $channelSelect.change(function() {
-           var $chanSel = $channelSelect.children('option:selected');
-           var chanServerId = $chanSel.val();
-           if(chanServerId === '')
-               return;
-
-           joinServerChannel(chanServerId, $chanSel.html());
-
-           $channelSelect.children('option:eq(0)').prop('selected', true);
-           $chanSel.prop('selected', false);
+            var $chanSel = $channelSelect.children("option:selected");
+            var chanServerId = $chanSel.val();
+            if(chanServerId === '')
+                return;
+            try {
+                createServerChannel(chanServerId, $chanSel.text());
+            } catch(e) {
+                console.error(e);
+            }
+            $channelSelect.children("option:eq(0)").prop("selected", true);
+            $chanSel.prop("selected", false);
         });
         // Track page resizing for scroll
         $(window).resize(function() {
-            var curChan = channels[selectedChannel];
-            // Maintain bottom-ness if at bottom
-            var $cWin = $('#chat-window-'+curChan.id);
-
-            if(curChan.atBottom) {
-                $cWin.scrollTop( $cWin.prop('scrollHeight') );
+            var channel = channelMeta[focusedChannel];
+            var $chatWin = $(channel.elem.chat);
+            if(channel.atBottom) {
+                $chatWin.scrollTop( $chatWin.prop("scrollHeight") );
             } else {
-                $cWin.addClass('historyShade');
+                $chatWin.addClass("historyShade");
             }
         });
 
         // Timers (Times are default from NEaB)
         // Start Chat Timer
-        getAllMessages();
-        getAllOnline();
+        retrieveAllMessages();
+        setInterval(retrieveAllMessages, 4000);
+        retrieveAllOnline();
+        setInterval(retrieveAllOnline, 16000);
+
         getInvasionStatus();
-        var chatHeartBeat = setInterval(getAllMessages, 4000);
-        // Start Online Timer
-        var onlineHeartBeat = setInterval(getAllOnline, 16000);
-        // Start Checking for Invasions
         var invasionHeartBeat = setInterval(getInvasionStatus, 20000);
 
         // This is a special call to joinChat that can't be canceled, it's the initial join
         var ctx = {
-            channelId: chan.id,
-            channel: chan.name,
+            channel: channel,
             firstJoin: true
         };
-        PluginManager.runHook('joinChat', ctx);
+        PluginManager.runHook("joinChat", ctx);
 
         // Check versions
         if(localStorageSupport) {
@@ -1795,7 +1858,7 @@ var Chat = (function(window, $) {
             var versionAge = versionCompare(version, pastVersion);
             // Current version is newer than the stored one
             if(versionAge > 0) {
-                if(settings.versionPopup == true) {
+                if(settings.versionPopup === true) {
                     newVersionDialog.openDialog();
                 }
             }
@@ -1807,9 +1870,9 @@ var Chat = (function(window, $) {
         renderChannelList();
         if(settings.detectChannels === true) {
             $.ajax({
-                url: 'general_chat.php',
-                data: 'CHANNEL=0&TAB=0',
-                type: 'GET',
+                url: "general_chat.php",
+                data: "CHANNEL=0&TAB=0",
+                type: "GET",
                 context: this,
                 success: function(result) {
                     var r = /\<option[ selected]* value=(\d+)\>([A-Za-z0-9 ]+)\n/gi;
@@ -1824,7 +1887,7 @@ var Chat = (function(window, $) {
                     // So that's why we're skipping 3 instead of the usual 1
                     availChannels = [];
                     for(var i = 0; i < tmp.length; i+=3) {
-                        availChannels.push({"id": parseInt(tmp[i]), "name": tmp[i+1]});
+                        availChannels.push({id: parseInt(tmp[i]), name: tmp[i+1]});
                     }
                     renderChannelList();
                 }
@@ -1833,25 +1896,25 @@ var Chat = (function(window, $) {
     }
 
     return {
-        'init': function() {
+        init: function() {
             init();
         },
-        'joinChannel': function(chanServerId, name) {
+        joinChannel: function(chanServerId, name) {
             joinServerChannel(chanServerId, name);
         },
-        'leaveChannel': function(chanId) {
+        leaveChannel: function(chanId) {
             removeChannel(chanId);
         },
-        'selectChannel': function(id) {
+        selectChannel: function(id) {
             switchChannel(id);
         },
-        'insertInputText': function(text, focus) {
+        insertInputText: function(text, focus) {
             $input.val($input.val() + text);
             if(typeof focus === 'undefined' || focus !== false) {
                 $input.focus();
             } 
         },
-        'addPlugin': function(plugin) {
+        addPlugin: function(plugin) {
             //return PluginManager.registerPlugin(plugin);
             return queuePlugin(plugin);
         }
@@ -1863,26 +1926,7 @@ var Chat = (function(window, $) {
  * Toggles the visibility of the help menu
  */
 function toggleHelp() {
-    $('#chatHelp').toggle();
-}
-
-/**
- * Selects the text (and other contents) of an element
- * @param {DOMNode} elem The DOM Node to select the contents of
- */
-function selectElement(elem) {
-    // Heavily influenced by http://stackoverflow.com/a/2838358
-    if (window.getSelection && document.createRange) {
-        var sel = window.getSelection();
-        var range = document.createRange();
-        range.selectNodeContents(elem);
-        sel.removeAllRanges();
-        sel.addRange(range);
-    } else if (document.body.createTextRange) {
-        var range = document.body.createTextRange();
-        range.moveToElementText(elem);
-        range.select();
-    }
+    $("#chatHelp").toggle();
 }
 
 /**
@@ -1891,11 +1935,11 @@ function selectElement(elem) {
  * @returns {String} The resulting padded number
  */
 function numPad(num) {
-    return num < 10 ? '0'+num : num;
+    return num < 10 ? "0" + num : num;
 }
 
 function openWhoWindow(player) {
-    window.open('player_info.php?SEARCH='+escape(player), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+    window.open("player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
     return false;
 }
 
@@ -1905,11 +1949,11 @@ Chat.addPlugin({
     author: "Etzos",
     license: "GPLv3",
     hooks: {
-        'send': function(e) {
+        send: function(e) {
             var line = e.text;
-            if(line.indexOf('/who') === 0 || line.indexOf('/whois') === 0) {
-                var textPiece = line.split(' ').splice(1).join('_');
-                window.open('player_info.php?SEARCH='+escape(textPiece), '_blank', 'depandant=no,height=600,width=430,scrollbars=no');
+            if(line.indexOf("/who") === 0 || line.indexOf("/whois") === 0) {
+                var textPiece = line.split(" ").splice(1).join("_");
+                window.open("player_info.php?SEARCH=" + escape(textPiece), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
                 e.clearInput = true;
                 e.stopEventNow = true;
             }
@@ -1923,7 +1967,7 @@ Chat.addPlugin({
     author: "Etzos",
     license: "GPLv3",
     hooks: {
-        'joinChat': function(e) {
+        joinChat: function(e) {
             if(e.firstJoin === true) {
                 this.sendMessage("/pop");
             }
@@ -1938,13 +1982,30 @@ Chat.addPlugin({
     license: "GPLv3",
     hooks: {
         receive: function(e) {
-            var msg = e.message;
-            // Check for actions and joins ('** <username> <whatever>' and '-- <username> <whatever>') [TODO]
-            // Check what's said (<username>&gt;)
+            var $msg = e.message;
+            var self = this;
             // Check against online players [TODO]
-            msg = msg.replace(/<B>*([\w\-]+)(\&gt;)<\/B>*/i, "<b><a href='#' class='chatLineName' onclick='openWhoWindow(\"$1\"); return false;'>$1</a>$2</b>");
-            e.message = msg;
+            // Person doing /pop or /afk
+            $msg.filter("span.popin, span.back, span.away, span.action, span.hugs").not(".bot").each(function() {
+                self.makeClickable(self.actionPopReg, $(this));
+            });
+
+            $msg.filter("span.username").not(".bot").each(function() {
+                self.makeClickable(self.messageReg, $(this));
+            });
+            e.message = $msg;
         }
+    },
+    globals: {
+        makeClickable: function(reg, $obj) {
+            //var parts = reg.exec($obj.html());
+            //var content = ((parts[1]) ? parts[1] : "") + "<a href='#' class='chatLineName' onClick='openWhoWindow(\"" + parts[2] + "\"); this.blur(); return false;'>" + parts[2] + "</a>" + ((parts[3]) ? parts[3] : "");
+            var content = $obj.html().replace(reg, "$1<a href='#' class='chatLineName' onClick='openWhoWindow(\"$2\"); this.blur(); return false;'>$2</a>$3");
+            $obj.html(content);
+        },
+        messageReg: /(to |from )?([\w\- ]+)(\&gt;)/i,
+        // Yep, I'm ignoring spaces here because there's no way to know where the username ends and the rest of the popin/action ends
+        actionPopReg: /(\*\* |\-\- )([\w\-]+)( )/i
     }
 });
 
@@ -1953,18 +2014,20 @@ Chat.addPlugin({
     description: "Makes links to images show a small preview when hovered over",
     author: "Etzos",
     license: "GPLv3",
-    hooks: {
-        receive: function(e) {
-            var $msg = $($.parseHTML(e.message));
-            var $anchors = $msg.filter("a");
-            var imageExtensionReg = /\.(png|jpeg|jpg|gif)$/i
+    globals: {
+        /**
+         * Binds a hover/leave to an anchor if it's for an image
+         * @param {jQuery Object} $anchors A jQuery Object containing a list of anchors to bind events to
+         */
+        bindAnchors: function($anchors) {
+            var imageExtensionReg = /\.(png|jpeg|jpg|gif)$/i;
             $anchors.each(function() {
                 var $this = $(this);
-                var location = $this.attr("href");
+                var location = $this.prop("href");
                 if(imageExtensionReg.test(location)) {
-                    $this.hover(function(e) {
-                        // In
-                        var $img = $("<img></img>").attr("src", location);
+                    // Mouse in
+                    $this.on("mouseenter.NChatNPlugin-ImagePreview", function(e) {
+                        var $img = $("<img></img>").prop("src", location);
                         $img.on("load", function() {
                             var $parent = $img.parent();
                             var top = parseInt($parent.css("top"));
@@ -1975,15 +2038,15 @@ Chat.addPlugin({
                             $parent.css({
                                 "width": $img.css("width"),
                                 "height": height,
-                                "visibility": "visible",
-                                "top": top + "px"
+                                "top": top + "px",
+                                "visibility": "visible"
                             });
 
                         }).on("error", function() {
                             $("#customImageLoader").remove();
                         });
 
-                        $img.css({"max-height": "200px", "max-width":"200px"});
+                        $img.css({"max-height": "240px", "max-width":"240px"});
                         var linkPos = $this.offset();
                         var $div = $("<div></div>")
                         .css({
@@ -2001,15 +2064,31 @@ Chat.addPlugin({
                         .attr("id", "customImageLoader")
                         .append($img);
                         $("body").append($div);
-                    }, function() {
-                        // Out
+                    })
+                    // Mouse out
+                    .on("mouseleave.NChatNPlugin-ImagePreview", function() {
                         $("#customImageLoader").remove();
                     });
                 }
             });
-
+            return $anchors;
+        }
+    },
+    hooks: {
+        receive: function(e) {
+            var $msg = e.message;
+            var $anchors = $msg.find("a").addBack().filter("a");
+            this.bindAnchors($anchors);
             e.message = $msg;
         }
+    },
+    onEnable: function() {
+        var $anchors = $("#chat").find("a").addBack().filter("a");
+        this.bindAnchors($anchors);
+    },
+    onDisable: function() {
+        $("#chat").find("a").addBack().filter("a").off("mouseenter.NChatNPlugin-ImagePreview mouseleave.NChatNPlugin-ImagePreview");
+        // TODO: Make sure all extra elements are removed
     }
 });
 

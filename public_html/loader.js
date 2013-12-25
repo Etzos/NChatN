@@ -16,7 +16,7 @@
 
 var Loader = (function(document) {
     var baseUrl = 'https://rawgithub.com/Etzos/NChatN/master/public_html/util/';
-    //var baseUrl = 'http://garth.web.nowhere-else.org/web/Uploads/';  // Etzos's testing branch
+    //var baseUrl = 'http://garth.web.nowhere-else.org/web/NChatN/'; // Etzos's experimental branch
     
     var queuedFiles = 0;
     var callback = function() {};
@@ -62,7 +62,11 @@ var Loader = (function(document) {
 })(document);
 
 Loader.onComplete(function() {
-    Chat.init();
+    try {
+        Chat.init();
+    } catch(e) {
+        console.error(e);
+    }
 });
 
 Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', '../chat.js']);
