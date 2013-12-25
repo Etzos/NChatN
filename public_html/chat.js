@@ -1634,14 +1634,20 @@ var Chat = (function (window, $) {
                 decsription: "Shows or hides the online player list",
                 action: function() {
                     var $cc = $("#channelContainer");
-                    if($cc.hasClass()) {
-                        setTimeout(10000, function() {
-                            $cc.hide();
-                        });
+                    if($cc.hasClass("noPlayers")) {
+                        $onlineContainer.show();
+                        setTimeout(function() {
+                            $cc.removeClass("noPlayers");
+                        }, 1);
                     } else {
-                        $cc.show();
+                        $cc.on("transitionend.NChatNonline", function(e) {
+                            if(e.originalEvent.propertyName === "left") {
+                                $onlineContainer.hide();
+                                $cc.off("transitionend.NChatNonline");
+                            }
+                        });
+                        $cc.addClass("noPlayers");
                     }
-                    $cc.toggleClass("noPlayers");
                     return false;
                 }
             },
