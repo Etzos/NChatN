@@ -32,7 +32,7 @@ var Chat = (function (window, $) {
         "4": {msg: "No Invasion", color: "greenText"}         // No invasions today
     };
 
-    var localStorageSupport = window.hasOwnProperty("localStorage") && window.localStorage !== null;
+    var localStorageSupport = "localStorage" in window && window.localStorage !== null;
     var scriptRegex = /<script>[\^]*?<\/script>/gi;
     var whisperRegex = /(to |from )([\w\- ]+)(>)/i;
 
@@ -1480,6 +1480,10 @@ var Chat = (function (window, $) {
         $channelSelect = $("#channel");
         $menu = $("#mainMenu");
         $invasion = $("#invasionStatus");
+
+        if(!localStorageSupport) {
+            alert("NChatN will not function properly without localStorage support. Please enable it!");
+        }
 
         // For Firefox users (or browsers that support the spellcheck attribute)
         if("spellcheck" in document.createElement("input")) {
