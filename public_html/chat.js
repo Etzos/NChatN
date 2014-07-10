@@ -2145,6 +2145,29 @@ Chat.addPlugin({
     }
 });
 
+Chat.addPlugin({
+    name: "Name Notifier",
+    description: "Show a notification when your name is said in chat",
+    author: "Etzos",
+    license: "GPLv3",
+    hooks: {
+        receive: function(e) {
+            if(e.isInit) {
+                return;
+            }
+            var playerNameReg = new RegExp(this.getPlayerName(), "i");
+            var $msg = e.message.filter("span.speech span.whisper");
+            $msg.each(function() {
+                var text = this.innerHTML;
+                if(playerNameReg.test(text)) {
+                    console.log("Found your name.");
+                    notify("NChatN : Your Name was Mentioned!", text);
+                }
+            });
+        }
+    }
+});
+
 /*Chat.addPlugin({
     name: "Smiley Replace",
     description: "Replaces smilies with their text equivalent",
