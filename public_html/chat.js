@@ -658,13 +658,13 @@ var Chat = (function (window, $) {
                         var isScript = scriptRegex.test(msg);
                         // Remove any attempts at inserting script tags a player may have used
                         if(!isScript) {
-                            msg = msg.replace(/\%3C/ig, "&lt;").replace(/\%3E/ig, "&gt;");
+                            msg = msg.replace(/\%3C/ig, "%253C").replace(/\%3E/ig, "%253E");
                         }
 
                         msg = unescape(msg);
                         msg += "<br>";
 
-                        msg = $($.parseHTML(msg));
+                        msg = $($.parseHTML(msg, !isInit));
 
                         var tmp = msg.filter("span.username,span.bot.whisper").text();
                         whisperTarget = whisperRegex.exec(tmp);
