@@ -151,6 +151,9 @@ var Chat = (function (window, $) {
             },
             isCurrentChannel: function(channel) {
                 return channel === channelMeta[focusedChannel];
+            },
+            getPlayerName: function() {
+                return playerName;
             }
         };
 
