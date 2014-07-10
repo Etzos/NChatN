@@ -970,7 +970,7 @@ var Chat = (function (window, $) {
             pm: "*",                // [Local] The current private message target
             newMessage: false,      // Whether there are new unread messages in this channel
             atBottom: true,         // Whether the player is scrolled all the way to the bottom of chat history (only valid on non-focus)
-            buffer: [],             // A buffer of the last messages sent to this channel
+            buffer: [''],           // A buffer of the last messages sent to this channel (fill with one bcause that's current buffer)
             bufferPointer: 0        // Where in the buffer the player is viewing currently
         };
         channelMeta[tag] = chan;
