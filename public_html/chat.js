@@ -654,7 +654,7 @@ var Chat = (function (window, $) {
                             continue;
                         }
                         // Fix the href attributes
-                        msg = msg.replace(/href=(?!")(.+?) /i, "href=\"$1\" ");
+                        msg = msg.replace(/href=(?!")(.+?) /gi, "href=\"$1\" ");
                         var isScript = scriptRegex.test(msg);
                         // Remove any attempts at inserting script tags a player may have used
                         if(!isScript) {
