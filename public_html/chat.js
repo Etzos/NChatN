@@ -1979,6 +1979,23 @@ function openWhoWindow(player) {
     return false;
 }
 
+
+function notify(title, msg) {
+
+    if(!("Notification" in window)) {
+        return;
+    } else if(Notification.permission === "granted") {
+        var note = new Notification(title, {body: msg});
+    } else if(Notification.permission !== "denied") {
+        Notification.requestPermission(function(perm) {
+            Notification.permission = perm;
+            if(perm === "granted") {
+                notify(title, msg);
+            }
+        });
+    }
+}
+
 Chat.addPlugin({
     name: "/who Command",
     description: "Gives basic /who and /whois support. A nice simple plugin",
