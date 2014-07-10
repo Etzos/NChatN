@@ -1612,6 +1612,7 @@ var Chat = (function (window, $) {
 
                         downloadRaw(page);
                     });
+                    return false;
                 }
             },
             updateOnline: {
