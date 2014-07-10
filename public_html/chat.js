@@ -295,6 +295,9 @@ var Chat = (function (window, $) {
                 onEnable: (plugin.onEnable) ? plugin.onEnable : null,
                 onDisable: (plugin.onDisable) ? plugin.onDisable : null
             };
+            if(plugin.hasOwnProperty("onEnable")) {
+                plugin.onEnable.apply(plugin.globals);
+            }
             return true;
         }
 
