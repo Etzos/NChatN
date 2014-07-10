@@ -1573,20 +1573,45 @@ var Chat = (function (window, $) {
                 action: function() {
                     var channel = channelMeta[focusedChannel];
 
-                    // TODO: Include the stylesheets
-                    var raw = $(channel.elem.chat).html();
-                    raw = Smilies.replaceTagsWithText(raw);
-                    var blob = new Blob([raw], {type: "application/octet-stream"});
-                    var src = window.URL.createObjectURL(blob);
-                    this.href = src;
+                    function downloadRaw(text) {
+                        var a = document.createElement("a");
+                        document.body.appendChild(a);
+                        a.style = "display: none";
 
-                    var time = new Date();
-                    // Format: 2013-06-23
-                    var timeStr = time.getFullYear() + "-" + numPad(time.getMonth()+1) + "-" + numPad(time.getDate());
-                    this.download = "NEaB Chat - "+channel.name+" ["+timeStr+"].html";
+                        var blob = new Blob([text], {type: "application/octet-stream"});
+                        var src = window.URL.createObjectURL(blob);
+                        a.href = src;
 
-                    // Note: This should be allowed to bubble (apparently, haven't tested)
-                    //return false;
+                        var time = new Date();
+                        // Format: 2013-06-23
+                        var timeStr = time.getFullYear() + "-" + numPad(time.getMonth()+1) + "-" + numPad(time.getDate());
+                        a.download = "NEaB Chat - "+channel.name+" ["+timeStr+"].html";
+                        a.click();
+
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }
+
+                    // Grab the NEaB stylesheet for embedding
+                    var reg = /http:\/\/(.+?)\//i;
+                    var loc = window.location.href.split(reg);
+                    var sheet = document.styleSheets[0].href.replace(reg, "http://" + loc[1] + "/");
+                    $.get(sheet, function(data) {
+                        var channel = channelMeta[focusedChannel];
+
+                        var raw = $(channel.elem.chat).html();
+                        raw = Smilies.replaceTagsWithText(raw);
+                        // TODO: Embed at least part of the NChatN stylesheet
+                        var page = "<!DOCTYPE html><html>" +
+                                "<head><meta charset='UTF-8'>\n" +
+                                "<script type='text/javascript'>" + openWhoWindow.toSource() + "</script>\n" +
+                                "<style>" + data + "</style>\n" +
+                                "<link href='" + document.styleSheets[1].href + "' rel='stylesheet' type='text/css'>\n" +
+                                "</head>\n"+
+                                "<body>" + raw + "</body></html>";
+
+                        downloadRaw(page);
+                    });
                 }
             },
             updateOnline: {
@@ -1946,7 +1971,7 @@ function numPad(num) {
 }
 
 function openWhoWindow(player) {
-    window.open("player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
+    window.open("http://www.nowhere-else.org/player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
     return false;
 }
 
