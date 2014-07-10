@@ -33,7 +33,7 @@ var Chat = (function (window, $) {
     };
 
     var localStorageSupport = "localStorage" in window && window.localStorage !== null;
-    var scriptRegex = /<script>[\^]*?<\/script>/gi;
+    var scriptRegex = /<script>[^]*?<\/script>/gi;
     var whisperRegex = /(to |from )([\w\- ]+)(>)/i;
 
     var channelMeta = {},           // Contains metadata on channels that have been joined
