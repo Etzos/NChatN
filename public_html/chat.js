@@ -558,11 +558,27 @@ var Chat = (function (window, $) {
 
         // PreSend Hook
         var ctx = {
-            channel: chan,
-            text: text,
-            clearInput: true
+            channel: chan,      // The current channel (should be read-only)
+            text: text,         // The text being sent
+            clearInput: true,   // Whether the input box should be cleared or not
+            addToBuffer: true   // Whether the line should be added to the history buffer or not
         };
         var hook = PluginManager.runHook("send", ctx);
+
+        text = hook.text;
+
+        if(hook.addToBuffer === true) {
+            // Trim input buffer back if it's large (give it some headroom too)
+            if(chan.buffer.length > 55) {
+                chan.buffer = chan.buffer.splice(49);
+            }
+
+            // Push this entry into the buffer
+            chan.buffer.push(text);
+            // And clear any leftovers
+            chan.buffer[0] = "";
+            chan.bufferPointer = 0;
+        }
 
         if(isFromInput && hook.clearInput) {
             $input.val("");
@@ -570,18 +586,6 @@ var Chat = (function (window, $) {
         if(hook.stopEvent) {
             return;
         }
-        text = hook.text;
-
-        // Trim input buffer back if it's large (give it some headroom too)
-        if(chan.buffer.length > 55) {
-            chan.buffer = chan.buffer.splice(49);
-        }
-
-        // Push this entry into the buffer
-        chan.buffer.push(text);
-        // And clear any leftovers
-        chan.buffer[0] = "";
-        chan.bufferPointer = 0;
 
         var isServer = (chan.type === "server");
         // Target whisper channels to lodge (to remain consistent)
