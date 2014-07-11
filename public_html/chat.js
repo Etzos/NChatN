@@ -1975,7 +1975,11 @@ function numPad(num) {
 }
 
 function openWhoWindow(player) {
-    window.open("http://www.nowhere-else.org/player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
+    var base = "";
+    if(window.location.href.indexOf('nowhere-else.org') < 0) {
+        base = "http://www.nowhere-else.org/";
+    }
+    window.open(base + "player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
     return false;
 }
 
