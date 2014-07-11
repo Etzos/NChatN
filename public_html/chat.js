@@ -1983,20 +1983,12 @@ function openWhoWindow(player) {
     return false;
 }
 
-
+// This function assumes permission was asked for already
 function notify(title, msg) {
-
     if(!("Notification" in window)) {
         return;
     } else if(Notification.permission === "granted") {
         var note = new Notification(title, {body: msg});
-    } else if(Notification.permission !== "denied") {
-        Notification.requestPermission(function(perm) {
-            Notification.permission = perm;
-            if(perm === "granted") {
-                notify(title, msg);
-            }
-        });
     }
 }
 
@@ -2156,19 +2148,52 @@ Chat.addPlugin({
     license: "GPLv3",
     hooks: {
         receive: function(e) {
-            if(e.isInit) {
+            // Don't notify of init messages or if the window is visible
+            // TODO: Add a pref and make page focus possibly also be a value
+            if(e.isInit || !document.hidden) {
                 return;
             }
+            // Don't notify if the message came from you
+            var pl = e.message.filter("span.username").text();
+            if(pl.indexOf(this.getPlayerName()) > -1 || e.message.filter(".whisper.to").length > 0) {
+                return;
+            }
+
             var playerNameReg = new RegExp(this.getPlayerName(), "i");
-            var $msg = e.message.filter("span.speech span.whisper");
-            $msg.each(function() {
-                var text = this.innerHTML;
-                if(playerNameReg.test(text)) {
-                    console.log("Found your name.");
-                    notify("NChatN : Your Name was Mentioned!", text);
+            e.message.filter(function() {
+                return this.nodeType === 3; // Text Node type number
+            }).each(function() {
+                if(playerNameReg.test(this.textContent)) {
+                    notify("NChatN", e.message.text());
+                    return false;
                 }
             });
+
+            /*$msg.each(function() {
+                console.log("Running though");
+                var text = this.innerHTML;
+                console.log("Text:", text);
+                if(playerNameReg.test(text)) {
+                    console.log("Sending");
+                    notify("NChatN : Your Name was Mentioned!", $msg.text());
+                    return false;
+                }
+            });*/
         }
+    },
+    onEnable: function() {
+        if(!("Notification" in window)) {
+            return;
+        } else if(Notification.permission === "granted") {
+            // NOOP
+        } else if(Notification.permission !== "denied") {
+            Notification.requestPermission(function(perm) {
+                Notification.permission = perm;
+            });
+        }
+        Notification.onclick = function() {
+            window.focus();
+        };
     }
 });
 
