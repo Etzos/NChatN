@@ -299,7 +299,12 @@ var Chat = (function (window, $) {
                 onDisable: (plugin.onDisable) ? plugin.onDisable : null
             };
             if(plugin.hasOwnProperty("onEnable")) {
-                plugin.onEnable.apply(plugin.globals);
+                try {
+                    plugin.onEnable.apply(plugin.globals);
+                } catch(e) {
+                    e.message = pluginTag(plugin) + e.message;
+                    console.error(e);
+                }
             }
             return true;
         }
@@ -332,11 +337,21 @@ var Chat = (function (window, $) {
             // Run the plugin's enabled/disabled function (if it has one)
             if(active) {
                 if(plugin.hasOwnProperty("onEnable")) {
-                    plugin.onEnable.apply(plugin.globals);
+                    try {
+                        plugin.onEnable.apply(plugin.globals);
+                    } catch(e) {
+                        e.message = pluginTag(plugin) + e.message;
+                        console.error(e);
+                    }
                 }
             } else {
                 if(plugin.hasOwnProperty("onDisable")) {
-                    plugin.onDisable.apply(plugin.globals);
+                    try {
+                        plugin.onDisable.apply(plugin.globals);
+                    } catch(e) {
+                        e.message = pluginTag(plugin) + e.message;
+                        console.error(e);
+                    }
                 }
             }
 
