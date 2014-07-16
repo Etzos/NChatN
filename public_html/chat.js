@@ -1766,7 +1766,12 @@ Chat.addPlugin({
                 if(imageExtensionReg.test(location)) {
                     // Mouse in
                     $this.on("mouseenter.NChatNPlugin-ImagePreview", function(e) {
-                        var $img = $("<img></img>").prop("src", location);
+                        var $img = $("<img></img>").prop("src", location).css("visibilty", "hidden");
+                        var $prog = $("<progress></progress>").css({
+                            width: "100%",
+                            height: "100%"
+                        });
+
                         $img.on("load", function() {
                             var $parent = $img.parent();
                             var top = parseInt($parent.css("top"));
@@ -1777,10 +1782,10 @@ Chat.addPlugin({
                             $parent.css({
                                 "width": $img.css("width"),
                                 "height": height,
-                                "top": top + "px",
-                                "visibility": "visible"
+                                "top": top + "px"
                             });
-
+                            $img.css("visibility", "visible");
+                            $prog.hide();
                         }).on("error", function() {
                             $("#customImageLoader").remove();
                         });
@@ -1790,17 +1795,17 @@ Chat.addPlugin({
                         var $div = $("<div></div>")
                         .css({
                             "position":"absolute",
-                            "height": "150px",
+                            "height": "15px",
                             "width": "150px",
                             "top": Math.floor(linkPos.top + $this.height()) + "px",
                             "left": Math.floor(linkPos.left) + "px",
                             "background-color": "lightblue",
                             "overflow": "hidden",
                             "border": "1px solid black",
-                            "visibility": "hidden",
                             "box-shadow": "0 0 1em gray"
                             })
                         .attr("id", "customImageLoader")
+                        .append($prog)
                         .append($img);
                         $("body").append($div);
                     })
