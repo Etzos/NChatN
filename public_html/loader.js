@@ -69,4 +69,4 @@ Loader.onComplete(function() {
     }
 });
 
-Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', '../pluginManager.js', '../chat.js']);
+Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', '../pluginManager.js', '../chat.js', '../plugins/corePlugins.js']);
