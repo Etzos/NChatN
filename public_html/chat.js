@@ -1,4 +1,4 @@
-/* Copyright (c) 2013 Kevin Ott (aka Etzos) <supercodingmonkey@gmail.com>
+/* Copyright (c) 2013-2014 Kevin Ott (aka Etzos) <supercodingmonkey@gmail.com>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var Chat = (function (window, $) {
-    var version = "2.1";
+    var version = "2.3";
 
     var URL = {
         send: 'sendchat.php',
@@ -33,7 +33,7 @@ var Chat = (function (window, $) {
     };
 
     var localStorageSupport = "localStorage" in window && window.localStorage !== null;
-    var scriptRegex = /<script>[\^]*?<\/script>/gi;
+    var scriptRegex = /<script>[^]*?<\/script>/gi;
     var whisperRegex = /(to |from )([\w\- ]+)(>)/i;
 
     var channelMeta = {},           // Contains metadata on channels that have been joined
@@ -70,323 +70,19 @@ var Chat = (function (window, $) {
         $menu,                      // The menu container
         $invasion;                  // Invasion message container
 
-    var PluginManager = (function() {
-        var index = 0;
-        /* Stores plugins as such:
-         * {
-         *     plugin0: {
-         *         id: 0
-         *         name: <plugin name>
-         *         description: <plugin description>
-         *         author: <plugin author> | null
-         *         license: <plugin license> | null
-         *         active: <plugin enable status>
-         *         hooks: [<reference to plugin hooks>]
-         *     },
-         *     plugin1: {
-         *         . . .
-         *     }
-         * }
-         */
-        var pluginList = { };
-
-        var newHooks = {
-            // Internal
-            pluginLoad: [],         // Plugin register and loaded
-            pluginUnload: [],       // Plugin unregistered
-            // Online List
-            playerJoin: [],         // Player joins
-            playerDepart: [],       // Player departs
-            // Chat
-            send: [],               // Player sends message
-            receive: [],            // Player receives a message
-            // UI / Mechanics
-            tabChange: [],          // Chat tab is changed
-            joinChat: [],           // Player joins another channel
-            leaveChat: []           // Player closes a chat
-        };
-
-        // Context exposed by the this variable (contains utilities and such)
-        var thisCtx = {
-            removeTags: function(str) {
-                return str.replace(/(<([^>]+)>)/ig, "");
-            },
-            removeTime: function(str) {
-                return str.replace(/^<B>.*?<\/B>/ig, "");
-            },
-            isJoinMessage: function(str) {
-                return str.test(/color="\#AA0070"/ig);
-            },
-            isPlayerAction: function (str) {
-                // Stub
-                return false;
-            },
-            isSystemMessage: function(str) {
-                // Stub
-                return false;
-            },
-            isFromPlayer: function(str) {
-                // Stub
-                return false;
-            },
-            isWhisper: function(str) {
-                // Stub
-                return false;
-            },
-            isWhisperFrom: function(str, player) {
-                // Stub
-                return false;
-            },
-            whisperFrom: function(str) {
-                // Stub
-                return "";
-            },
-            whisperTo: function(str) {
-                // Stub
-                return "";
-            },
-            // Action context
-            sendMessage: function(message) {
-                sendMessage(message);
-            },
-            isCurrentChannel: function(channel) {
-                return channel === channelMeta[focusedChannel];
-            }
-        };
-
-        // The actual event context
-        var eventCtx = {
-            stopEvent: false,     // Stops the event (can be overridden by a plugin called later)
-            stopEventNow: false   // Stops the event immediately (prevents other plugins from running)
-        };
-
-        // TODO: Expose more of the 'global' chat context for each event, like online players and such
-
-        function createContext(original, toMerge) {
-            var obj = {};
-
-            // Add the original in
-            for(var prop in original) {
-                obj[prop] = original[prop];
-            }
-
-            // Add the merge in (be careful not to overwrite)
-            for(var prop in toMerge) {
-                if(obj.hasOwnProperty(prop)) {
-                    console.error("Improper hook register! Trying to add preexisting property: " + prop);
-                    continue;
-                }
-                obj[prop] = toMerge[prop];
-            }
-
-            return obj;
-        }
-
-        function runHook(hookName, additionalContext, ignoreStop) {
-            if(typeof ignoreStop === "undefined") {
-                ignoreStop = false;
-            }
-            if(!newHooks.hasOwnProperty(hookName)) {
-                console.error("Trying to run non-existant hook "+hookName);
-                return {};
-            }
-
-            var selectedHook = newHooks[hookName];
-            var eventContext = createContext(eventCtx, additionalContext);
-
-            for(var i = 0; i < selectedHook.length; i++) {
-                var runningHook = selectedHook[i];
-                // Don't run deactived plugins
-                if(!runningHook.active) {
-                    continue;
-                }
-
-                var plugin = pluginList[runningHook.plugin];
-                var runningContext = createContext(thisCtx, plugin.globals);
-                try {
-                    runningHook.fn.apply(runningContext, [eventContext]);
-                } catch(e) {
-                    e.message = pluginTag(plugin) + e.message;
-                    console.error(e);
-                }
-                if(eventContext.stopEventNow === true) {
-                    eventContext.stopEvent = true;
-                    break;
-                }
-            }
-
-            return eventContext;
-        }
-
-        function getPluginIdByName(name) {
-            for(var prop in pluginList) {
-                var plugin = pluginList[prop];
-                if(plugin.name === name)
-                    return prop;
-            }
-            return "";
-        }
-
-        function pluginTag(plugin) {
-            return "[Plugin: '"+plugin.name+"'] ";
-        }
-
-        function checkPluginValidity(plugin) {
-            if(!plugin.hasOwnProperty("name")) {
-                console.error("Plugin does not have a name property. Unable to register.");
-                return false;
-            } else if(!plugin.hasOwnProperty('hooks')) {
-                console.error(pluginTag(plugin)+"Plugin must register some hooks in order to work properly.");
-                return false;
-            }
-
-            for(var prop in plugin.hooks) {
-                if(!newHooks.hasOwnProperty(prop)) {
-                    console.error(pluginTag(plugin)+"Unknown hook '"+prop+"'. Plugin may not function properly.");
-                    continue;
-                }
-                if(typeof plugin.hooks[prop] !== "function") {
-                    console.error(pluginTag(plugin)+"Hook '"+prop+"' is not a function. Plugin may not function properly.");
-                    continue;
-                }
-            }
-
-            if(!plugin.hasOwnProperty("description")) {
-                console.warn("Plugin should have a description property to describe its purpose.");
-            }
-            return true;
-        }
-
-        function registerPlugin(plugin) {
-            // Check to make sure the plugin has all required properties
-            if(!checkPluginValidity(plugin)) {
-                return false;
-            }
-
-            var pluginId = index;
-            index++;
-
-            // Avoid running disabled plugins from the start
-            var defaultActive = true;
-            if(settings.disabledPlugins.indexOf(plugin.name) > -1) {
-                defaultActive = false;
-            }
-
-            var registeredHooks = [];
-            for(var prop in plugin.hooks) {
-                var hookObj = {
-                    plugin: "plugin" + pluginId,
-                    fn: plugin.hooks[prop],
-                    active: defaultActive
-                };
-                newHooks[prop].push(hookObj);
-                registeredHooks.push(hookObj);
-            }
-
-            pluginList["plugin"+pluginId] = {
-                id: pluginId,
-                name: plugin.name,
-                description: plugin.description,
-                license: (plugin.license) ? plugin.license : null,
-                author: (plugin.author) ? plugin.author : null,
-                active: defaultActive,
-                globals: (plugin.globals) ? plugin.globals : {},
-                hooks: registeredHooks,
-                onEnable: (plugin.onEnable) ? plugin.onEnable : null,
-                onDisable: (plugin.onDisable) ? plugin.onDisable : null
-            };
-            return true;
-        }
-
-        /**
-         * Activates or deactivates the given plugin
-         * 
-         * @param {string} pluginName The name of the plugin to enable or disable
-         * @param {bool} active [Optional] Whether to enable (true) or disable (false) the plugin (Default: toggle
-         * current state)
-         * @returns {bool} Returns true if the plugin has been enabled or disabled, returns false if the plugin is
-         * already enabled/disabled and told to enable or disable respectively
-         */
-        function changePluginStatus(pluginName, active) {
-            var pluginTag = getPluginIdByName(pluginName);
-            if(pluginTag === "") {
-                console.warn("Unable to find plugin '"+pluginName+"'");
-                return false;
-            }
-            var plugin = pluginList[pluginTag];
-
-            if(typeof active === "undefined") {
-                active = !plugin.active;
-            } else {
-                if(plugin.active === active) {
-                    return false;
-                }
-            }
-
-            // Run the plugin's enabled/disabled function (if it has one)
-            if(active) {
-                if(plugin.hasOwnProperty("onEnable")) {
-                    plugin.onEnable.apply(plugin.globals);
-                }
-            } else {
-                if(plugin.hasOwnProperty("onDisable")) {
-                    plugin.onDisable.apply(plugin.globals);
-                }
-            }
-
-            $.each(plugin.hooks, function(key, value) {
-               value.active = active;
-            });
-            plugin.active = active;
-            return true;
-        }
-
-        function unregisterPlugin(pluginName) {
-            var plugin = getPluginIdByName(pluginName);
-            if(plugin === "") {
-                return false;
-            }
-
-            // TODO: Call plugin unload hook
-
-            // Remove hooks
-            $.each(newHooks, function(key) {
-                delete newHooks[key][plugin];
-            });
-
-            // Remove plugin
-            delete pluginList[plugin];
-
-            return true;
-        }
-
-        function listPlugins() {
-
-        }
-
-        return {
-            registerPlugin: function(plugin) {
-                return registerPlugin(plugin);
-            },
-            unregisterPlugin: function(pluginName) {
-                return unregisterPlugin(pluginName);
-            },
-            runHook: function(hookName, additionalContext) {
-                return runHook(hookName, additionalContext, false);
-            },
-            deactivatePlugin: function(pluginName) {
-                return changePluginStatus(pluginName, false);
-            },
-            activatePlugin: function(pluginName) {
-                return changePluginStatus(pluginName, true);
-            },
-            forEachPlugin: function(callback) {
-                $.each(pluginList, function(key, value) {
-                    callback(value);
-                });
-            }
-        };
-    })();
+    // Initialize the PluginManager
+    try {
+        // TODO: Remove external dependencies from the PluginManager
+        // NOTE: For now, export just the values the PluginManager needs access to.
+        var pluginManager = new PluginManager($, {
+            channelMeta: channelMeta,
+            focusedChannel: focusedChannel,
+            playerName: playerName,
+            settings: settings
+        });
+    } catch(e) {
+        console.error(e);
+    }
 
     function templateOnlinePlayerRow(id, name, icon, isAway) {
         var awayClass = (isAway === "true") ? "" : "inactive";
@@ -555,11 +251,27 @@ var Chat = (function (window, $) {
 
         // PreSend Hook
         var ctx = {
-            channel: chan,
-            text: text,
-            clearInput: true
+            channel: chan,      // The current channel (should be read-only)
+            text: text,         // The text being sent
+            clearInput: true,   // Whether the input box should be cleared or not
+            addToBuffer: true   // Whether the line should be added to the history buffer or not
         };
-        var hook = PluginManager.runHook("send", ctx);
+        var hook = pluginManager.runHook("send", ctx);
+
+        text = hook.text;
+
+        if(hook.addToBuffer === true) {
+            // Trim input buffer back if it's large (give it some headroom too)
+            if(chan.buffer.length > 55) {
+                chan.buffer = chan.buffer.splice(49);
+            }
+
+            // Push this entry into the buffer
+            chan.buffer.push(text);
+            // And clear any leftovers
+            chan.buffer[0] = "";
+            chan.bufferPointer = 0;
+        }
 
         if(isFromInput && hook.clearInput) {
             $input.val("");
@@ -567,18 +279,6 @@ var Chat = (function (window, $) {
         if(hook.stopEvent) {
             return;
         }
-        text = hook.text;
-
-        // Trim input buffer back if it's large (give it some headroom too)
-        if(chan.buffer.length > 55) {
-            chan.buffer = chan.buffer.splice(49);
-        }
-
-        // Push this entry into the buffer
-        chan.buffer.push(text);
-        // And clear any leftovers
-        chan.buffer[0] = "";
-        chan.bufferPointer = 0;
 
         var isServer = (chan.type === "server");
         // Target whisper channels to lodge (to remain consistent)
@@ -651,17 +351,17 @@ var Chat = (function (window, $) {
                             continue;
                         }
                         // Fix the href attributes
-                        msg = msg.replace(/href=(?!")(.+?) /i, "href=\"$1\" ");
+                        msg = msg.replace(/href=(?!")(.+?) /gi, "href=\"$1\" ");
                         var isScript = scriptRegex.test(msg);
                         // Remove any attempts at inserting script tags a player may have used
                         if(!isScript) {
-                            msg = msg.replace(/\%3C/ig, "&lt;").replace(/\%3E/ig, "&gt;");
+                            msg = msg.replace(/\%3C/ig, "%253C").replace(/\%3E/ig, "%253E");
                         }
 
                         msg = unescape(msg);
                         msg += "<br>";
 
-                        msg = $($.parseHTML(msg));
+                        msg = $($.parseHTML(msg, !isInit));
 
                         var tmp = msg.filter("span.username,span.bot.whisper").text();
                         whisperTarget = whisperRegex.exec(tmp);
@@ -673,7 +373,7 @@ var Chat = (function (window, $) {
 
                         // No one is allowed to circumvent scripts running
                         if(!isScript) {
-                            var hook = PluginManager.runHook("receive", {
+                            var hook = pluginManager.runHook("receive", {
                                 isInit: isInit,
                                 message: msg,
                                 channel: channel
@@ -967,7 +667,7 @@ var Chat = (function (window, $) {
             pm: "*",                // [Local] The current private message target
             newMessage: false,      // Whether there are new unread messages in this channel
             atBottom: true,         // Whether the player is scrolled all the way to the bottom of chat history (only valid on non-focus)
-            buffer: [],             // A buffer of the last messages sent to this channel
+            buffer: [''],           // A buffer of the last messages sent to this channel (fill with one bcause that's current buffer)
             bufferPointer: 0        // Where in the buffer the player is viewing currently
         };
         channelMeta[tag] = chan;
@@ -1122,7 +822,7 @@ var Chat = (function (window, $) {
             newChannel: newFocus,
             oldChannel: currentFocus
         };
-        var hook = PluginManager.runHook("tabChange", ctx);
+        var hook = pluginManager.runHook("tabChange", ctx);
         if(hook.stopEvent) {
             return;
         }
@@ -1360,11 +1060,11 @@ var Chat = (function (window, $) {
      * TODO: Load settings before init() is called so that there's no need for this (since plugin registration relies on settings.disabledPlugins)
      * 
      * @param {JSON} plugin The plugin to queue to be added
-     * @returns {bool} Result of PluginManager.registerPlugin() or true if init() not called yet
+     * @returns {bool} Result of pluginManager.registerPlugin() or true if init() not called yet
      */
     function queuePlugin(plugin) {
         if(initiated === true) {
-            return PluginManager.registerPlugin(plugin);
+            return pluginManager.registerPlugin(plugin);
         } else {
             queuedPlugins.push(plugin);
             return true;
@@ -1505,22 +1205,22 @@ var Chat = (function (window, $) {
 
         // Load queued plugins
         for(var i = 0; i < queuedPlugins.length; i++) {
-            PluginManager.registerPlugin(queuedPlugins[i]);
+            pluginManager.registerPlugin(queuedPlugins[i]);
         }
 
         var $container = $("<span></span>");
-        PluginManager.forEachPlugin(function(plugin) {
+        pluginManager.forEachPlugin(function(plugin) {
             var $inpt = $('<input type="checkbox" ' + ((plugin.active) ? "checked=checked" : "") + '>');
             $inpt.change(function() {
                 var checked = $(this).prop("checked");
                 if(!checked) {
                     settings.disabledPlugins.push(plugin.name);
                     _saveSettings();
-                    PluginManager.deactivatePlugin(plugin.name);
+                    pluginManager.deactivatePlugin(plugin.name);
                 } else {
                     settings.disabledPlugins.splice(settings.disabledPlugins.indexOf(plugin.name), 1);
                     _saveSettings();
-                    PluginManager.activatePlugin(plugin.name);
+                    pluginManager.activatePlugin(plugin.name);
                 }
             });
             $container.append($inpt);
@@ -1566,20 +1266,46 @@ var Chat = (function (window, $) {
                 action: function() {
                     var channel = channelMeta[focusedChannel];
 
-                    // TODO: Include the stylesheets
-                    var raw = $(channel.elem.chat).html();
-                    raw = Smilies.replaceTagsWithText(raw);
-                    var blob = new Blob([raw], {type: "application/octet-stream"});
-                    var src = window.URL.createObjectURL(blob);
-                    this.href = src;
+                    function downloadRaw(text) {
+                        var a = document.createElement("a");
+                        document.body.appendChild(a);
+                        a.style = "display: none";
 
-                    var time = new Date();
-                    // Format: 2013-06-23
-                    var timeStr = time.getFullYear() + "-" + numPad(time.getMonth()+1) + "-" + numPad(time.getDate());
-                    this.download = "NEaB Chat - "+channel.name+" ["+timeStr+"].html";
+                        var blob = new Blob([text], {type: "application/octet-stream"});
+                        var src = window.URL.createObjectURL(blob);
+                        a.href = src;
 
-                    // Note: This should be allowed to bubble (apparently, haven't tested)
-                    //return false;
+                        var time = new Date();
+                        // Format: 2013-06-23
+                        var timeStr = time.getFullYear() + "-" + numPad(time.getMonth()+1) + "-" + numPad(time.getDate());
+                        a.download = "NEaB Chat - "+channel.name+" ["+timeStr+"].html";
+                        a.click();
+
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }
+
+                    // Grab the NEaB stylesheet for embedding
+                    var reg = /http:\/\/(.+?)\//i;
+                    var loc = window.location.href.split(reg);
+                    var sheet = document.styleSheets[0].href.replace(reg, "http://" + loc[1] + "/");
+                    $.get(sheet, function(data) {
+                        var channel = channelMeta[focusedChannel];
+
+                        var raw = $(channel.elem.chat).html();
+                        raw = Smilies.replaceTagsWithText(raw);
+                        // TODO: Embed at least part of the NChatN stylesheet
+                        var page = "<!DOCTYPE html><html>" +
+                                "<head><meta charset='UTF-8'>\n" +
+                                "<script type='text/javascript'>" + openWhoWindow.toSource() + "</script>\n" +
+                                "<style>" + data + "</style>\n" +
+                                "<link href='" + document.styleSheets[1].href + "' rel='stylesheet' type='text/css'>\n" +
+                                "</head>\n"+
+                                "<body>" + raw + "</body></html>";
+
+                        downloadRaw(page);
+                    });
+                    return false;
                 }
             },
             updateOnline: {
@@ -1847,7 +1573,7 @@ var Chat = (function (window, $) {
             channel: channel,
             firstJoin: true
         };
-        PluginManager.runHook("joinChat", ctx);
+        pluginManager.runHook("joinChat", ctx);
 
         // Check versions
         if(localStorageSupport) {
@@ -1915,7 +1641,7 @@ var Chat = (function (window, $) {
             } 
         },
         addPlugin: function(plugin) {
-            //return PluginManager.registerPlugin(plugin);
+            //return pluginManager.registerPlugin(plugin);
             return queuePlugin(plugin);
         }
     };
@@ -1939,167 +1665,10 @@ function numPad(num) {
 }
 
 function openWhoWindow(player) {
-    window.open("player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
+    var base = "";
+    if(window.location.href.indexOf('nowhere-else.org') < 0) {
+        base = "http://www.nowhere-else.org/";
+    }
+    window.open(base + "player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
     return false;
 }
-
-Chat.addPlugin({
-    name: "/who Command",
-    description: "Gives basic /who and /whois support. A nice simple plugin",
-    author: "Etzos",
-    license: "GPLv3",
-    hooks: {
-        send: function(e) {
-            var line = e.text;
-            if(line.indexOf("/who") === 0 || line.indexOf("/whois") === 0) {
-                var textPiece = line.split(" ").splice(1).join("_");
-                window.open("player_info.php?SEARCH=" + escape(textPiece), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
-                e.clearInput = true;
-                e.stopEventNow = true;
-            }
-        }
-    }
-});
-
-Chat.addPlugin({
-    name: "Auto /pop",
-    description: "Automatically /pops when you enter the Lodge",
-    author: "Etzos",
-    license: "GPLv3",
-    hooks: {
-        joinChat: function(e) {
-            if(e.firstJoin === true) {
-                this.sendMessage("/pop");
-            }
-        }
-    }
-});
-
-Chat.addPlugin({
-    name: "Clickable Names",
-    description: "Makes usernames link to the player's info page",
-    author: "Etzos",
-    license: "GPLv3",
-    hooks: {
-        receive: function(e) {
-            var $msg = e.message;
-            var self = this;
-            // Check against online players [TODO]
-            // Person doing /pop or /afk
-            $msg.filter("span.popin, span.back, span.away, span.action, span.hugs").not(".bot").each(function() {
-                self.makeClickable(self.actionPopReg, $(this));
-            });
-
-            $msg.filter("span.username").not(".bot").each(function() {
-                self.makeClickable(self.messageReg, $(this));
-            });
-            e.message = $msg;
-        }
-    },
-    globals: {
-        makeClickable: function(reg, $obj) {
-            //var parts = reg.exec($obj.html());
-            //var content = ((parts[1]) ? parts[1] : "") + "<a href='#' class='chatLineName' onClick='openWhoWindow(\"" + parts[2] + "\"); this.blur(); return false;'>" + parts[2] + "</a>" + ((parts[3]) ? parts[3] : "");
-            var content = $obj.html().replace(reg, "$1<a href='#' class='chatLineName' onClick='openWhoWindow(\"$2\"); this.blur(); return false;'>$2</a>$3");
-            $obj.html(content);
-        },
-        messageReg: /(to |from )?([\w\- ]+)(\&gt;)/i,
-        // Yep, I'm ignoring spaces here because there's no way to know where the username ends and the rest of the popin/action ends
-        actionPopReg: /(\*\* |\-\- )([\w\-]+)( )/i
-    }
-});
-
-Chat.addPlugin({
-    name: "Image Preview",
-    description: "Makes links to images show a small preview when hovered over",
-    author: "Etzos",
-    license: "GPLv3",
-    globals: {
-        /**
-         * Binds a hover/leave to an anchor if it's for an image
-         * @param {jQuery Object} $anchors A jQuery Object containing a list of anchors to bind events to
-         */
-        bindAnchors: function($anchors) {
-            var imageExtensionReg = /\.(png|jpeg|jpg|gif)$/i;
-            $anchors.each(function() {
-                var $this = $(this);
-                var location = $this.prop("href");
-                if(imageExtensionReg.test(location)) {
-                    // Mouse in
-                    $this.on("mouseenter.NChatNPlugin-ImagePreview", function(e) {
-                        var $img = $("<img></img>").prop("src", location);
-                        $img.on("load", function() {
-                            var $parent = $img.parent();
-                            var top = parseInt($parent.css("top"));
-                            var height = parseInt($img.css("height"));
-                            if((top + height) > document.body.clientHeight) {
-                                top = Math.floor(top - height - $this.height());
-                            }
-                            $parent.css({
-                                "width": $img.css("width"),
-                                "height": height,
-                                "top": top + "px",
-                                "visibility": "visible"
-                            });
-
-                        }).on("error", function() {
-                            $("#customImageLoader").remove();
-                        });
-
-                        $img.css({"max-height": "240px", "max-width":"240px"});
-                        var linkPos = $this.offset();
-                        var $div = $("<div></div>")
-                        .css({
-                            "position":"absolute",
-                            "height": "150px",
-                            "width": "150px",
-                            "top": Math.floor(linkPos.top + $this.height()) + "px",
-                            "left": Math.floor(linkPos.left) + "px",
-                            "background-color": "lightblue",
-                            "overflow": "hidden",
-                            "border": "1px solid black",
-                            "visibility": "hidden",
-                            "box-shadow": "0 0 1em gray"
-                            })
-                        .attr("id", "customImageLoader")
-                        .append($img);
-                        $("body").append($div);
-                    })
-                    // Mouse out
-                    .on("mouseleave.NChatNPlugin-ImagePreview", function() {
-                        $("#customImageLoader").remove();
-                    });
-                }
-            });
-            return $anchors;
-        }
-    },
-    hooks: {
-        receive: function(e) {
-            var $msg = e.message;
-            var $anchors = $msg.find("a").addBack().filter("a");
-            this.bindAnchors($anchors);
-            e.message = $msg;
-        }
-    },
-    onEnable: function() {
-        var $anchors = $("#chat").find("a").addBack().filter("a");
-        this.bindAnchors($anchors);
-    },
-    onDisable: function() {
-        $("#chat").find("a").addBack().filter("a").off("mouseenter.NChatNPlugin-ImagePreview mouseleave.NChatNPlugin-ImagePreview");
-        // TODO: Make sure all extra elements are removed
-    }
-});
-
-/*Chat.addPlugin({
-    name: "Smiley Replace",
-    description: "Replaces smilies with their text equivalent",
-    author: "Etzos",
-    license: "GPLv3",
-    hooks: {
-        receive: function(e) {
-            e.message = Smilies.replaceTagsWithText(e.message);
-        }
-    }
-});*/

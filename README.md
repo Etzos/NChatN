@@ -10,9 +10,11 @@ Tampermonkey first. If you're using Firefox you will need to install
 GreaseMonkey first. After that simply open the GMShim.user.js file located
 in the public_html/bin/ directory.
 
+For full instructions, please visit NChatN's website: http://etzos.github.io/NChatN/
+
 License
 -------
-Copyright (c) 2013 Kevin Ott (aka Etzos) <supercodingmonkey@gmail.com>
+Copyright (c) 2013-2014 Kevin Ott (aka Etzos/Garth) <supercodingmonkey@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
