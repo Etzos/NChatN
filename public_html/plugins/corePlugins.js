@@ -236,6 +236,13 @@ Chat.addPlugin({
 });
 
 /*Chat.addPlugin({
+    name: "Command Helper",
+    description: "Add autocomplete support for some of the common /commands [Experimental]",
+    author: "Etzos",
+    license: "GPLv3"
+});*/
+
+/*Chat.addPlugin({
     name: "Smiley Replace",
     description: "Replaces smilies with their text equivalent",
     author: "Etzos",
