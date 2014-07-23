@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var Chat = (function (window, $) {
-    var version = "2.3";
+    var version = "2.3.1";
 
     var URL = {
         send: 'sendchat.php',
@@ -1297,7 +1297,7 @@ var Chat = (function (window, $) {
                         // TODO: Embed at least part of the NChatN stylesheet
                         var page = "<!DOCTYPE html><html>" +
                                 "<head><meta charset='UTF-8'>\n" +
-                                "<script type='text/javascript'>" + openWhoWindow.toSource() + "</script>\n" +
+                                "<script type='text/javascript'>" + openWhoWindow.toString() + "</script>\n" +
                                 "<style>" + data + "</style>\n" +
                                 "<link href='" + document.styleSheets[1].href + "' rel='stylesheet' type='text/css'>\n" +
                                 "</head>\n"+
