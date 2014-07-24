@@ -653,6 +653,7 @@ ol.onlinePlayerList span.player-name {
 ol.onlinePlayerList span.player-icon {
     display: inline-block;
     width: 40px;
+    min-height: 25px;
 }
 
 ol.onlinePlayerList span.player-icon img {
