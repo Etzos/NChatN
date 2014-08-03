@@ -91,7 +91,7 @@ var PluginManager = function($, Chat) {
         },
         // Action context
         sendMessage: function(message) {
-            sendMessage(message);
+            Chat.sendMessage(message);
         },
         isCurrentChannel: function(channel) {
             return channel === Chat.channelMeta[Chat.focusedChannel];

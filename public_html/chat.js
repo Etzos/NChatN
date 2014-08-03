@@ -75,6 +75,7 @@ var Chat = (function (window, $) {
         // TODO: Remove external dependencies from the PluginManager
         // NOTE: For now, export just the values the PluginManager needs access to.
         var pluginManager = new PluginManager($, {
+            sendMessage: sendMessage,
             channelMeta: channelMeta,
             focusedChannel: focusedChannel,
             playerName: playerName,
