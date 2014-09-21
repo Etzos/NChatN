@@ -349,6 +349,9 @@ var PluginManager = function($, Chat) {
             $.each(pluginList, function(key, value) {
                 callback(value);
             });
+        },
+        setChatValue: function(variable, value) {
+            Chat[variable] = value;
         }
     };
 };

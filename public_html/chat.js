@@ -879,6 +879,7 @@ var Chat = (function (window, $) {
         $input.val(newFocus.input).focus();
 
         focusedChannel = tag;
+        pluginManager.setChatValue("focusedChannel", focusedChannel);
     }
 
     function _showNewMessageNum($elem, amount) {
@@ -1240,6 +1241,8 @@ var Chat = (function (window, $) {
 
         // Get value from cookie
         playerName = Util.Cookies.neabGet("RPG", 1);
+        // Set value in plugin PluginManager
+        pluginManager.setChatValue("playerName", playerName);
 
         // Load queued plugins
         for(var i = 0; i < queuedPlugins.length; i++) {

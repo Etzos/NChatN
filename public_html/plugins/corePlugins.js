@@ -180,17 +180,18 @@ Chat.addPlugin({
 });
 
 Chat.addPlugin({
-    name: "Name Notifier",
-    description: "Show a notification when your name is said in chat",
+    name: "Notifier",
+    description: "Show a notification on certain events in chat",
     author: "Etzos",
     license: "GPLv3",
     hooks: {
         receive: function(e) {
-            // Don't notify of init messages or if the window is visible
+            // Don't notify of init messages or if the window doesn't have focus
             // TODO: Add a pref and make page focus possibly also be a value
-            if(e.isInit || !document.hidden) {
+            if(e.isInit || document.hasFocus()) {
                 return;
             }
+
             // Don't notify if the message came from you
             var pl = e.message.filter("span.username").text();
             if(pl.indexOf(this.getPlayerName()) > -1 || e.message.filter(".whisper.to").length > 0) {
