@@ -625,6 +625,18 @@ section.noPlayers #chatContainer {
     text-overflow: ellipsis;
 }
 
+a.tabLink span.newMsgs {
+    display: none;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    width: 15px;
+    float: left;
+    border-radius: 50%;
+    padding: 1px;
+    text-align: center;
+}
+
 ol.onlinePlayerList {
     list-style-type: none;
     padding: 0px;

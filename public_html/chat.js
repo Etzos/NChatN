@@ -644,8 +644,10 @@ var Chat = (function (window, $) {
             // * If we weren't told to skip the animation AND
             //   - It's not a system message/It's a normal message OR
             //   - It is a system message AND system message's are turned on
-            channel.newMessage = true;
-            $(channel.elem.tab).addClass("newMessageTab");
+            channel.newMessage++;
+            var $tabElem = $(channel.elem.tab);
+            $tabElem.addClass("newMessageTab");
+            _showNewMessageNum($tabElem, channel.newMessage);
         }
     }
 
@@ -686,7 +688,7 @@ var Chat = (function (window, $) {
             lastPlayerHash: "",     // [Server] The last player hash sent by the server
             playerList: [],         // A list of players currently in the channel (used for tab-completion)
             pm: "*",                // [Local] The current private message target
-            newMessage: false,      // Whether there are new unread messages in this channel
+            newMessage: 0,          // How many new unread messages there are
             atBottom: true,         // Whether the player is scrolled all the way to the bottom of chat history (only valid on non-focus)
             buffer: [''],           // A buffer of the last messages sent to this channel (fill with one bcause that's current buffer)
             bufferPointer: 0        // Where in the buffer the player is viewing currently
@@ -777,7 +779,7 @@ var Chat = (function (window, $) {
             }).click(function() {
                 focusChannel(chan.type, chan.id);
                 return false;
-            }).append("<span class='tabName'>" + chan.name + "</span>").append($del)
+            }).append("<span class='tabName'>" + chan.name + "</span><span class='newMsgs'>0</span>").append($del)
         );
         // Hackery to animate things
         $tab.appendTo($tabContainer);
@@ -860,21 +862,36 @@ var Chat = (function (window, $) {
 
         // New focus
         var $chatWin = $(newFocus.elem.chat);
+        var $newFocusTabElem = $(newFocus.elem.tab);
         $chatWin.show().siblings().hide();
         $(newFocus.elem.online).show().siblings().hide();
         if(newFocus.atBottom === true) {
             $chatWin.scrollTop($chatWin.prop("scrollHeight"));
         }
-        if(newFocus.newMessage) {
-            newFocus.newMessage = false;
+        if(newFocus.newMessage > 0) {
+            newFocus.newMessage = 0;
+            _hideNewMessageNum($newFocusTabElem);
         } else {
             // If there are no new messages, don't show an indicator
             $chatWin.find("hr.lastSeen").remove();
         }
-        $(newFocus.elem.tab).addClass("selectedTab").removeClass("newMessageTab");
+        $newFocusTabElem.addClass("selectedTab").removeClass("newMessageTab");
         $input.val(newFocus.input).focus();
 
         focusedChannel = tag;
+    }
+
+    function _showNewMessageNum($elem, amount) {
+        if(amount > 99) {
+            amount = amount.toString() + "+";
+        }
+        $elem.find(".tabName").css("width", "90px");
+        $elem.find(".newMsgs").text(amount).show();
+    }
+
+    function _hideNewMessageNum($elem) {
+        $elem.find(".newMsgs").hide();
+        $elem.find(".tabName").css("width", "110px");
     }
 
     function inChannel(type, id, ignoreActive) {
