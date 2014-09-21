@@ -57,6 +57,7 @@ var Chat = (function (window, $) {
         detectChannels: true,       // Attempt to guess which channels (other than the defaults) can be joined
         versionPopup: true,         // Whether to show the version popup when NChatN updates or not
         forceDown: false,           // Whether to just force the chat to bottom when a new message is added
+        selfMsgNoDisplay: true,     // Whether to show a new message animation from your own messages or not
         disabledPlugins: [          // A list of the names of plugins to disable
             "Smiley Replace"        // This plugin is more of a test than an actual plugin, so disable it
         ]
@@ -364,8 +365,8 @@ var Chat = (function (window, $) {
 
                         msg = $($.parseHTML(msg, !isInit));
 
-                        var tmp = msg.filter("span.username,span.bot.whisper").text();
-                        whisperTarget = whisperRegex.exec(tmp);
+                        var lineIdent = msg.filter("span.username,span.bot.whisper").text();
+                        whisperTarget = whisperRegex.exec(lineIdent);
 
                         // Old scripts shouldn't run during init
                         if(isInit && isScript) {
@@ -384,6 +385,8 @@ var Chat = (function (window, $) {
                                 continue;
                             }
 
+                            var noShowNewMessage = false;
+
                             if(whisperTarget) {
                                 var whisperChannel;
                                 if(!inChannel("local", whisperTarget[2], true)) {
@@ -391,21 +394,30 @@ var Chat = (function (window, $) {
                                 } else {
                                     whisperChannel = channelMeta[getTag("local", whisperTarget[2])];
                                 }
-                                insertMessage(whisperChannel, hook.message);
+
+                                // Check for self message
+                                if(settings.selfMsgNoDisplay && lineIdent.indexOf("to ") > -1) {
+                                    noShowNewMessage = true;
+                                }
+                                insertMessage(whisperChannel, hook.message, false, noShowNewMessage);
                             } else {
-                                insertMessage(channel, hook.message, false);
+                                if(settings.selfMsgNoDisplay && lineIdent.indexOf(playerName) > -1) {
+                                    noShowNewMessage = true;
+                                }
+                                insertMessage(channel, hook.message, false, noShowNewMessage);
                             }
                         } else {
+                            // This is inserting a script not really a message
                             insertMessage(channel, msg, false);
                         }
                     }
                     if(isInit && channel.id === 0) {
                         // Add a visual cue of messages past
                         for(var chan in channelMeta) {
-                            insertMessage(channelMeta[chan], "<hr>");
+                            insertMessage(channelMeta[chan], "<hr>", false, true);
                         }
                     } else if(isInit) {  // NOTE: This means isInit && channel.id != 0
-                        insertMessage(channel, "<hr>");
+                        insertMessage(channel, "<hr>", false, true);
                     }
                 }
             }
@@ -603,9 +615,12 @@ var Chat = (function (window, $) {
     }
 
     // -- Channel Methods -- //
-    function insertMessage(channel, message, isSys) {
+    function insertMessage(channel, message, isSys, skipNewAnim) {
         if(typeof isSys === "undefined") {
             isSys = false;
+        }
+        if(typeof skipNewAnim === "undefined") {
+            skipNewAnim = false;
         }
 
         var $chatWin = $(channel.elem.chat);
@@ -623,7 +638,12 @@ var Chat = (function (window, $) {
         }
         scrollCheck(channel);
         // Update tabs (if working on a tab that's not focused)
-        if(!isSelected && (!isSys || (isSys && settings.showSysMessages))) {
+        if(!isSelected && !skipNewAnim && (!isSys || (isSys && settings.showSysMessages))) {
+            // This if is nasty, so let me explain for quicker parsing:
+            // * If the current tab isn't selected AND
+            // * If we weren't told to skip the animation AND
+            //   - It's not a system message/It's a normal message OR
+            //   - It is a system message AND system message's are turned on
             channel.newMessage = true;
             $(channel.elem.tab).addClass("newMessageTab");
         }
@@ -1389,6 +1409,17 @@ var Chat = (function (window, $) {
                         });
                         $cc.addClass("noPlayers");
                     }
+                    return false;
+                }
+            },
+            showNewMessages: {
+                text: "Alert Self Message [" + (!settings.selfMsgNoDisplay ? "on" : "off") + "]",
+                description: "Turn the new message indicator from messages from yourself off/on",
+                action: function() {
+                    var newVal = !settings.selfMsgNoDisplay;
+                    settingMenu.modifyEntry("showNewMessages",
+                                            "Alert Self Message [" + (!newVal ? "on" : "off") + "]");
+                    changeSetting("selfMsgNoDisplay", newVal);
                     return false;
                 }
             },
