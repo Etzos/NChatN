@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 var Chat = (function (window, $) {
-    var version = "2.3.3";
+    var version = "2.4";
 
     var URL = {
         send: 'sendchat.php',
