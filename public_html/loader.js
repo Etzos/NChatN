@@ -15,7 +15,7 @@
  */
 
 var Loader = (function(document) {
-    var baseUrl = 'https://rawgithub.com/Etzos/NChatN/master/public_html/util/';
+    var baseUrl = 'https://rawgit.com/Etzos/NChatN/master/public_html/util/';
     //var baseUrl = 'http://garth.web.nowhere-else.org/web/NChatN/'; // Etzos's experimental branch
     
     var queuedFiles = 0;
