@@ -19,8 +19,8 @@
     "title": "NChatN",
     "always-on-top": false,
     "frame": true,
-    "mac_app_icon": "NChatN-128.png",
-    "exe_icon": "NChatN-128.png",
+    "mac_app_icon": "img/NChatN-128.png",
+    "exe_icon": "img/NChatN-128.png",
     "visible": true,
     "as_desktop": false,
     "position": "",
@@ -28,7 +28,7 @@
     "height": 480,
     "width": 640,
     "toolbar": true,
-    "icon": "NChatN-128.png"
+    "icon": "img/NChatN-128.png"
   },
   "version": "2.4.1",
   "webkit": {
