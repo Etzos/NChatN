@@ -1,0 +1,46 @@
+{
+  "webexe_settings": {
+    "linux-x32": true,
+    "download_dir": "/home/kevin/Code/GitHubClones/Web2Executable/files/downloads",
+    "windows": true,
+    "mac": false,
+    "nw_version": "0.10.5",
+    "force_download": false,
+    "linux-x64": true
+  },
+  "name": "NChatN",
+  "nodejs": true,
+  "description": "",
+  "single-instance": false,
+  "keywords": [],
+  "window": {
+    "fullscreen": false,
+    "resizable": true,
+    "title": "NChatN",
+    "always-on-top": false,
+    "frame": true,
+    "mac_app_icon": "NChatN-128.png",
+    "exe_icon": "NChatN-128.png",
+    "visible": true,
+    "as_desktop": false,
+    "position": "",
+    "show_in_taskbar": true,
+    "height": 480,
+    "width": 640,
+    "toolbar": true,
+    "icon": "NChatN-128.png"
+  },
+  "version": "2.4.1",
+  "webkit": {
+    "page-cache": false,
+    "java": false,
+    "plugin": false
+  },
+  "main": "login.html",
+  "node-main": "",
+  "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-util": "^3.0.1",
+    "node-webkit-builder": "^0.2.0"
+  }
+}

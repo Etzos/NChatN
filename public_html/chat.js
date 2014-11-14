@@ -13,15 +13,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+var gui = require("nw.gui");
+var request = require("request");
+var path = require("path");
+var Entities = require('html-entities').AllHtmlEntities;
+entities = new Entities();
+
+try {
+var dictionary = new Typo('en_US', null, null, {platform: 'node-webkit', dictionaryPath: path.dirname(window.location)+'/lib/typo/dictionaries'});
+} catch(e) {
+    console.log(e);
+}
+var j = request.jar();
+var cook = localStorage.getItem("NChatN-cookie");
+j.setCookie(cook, "http://www.nowhere-else.org/", function(a, b) {
+    console.log(a, b);
+});
+request = request.defaults({jar: j});
+
 var Chat = (function (window, $) {
     var version = "2.4.1";
 
     var URL = {
-        send: 'sendchat.php',
-        receive: 'lastchat.php',
-        online: 'rs/online.php',
-        invasion: 'check_invasions.php',
-        player: 'player_info.php'
+        send: 'http://www.nowhere-else.org/sendchat.php',
+        receive: 'http://www.nowhere-else.org/lastchat.php',
+        online: 'http://www.nowhere-else.org/rs/online.php',
+        invasion: 'http://www.nowhere-else.org/check_invasions.php',
+        player: 'http://www.nowhere-else.org/player_info.php'
     };
 
     var INVASION_STATUS = {
@@ -92,7 +110,7 @@ var Chat = (function (window, $) {
 
         return "<li id='player-list-player-"+id+"' class=''>" +
                "<a href='#'>" +
-               "<span class='player-icon'><img src='" + icon + "'></span><img src='images/away.gif' class='" + awayClass + "'>" +
+               "<span class='player-icon'><img src='http://www.nowhere-else.org/" + icon + "'></span><img src='http://www.nowhere-else.org/images/away.gif' class='" + awayClass + "'>" +
                "<span class='player-name " + spanAwayClass + "'>" + name + "</span>" +
                "</a>" +
                "<ol class='inactive'><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
@@ -105,17 +123,21 @@ var Chat = (function (window, $) {
      * @returns {undefined}
      */
     function getInvasionStatus() {
-        $.ajax({
+        request({
+            method: "GET",
             url: URL.invasion,
-            data: "RND=" + _getTime(),
-            type: "GET",
-            context: this,
-            timeout: queryTimeout,
-            success: function(result) {
-                var imageId = result.charAt(0);
-                var message = result.substring(1);
-                _updateInvasionMessage(imageId, message);
+            qs: {
+                "RND": _getTime()
+            },
+            timeout: queryTimeout
+        }, function(error, response, result) {
+            if(error || response.statusCode != 200) {
+                return;
             }
+
+            var imageId = result.charAt(0);
+            var message = result.substring(1);
+            _updateInvasionMessage(imageId, message);
         });
     }
 
@@ -289,17 +311,21 @@ var Chat = (function (window, $) {
         var rand = _getTime();
 
         // Process text for transmission
-        text = escape(text).replace(/\+/g, "%2B");
+        //text = escape(text).replace(/\+/g, "%2B");
+        //text = text.replace(/\+/g, "%2B");
 
         // Send the message
-        $.ajax({
+        request({
+            method: "GET",
             url: URL.send,
-            data: "CHANNEL=" + targetChannel + "&TO=" + to + "&RND=" + rand + "&TEXT=" + text,
-            type: "GET",
-            timeout: queryTimeout,
-            error: function() {
-                // TODO: Store message
+            qs: {
+                "CHANNEL": targetChannel,
+                "TO": to,
+                "RND": rand,
+                "TEXT": text
             }
+        }, function(error, response, body) {
+            // TODO: Store message on error
         });
         // TODO: PostSend Hook
     }
@@ -315,120 +341,142 @@ var Chat = (function (window, $) {
             var timeStart = Date.now();
         }
 
-        $.ajax({
+        request({
+            method: "GET",
             url: URL.receive,
-            data: "CHANNEL=" + channel.id + "&RND=" + _getTime() + "&ID=" + channel.lastMessageID,
-            type: "GET",
-            context: this,
-            timeout: queryTimeout,
-            success: function(result) {
-                if(result === "")
+            qs: {
+                "CHANNEL": channel.id,
+                "RND": _getTime(),
+                "ID": channel.lastMessageID
+            }
+        }, function(error, response, result) {
+            if(error || response.statusCode != 200) {
+                if(channel.id === 0) {
+                    numTimeouts++;
+                    updateTickClock();
+                }
+                console.log("We have an error: ", error);
+                return;
+            } else {
+                updateTickClock();
+            }
+
+            if(result === "")
                     return;
 
-                if(channel.id === 0) {
-                    // Update last connection
-                    lastConnection = Date.now() - timeStart;
-                    // Clear any timeouts
-                    numTimeouts = 0;
-                }
-
-                var splitLoc = result.indexOf("\n");
-                var last = parseInt(result.substring(0, splitLoc));
-
-                if(last !== channel.lastMessageID) {
-                    var isInit = (channel.lastMessageID === 0);
-                    channel.lastMessageID = last;
-
-                    var msgArr = result.substring(splitLoc+1, result.length).split("<BR>");
-                    // Init has an extra <BR> tag that should be avoided
-                    var end = (isInit) ? msgArr.length-1 : msgArr.length;
-                    // Only reset the begining if it's needed (init and the sent messages are too long)
-                    var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
-
-                    var whisperTarget = null;
-                    // Insert each message in order
-                    for(var i = begin; i < end; i++) {
-                        var msg = msgArr[i];
-                        if(msg === "") {
-                            continue;
-                        }
-                        // Fix the href attributes
-                        msg = msg.replace(/href=(?!")(.+?) /gi, "href=\"$1\" ");
-                        var isScript = scriptRegex.test(msg);
-                        // Remove any attempts at inserting script tags a player may have used
-                        if(!isScript) {
-                            msg = msg.replace(/\%3C/ig, "%253C").replace(/\%3E/ig, "%253E");
-                        }
-
-                        msg = unescape(msg);
-                        msg += "<br>";
-
-                        msg = $($.parseHTML(msg, !isInit));
-
-                        var lineIdent = msg.filter("span.username,span.bot.whisper").text();
-                        whisperTarget = whisperRegex.exec(lineIdent);
-
-                        // Old scripts shouldn't run during init
-                        if(isInit && isScript) {
-                            continue;
-                        }
-
-                        // No one is allowed to circumvent scripts running
-                        if(!isScript) {
-                            var hook = pluginManager.runHook("receive", {
-                                isInit: isInit,
-                                message: msg,
-                                channel: channel
-                            });
-
-                            if(hook.stopEvent) {
-                                continue;
-                            }
-
-                            var noShowNewMessage = false;
-
-                            if(whisperTarget) {
-                                var whisperChannel;
-                                if(!inChannel("local", whisperTarget[2], true)) {
-                                    whisperChannel = createWhisperChannel(whisperTarget[2], true);
-                                } else {
-                                    whisperChannel = channelMeta[getTag("local", whisperTarget[2])];
-                                }
-
-                                // Check for self message
-                                if(settings.selfMsgNoDisplay && lineIdent.indexOf("to ") > -1) {
-                                    noShowNewMessage = true;
-                                }
-                                insertMessage(whisperChannel, hook.message, false, noShowNewMessage);
-                            } else {
-                                if(settings.selfMsgNoDisplay && lineIdent.indexOf(playerName) > -1) {
-                                    noShowNewMessage = true;
-                                }
-                                insertMessage(channel, hook.message, false, noShowNewMessage);
-                            }
-                        } else {
-                            // This is inserting a script not really a message
-                            insertMessage(channel, msg, false);
-                        }
-                    }
-                    if(isInit && channel.id === 0) {
-                        // Add a visual cue of messages past
-                        for(var chan in channelMeta) {
-                            insertMessage(channelMeta[chan], "<hr>", false, true);
-                        }
-                    } else if(isInit) {  // NOTE: This means isInit && channel.id != 0
-                        insertMessage(channel, "<hr>", false, true);
-                    }
-                }
-            }
-        })
-        .fail(function() {
-            if(channel.id === 0)
-                numTimeouts++;
-        })
-        .always(function() {
             if(channel.id === 0) {
-                updateTickClock();
+                // Update last connection
+                lastConnection = Date.now() - timeStart;
+                // Clear any timeouts
+                numTimeouts = 0;
+            }
+
+            var splitLoc = result.indexOf("\n");
+            var last = parseInt(result.substring(0, splitLoc));
+
+            if(last !== channel.lastMessageID) {
+                var isInit = (channel.lastMessageID === 0);
+                channel.lastMessageID = last;
+
+                var msgArr = result.substring(splitLoc+1, result.length).split("<BR>");
+                // Init has an extra <BR> tag that should be avoided
+                var end = (isInit) ? msgArr.length-1 : msgArr.length;
+                // Only reset the begining if it's needed (init and the sent messages are too long)
+                var begin = (isInit && end > (settings.chatHistoryLogin-1)) ? end-settings.chatHistoryLogin : 0;
+
+                var whisperTarget = null;
+                // Insert each message in order
+                for(var i = begin; i < end; i++) {
+                    var msg = msgArr[i];
+                    if(msg === "") {
+                        continue;
+                    }
+                    // Fix the href attributes
+                    msg = msg.replace(/href=(?!")(.+?) /gi, "href=\"$1\" ");
+                    var isScript = scriptRegex.test(msg);
+                    // Remove any attempts at inserting script tags a player may have used
+                    if(!isScript) {
+                        msg = msg.replace(/\%3C/ig, "%253C").replace(/\%3E/ig, "%253E");
+                    }
+
+                    msg = unescape(msg);
+                    msg += "<br>";
+
+                    msg = $($.parseHTML(msg, !isInit));
+
+                    // TODO: Make this a little bit nicer >.<
+                    msg.find("img").addBack().filter("img").each(function() {
+                        var $i = $(this);
+                        var src = $i.prop("src");
+                        var pieces = src.split("/");
+                        src = pieces[pieces.length-1];
+                        $i.prop("src", "http://www.nowhere-else.org/smilies/" + src);
+                    });
+
+                    // Make all links open externally
+                    msg.find("a").addBack().filter("a").each(function() {
+                        var $a = $(this);
+                        var href = $a.prop("href");
+                        $a.on("click", function() {
+                            gui.Shell.openExternal(href);
+                            return false;
+                        });
+                    });
+
+                    var lineIdent = msg.filter("span.username,span.bot.whisper").text();
+                    whisperTarget = whisperRegex.exec(lineIdent);
+
+                    // Old scripts shouldn't run during init
+                    if(isInit && isScript) {
+                        continue;
+                    }
+
+                    // No one is allowed to circumvent scripts running
+                    if(!isScript) {
+                        var hook = pluginManager.runHook("receive", {
+                            isInit: isInit,
+                            message: msg,
+                            channel: channel
+                        });
+
+                        if(hook.stopEvent) {
+                            continue;
+                        }
+
+                        var noShowNewMessage = false;
+
+                        if(whisperTarget) {
+                            var whisperChannel;
+                            if(!inChannel("local", whisperTarget[2], true)) {
+                                whisperChannel = createWhisperChannel(whisperTarget[2], true);
+                            } else {
+                                whisperChannel = channelMeta[getTag("local", whisperTarget[2])];
+                            }
+
+                            // Check for self message
+                            if(settings.selfMsgNoDisplay && lineIdent.indexOf("to ") > -1) {
+                                noShowNewMessage = true;
+                            }
+                            insertMessage(whisperChannel, hook.message, false, noShowNewMessage);
+                        } else {
+                            if(settings.selfMsgNoDisplay && lineIdent.indexOf(playerName) > -1) {
+                                noShowNewMessage = true;
+                            }
+                            insertMessage(channel, hook.message, false, noShowNewMessage);
+                        }
+                    } else {
+                        // This is inserting a script not really a message
+                        insertMessage(channel, msg, false);
+                    }
+                }
+                if(isInit && channel.id === 0) {
+                    // Add a visual cue of messages past
+                    for(var chan in channelMeta) {
+                        insertMessage(channelMeta[chan], "<hr>", false, true);
+                    }
+                } else if(isInit) {  // NOTE: This means isInit && channel.id != 0
+                    insertMessage(channel, "<hr>", false, true);
+                }
             }
         });
     }
@@ -453,42 +501,47 @@ var Chat = (function (window, $) {
             return;
         }
 
-        $.ajax({
+        request({
+            method: "GET",
             url: URL.online,
-            data: "CHANNEL=" + channel.id,
-            type: "GET",
-            context: this,
+            qs: {
+                "CHANNEL": channel.id
+            },
             timeout: queryTimeout,
-            success: function(result) {
-                var oldPlayerList = $.merge([], channel.playerList);
-
-                channel.playerList = [];
-                // Add bots
-                $.each(result.bots, function(i, data) {
-                    channel.playerList.push(data.name);
-                });
-                // Add players (as well as changing the way they're stored)
-                $.each(result.players, function(i, data) {
-                    channel.playerList.push(data.name);
-                });
-                // Note: I'm ignoring guests on purpose as that function isn't possible anymore (as far as I know)
-
-                // TODO: This doesn't really check if it's when first entering the chat room, although that's probably not an issue
-                if(oldPlayerList.length > 0) {
-                    var entered = _arrSub(channel.playerList, oldPlayerList);
-                    for(var i = 0; i < entered.length; i++) {
-                        insertMessage(channel, _formatSystemMsg("-- " + entered[i] + " joins --"), true);
-                    }
-                    // old - new = leave
-                    var left = _arrSub(oldPlayerList, channel.playerList);
-                    for(var i = 0; i < left.length; i++) {
-                        insertMessage(channel, _formatSystemMsg("-- " + left[i] + " departs --"), true);
-                    }
-                }
-
-                channel.players = result;
-                redrawOnlineList(channel);
+            json: true
+        }, function(error, response, result) {
+            if(error || response.statusCode != 200) {
+                console.log("Error with getting online players.");
+                return;
             }
+            var oldPlayerList = $.merge([], channel.playerList);
+
+            channel.playerList = [];
+            // Add bots
+            $.each(result.bots, function(i, data) {
+                channel.playerList.push(data.name);
+            });
+            // Add players (as well as changing the way they're stored)
+            $.each(result.players, function(i, data) {
+                channel.playerList.push(data.name);
+            });
+            // Note: I'm ignoring guests on purpose as that function isn't possible anymore (as far as I know)
+
+            // TODO: This doesn't really check if it's when first entering the chat room, although that's probably not an issue
+            if(oldPlayerList.length > 0) {
+                var entered = _arrSub(channel.playerList, oldPlayerList);
+                for(var i = 0; i < entered.length; i++) {
+                    insertMessage(channel, _formatSystemMsg("-- " + entered[i] + " joins --"), true);
+                }
+                // old - new = leave
+                var left = _arrSub(oldPlayerList, channel.playerList);
+                for(var i = 0; i < left.length; i++) {
+                    insertMessage(channel, _formatSystemMsg("-- " + left[i] + " departs --"), true);
+                }
+            }
+
+            channel.players = result;
+            redrawOnlineList(channel);
         });
     }
 
@@ -737,6 +790,7 @@ var Chat = (function (window, $) {
         var chan = addChannelMeta(type, id, name);
         // TODO: Add some form of the joinChat hook
         // Chat History
+
         $("<div>", {
             id: chan.elem.chat.substring(1),
             class: "chatWindow inactive"
@@ -1227,11 +1281,6 @@ var Chat = (function (window, $) {
             alert("NChatN will not function properly without localStorage support. Please enable it!");
         }
 
-        // For Firefox users (or browsers that support the spellcheck attribute)
-        if("spellcheck" in document.createElement("input")) {
-            $input.prop("spellcheck", "true");
-        }
-
         createChannel("server", 0, "Lodge");
         focusChannel("server", 0);
         var channel = channelMeta[focusedChannel];
@@ -1240,7 +1289,10 @@ var Chat = (function (window, $) {
         _loadSettings();
 
         // Get value from cookie
-        playerName = Util.Cookies.neabGet("RPG", 1);
+        // Split the NEaB cookie value into parts and grab index 1 (the player name)
+        var t = localStorage.getItem("NChatN-cookie").replace(/\%2F/g, "/");
+        var u = t.split("/");
+        playerName = u[1];
         // Set value in plugin PluginManager
         pluginManager.setChatValue("playerName", playerName);
 
@@ -1284,8 +1336,8 @@ var Chat = (function (window, $) {
                      'A copy of the license is available at ' +
                      '&lt;<a href="http://www.gnu.org/licenses/" target="_blank">http://www.gnu.org/licenses/</a>&gt;.<br><br>' +
                      '<span>If you like what I\'ve done, feel free to thank me for my work.<br>Or if you\'re feeling really ' +
-                     'generous, consider giving me a Gittip: ' +
-                     '<script data-gittip-username="Etzos" data-gittip-widget="button" src="//gttp.co/v1.js"></script><br>' +
+                     'generous, consider giving me some money through ' +
+                     '<a href="https://gratipay.com/Etzos/">Gratipay</a>.<br>' +
                      'Do both, one, or none!<br>No matter which you pick, I appreciate you giving my chat client a try!' +
                      '</span>'
         });
@@ -1308,12 +1360,13 @@ var Chat = (function (window, $) {
                     var channel = channelMeta[focusedChannel];
 
                     function downloadRaw(text) {
+                        var URLHandler = (webkitURL) ? webkitURL : URL;
                         var a = document.createElement("a");
                         document.body.appendChild(a);
                         a.style = "display: none";
 
                         var blob = new Blob([text], {type: "application/octet-stream"});
-                        var src = window.URL.createObjectURL(blob);
+                        var src = URLHandler.createObjectURL(blob);
                         a.href = src;
 
                         var time = new Date();
@@ -1322,7 +1375,7 @@ var Chat = (function (window, $) {
                         a.download = "NEaB Chat - "+channel.name+" ["+timeStr+"].html";
                         a.click();
 
-                        window.URL.revokeObjectURL(url);
+                        URLHandler.revokeObjectURL(src);
                         document.body.removeChild(a);
                     }
 
@@ -1647,14 +1700,20 @@ var Chat = (function (window, $) {
 
         renderChannelList();
         if(settings.detectChannels === true) {
-            $.ajax({
-                url: "general_chat.php",
-                data: "CHANNEL=0&TAB=0",
-                type: "GET",
-                context: this,
-                success: function(result) {
-                    var r = /\<option[ selected]* value=(\d+)\>([A-Za-z0-9 ]+)\n/gi;
-                    var tmp = result.split(r);
+            request({
+                method: "GET",
+                url: "http://www.nowhere-else.org/general_chat.php",
+                qs: {
+                    "CHANNEL": 0,
+                    "TAB": 0
+                }
+            }, function(error, response, body) {
+                if(error || response.statusCode != 200) {
+                    return;
+                }
+
+                var r = /\<option[ selected]* value=(\d+)\>([A-Za-z0-9 ]+)\n/gi;
+                    var tmp = body.split(r);
                     tmp.shift();
                     tmp.pop();
                     if(tmp.length < 2) {
@@ -1668,7 +1727,6 @@ var Chat = (function (window, $) {
                         availChannels.push({id: parseInt(tmp[i]), name: tmp[i+1]});
                     }
                     renderChannelList();
-                }
             });
         }
     }

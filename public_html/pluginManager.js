@@ -175,7 +175,7 @@ var PluginManager = function($, Chat) {
     }
 
     function pluginTag(plugin) {
-        return "[Plugin: '"+plugin.name+"'] ";
+        return "[Plugin: '" + plugin.name + "'] ";
     }
 
     function checkPluginValidity(plugin) {
@@ -263,12 +263,12 @@ var PluginManager = function($, Chat) {
      * already enabled/disabled and told to enable or disable respectively
      */
     function changePluginStatus(pluginName, active) {
-        var pluginTag = getPluginIdByName(pluginName);
-        if(pluginTag === "") {
+        var pluginID = getPluginIdByName(pluginName);
+        if(pluginID === "") {
             console.warn("Unable to find plugin '"+pluginName+"'");
             return false;
         }
-        var plugin = pluginList[pluginTag];
+        var plugin = pluginList[pluginID];
 
         if(typeof active === "undefined") {
             active = !plugin.active;

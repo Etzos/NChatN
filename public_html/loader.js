@@ -15,7 +15,7 @@
  */
 
 var Loader = (function(document) {
-    var baseUrl = 'https://rawgit.com/Etzos/NChatN/master/public_html/util/';
+    var baseUrl = 'util/';
     //var baseUrl = 'http://garth.web.nowhere-else.org/web/NChatN/'; // Etzos's experimental branch
     
     var queuedFiles = 0;
@@ -69,4 +69,5 @@ Loader.onComplete(function() {
     }
 });
 
-Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', '../pluginManager.js', '../chat.js', '../plugins/corePlugins.js']);
+Loader.import(['../lib/typo/typo.js', '../lib/jquery-2.1.1.min.js', 'util.js', 'tooltip.js', 'smilies.js', 'menu.js',
+               'dialog.js', '../pluginManager.js', '../chat.js', '../plugins/corePlugins.js']);

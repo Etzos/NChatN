@@ -1,0 +1,30 @@
+#errorBox {
+    font-family: Arial, Sans;
+    width: 270px;
+    background-color: pink;
+    color: red;
+    display: none;
+    margin: 0 auto;
+    border: 1px solid red;
+    border-radius: 6px;
+    box-shadow: 0.2em 0.2em 0.7em darkgray;
+    padding: 0.3em;
+    font-weight: bold;
+    text-align: center;
+}
+
+#loginBox {
+    width: 270px;
+    height: 80px;
+    background-color: lightblue;
+    border-radius: 0.8em;
+    border: 1px solid gray;
+    box-shadow: 0.2em 0.2em 0.7em darkgray; 
+    text-align: center; padding: 0.4em;
+    margin: auto auto;
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+}

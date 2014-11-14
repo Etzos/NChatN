@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <title>NEaB Chat Next - Login</title>
+
+    <link href="login.css" rel="stylesheet" type="text/css">
+
+    <script type="text/javascript" src="lib/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="lib/md5.js"></script>
+    <script type="text/javascript" src="util/util.js"></script>
+
+    <script type="text/javascript">
+    var crypt = require("crypto");
+    var request = require("request");
+    var md5sum = crypt.createHash("md5");
+
+    var j = request.jar();
+    request = request.defaults({jar: j});
+
+    var NEAB_HOME = "http://www.nowhere-else.org/index.php";
+    var IP_REG = RegExp("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
+
+    function printError(msg) {
+        var $errorBox = $("#errorBox");
+        $errorBox.html(msg);
+        $errorBox.show();
+    }
+
+    function md5(data) {
+        // Wooo. Unicode support is awful
+        var tmp = unescape(encodeURIComponent(data))
+        return crypt.createHash('md5').update(tmp).digest('hex');
+    }
+
+    function locateIP(callback) {
+        request({
+            method: "get",
+            url: NEAB_HOME
+        }, function(error, response, body) {
+            if(error || response.statusCode != 200) {
+                printError("Unable to communicate with NEaB. Please try again later.");
+                return;
+            }
+            var res = IP_REG.exec(body);
+            if(res.length > 0) {
+                callback(res[0]);
+            } else {
+                printError("Unbable to locate required login information.");
+            }
+        });
+    }
+
+    function login(ip) {
+        var username = $("#username").val();
+        var password = $("#password").val();
+
+        if(username == "") {
+            printError("You must enter a username in order to login.");
+            return;
+        } else if(password == "") {
+            printError("You must enter a password in order to login.");
+            return;
+        }
+
+        var firstPart = md5(password);
+        var fullHash = md5(md5(password)+ip);
+
+        request({
+            method: "POST",
+            url: NEAB_HOME,
+            form: {
+                "ACTION": "LOGIN",
+                "USERNAME": username,
+                "PASSWORD": fullHash,
+                "PP": ""
+            }
+        },
+        function(error, response, body) {
+            // If there's an error, it just loads the default page
+            if(!error && response.statusCode == 200) {
+                if(body.indexOf("Too many bad trials.") > -1) {
+                    printError("Too many incorrect login attempts. You will have to wait 15 minutes before logging in.");
+                    return;
+                } else if(body.indexOf("Wrong username or password") > -1) {
+                    printError("Incorect username or password.");
+                    return;
+                }
+            }
+            // If it worked we get a redirect
+            if(!error && response.statusCode == 302) {
+                // Store the cookie for later use
+                localStorage.setItem("NChatN-cookie", j.getCookieString("http://www.nowhere-else.org/"));
+                // Load the chat window
+                window.location.href = "chat.html";
+            } else {
+                console.log(error, response);
+            }
+        });
+    }
+
+    function startLogin() {
+        locateIP(login);
+    }
+
+    $(document).ready(function() {
+        $("#subButton").click(function() {
+            startLogin();
+            return false;
+        });
+        $("#username,#password").keyup(function(event) {
+            if(event.which === 13) {
+                startLogin();
+            }
+        });
+    });
+    </script>
+
+</head>
+<body>
+    <section id="errorBox">No Error</section>
+    <section id="loginBox">
+        Username: <input type="text" id="username"><br>
+        Password: <input type="password" id="password"><br>
+    <button id="subButton">Login</button>
+    </section>
+</body>
+</html>
