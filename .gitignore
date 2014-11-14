@@ -11,3 +11,6 @@ nb-configuration.xml
 .directory
 Thumbs.db
 
+# Project specific
+public_html/cache/
+public_html/node_modules/
