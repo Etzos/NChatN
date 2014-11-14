@@ -50,7 +50,6 @@ var Chat = (function (window, $) {
         "4": {msg: "No Invasion", color: "greenText"}         // No invasions today
     };
 
-    var localStorageSupport = "localStorage" in window && window.localStorage !== null;
     var scriptRegex = /<script>[^]*?<\/script>/gi;
     var whisperRegex = /(to |from )([\w\- ]+)(>)/i;
 
@@ -1038,10 +1037,6 @@ var Chat = (function (window, $) {
      * @returns {undefined}
      */
     function _loadSettings() {
-        if(!localStorageSupport) {
-            return;
-        }
-
         var savedSettings = localStorage.getItem("NChatN-settings");
 
         try {
@@ -1060,10 +1055,6 @@ var Chat = (function (window, $) {
      * @returns {undefined}
      */
     function _saveSettings() {
-        if(!localStorageSupport) {
-            return;
-        }
-
         localStorage.setItem("NChatN-settings", JSON.stringify(settings));
     }
 
@@ -1276,10 +1267,6 @@ var Chat = (function (window, $) {
         $channelSelect = $("#channel");
         $menu = $("#mainMenu");
         $invasion = $("#invasionStatus");
-
-        if(!localStorageSupport) {
-            alert("NChatN will not function properly without localStorage support. Please enable it!");
-        }
 
         createChannel("server", 0, "Lodge");
         focusChannel("server", 0);
@@ -1681,22 +1668,19 @@ var Chat = (function (window, $) {
         pluginManager.runHook("joinChat", ctx);
 
         // Check versions
-        if(localStorageSupport) {
-            var pastVersion = localStorage.getItem("NChatN-version");
-            if(!pastVersion) {
-                pastVersion = "0.0";
-            }
-            var versionAge = versionCompare(version, pastVersion);
-            // Current version is newer than the stored one
-            if(versionAge > 0) {
-                if(settings.versionPopup === true) {
-                    newVersionDialog.openDialog();
-                }
-            }
-
-            // Always set the version, just to be sure
-            localStorage.setItem("NChatN-version", version);
+        var pastVersion = localStorage.getItem("NChatN-version");
+        if(!pastVersion) {
+            pastVersion = "0.0";
         }
+        var versionAge = versionCompare(version, pastVersion);
+        // Current version is newer than the stored one
+        if(versionAge > 0) {
+            if(settings.versionPopup === true) {
+                newVersionDialog.openDialog();
+            }
+        }
+        // Always set the version, just to be sure
+        localStorage.setItem("NChatN-version", version);
 
         renderChannelList();
         if(settings.detectChannels === true) {
