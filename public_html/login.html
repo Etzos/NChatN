@@ -137,14 +137,14 @@
 
         $remName = $("#remember-name");
         $remPass = $("#remember-pass");
-        if(remember["name"]) {
+        if(remember && remember.hasOwnProperty("name")) {
             rememberName = true;
             $remName.prop("checked", true);
             $username.val(remember.name);
         } else {
             rememberName = false;
         }
-        if(remember["pass"]) {
+        if(remember && remember.hasOwnProperty("pass")) {
             rememberPass = true;
             $remPass.prop("checked", true);
             $password.val(remember.pass)
