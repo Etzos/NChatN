@@ -130,7 +130,7 @@ var Chat = (function (window, $) {
             },
             timeout: queryTimeout
         }, function(error, response, result) {
-            if(error || response.statusCode != 200) {
+            if(error || response.statusCode != 200 || !result) {
                 return;
             }
 
@@ -514,7 +514,18 @@ var Chat = (function (window, $) {
                 return;
             }
             var oldPlayerList = $.merge([], channel.playerList);
-
+            if(!result) {
+                result = {
+                    bots: {},
+                    players: {}
+                };
+            }
+            if(!result.bots) {
+                result.bots = {};
+            }
+            if(!result.players) {
+                result.players = {};
+            }
             channel.playerList = [];
             // Add bots
             $.each(result.bots, function(i, data) {
