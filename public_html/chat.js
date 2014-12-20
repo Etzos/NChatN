@@ -406,16 +406,6 @@ var Chat = (function (window, $) {
                         $i.prop("src", "http://www.nowhere-else.org/smilies/" + src);
                     });
 
-                    // Make all links open externally
-                    msg.find("a").addBack().filter("a").each(function() {
-                        var $a = $(this);
-                        var href = $a.prop("href");
-                        $a.on("click", function() {
-                            gui.Shell.openExternal(href);
-                            return false;
-                        });
-                    });
-
                     var lineIdent = msg.filter("span.username,span.bot.whisper").text();
                     whisperTarget = whisperRegex.exec(lineIdent);
 
@@ -1653,6 +1643,12 @@ var Chat = (function (window, $) {
             } else {
                 $chatWin.addClass("historyShade");
             }
+        });
+        // Try to make links open externally
+        var win = gui.Window.get();
+        win.on("new-win-policy", function(frame, url, policy) {
+            gui.Shell.openExternal(url);
+            policy.ignore();
         });
 
         // Timers (Times are default from NEaB)
