@@ -1764,6 +1764,6 @@ function openWhoWindow(player) {
     if(window.location.href.indexOf('nowhere-else.org') < 0) {
         base = "http://www.nowhere-else.org/";
     }
-    window.open(base + "player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
+    window.open(base + "player_info.php?SEARCH=" + escape(player));
     return false;
 }
