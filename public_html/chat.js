@@ -310,19 +310,13 @@ var Chat = (function (window, $) {
         var rand = _getTime();
 
         // Process text for transmission
-        //text = escape(text).replace(/\+/g, "%2B");
-        //text = text.replace(/\+/g, "%2B");
+        text = escape(text).replace(/\+/g, "%2B");
+        text = text.replace(/\+/g, "%2B");
 
         // Send the message
         request({
             method: "GET",
-            url: URL.send,
-            qs: {
-                "CHANNEL": targetChannel,
-                "TO": to,
-                "RND": rand,
-                "TEXT": text
-            }
+            url: URL.send + "?CHANNEL=" + targetChannel + "&TO=" + to + "&RND=" + rand + "&TEXT=" + text
         }, function(error, response, body) {
             // TODO: Store message on error
         });
