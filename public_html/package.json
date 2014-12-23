@@ -1,17 +1,8 @@
 {
-  "webexe_settings": {
-    "linux-x32": true,
-    "download_dir": "/home/kevin/Code/GitHubClones/Web2Executable/files/downloads",
-    "windows": true,
-    "mac": false,
-    "nw_version": "0.10.5",
-    "force_download": false,
-    "linux-x64": true
-  },
   "name": "NChatN",
   "nodejs": true,
   "description": "",
-  "single-instance": false,
+  "single-instance": true,
   "keywords": [],
   "window": {
     "fullscreen": false,
