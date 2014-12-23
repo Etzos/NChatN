@@ -5,7 +5,7 @@ var gutil = require('gulp-util');
 gulp.task('nw', function () {
 
     var nw = new NwBuilder({
-        version: '0.10.5',
+        version: '0.11.3',
         files: [ './**', '!./cache/**', '!./build/**', '!./bin/**', '!./node_modules/gulp/**',
             '!./node_modules/gulp_util/**', '!./node_modules/node-webkit-builder/**'
         ],
