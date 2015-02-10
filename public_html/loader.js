@@ -15,24 +15,23 @@
  */
 
 var Loader = (function(document) {
-    var baseUrl = 'https://rawgit.com/Etzos/NChatN/master/public_html/util/';
-    //var baseUrl = 'http://garth.web.nowhere-else.org/web/NChatN/'; // Etzos's experimental branch
-    
+    var baseUrl = 'http://nowhere-else.org/chat/';
+
     var queuedFiles = 0;
     var callback = function() {};
-    
+
     function scriptLoaded() {
         queuedFiles--;
         if(queuedFiles < 1) {
             callback();
         }
     }
-    
+
     function importScripts(scripts) {
         if(!Array.isArray(scripts)) {
             scripts = [scripts];
         }
-        
+
         queuedFiles = scripts.length;
 
         for(var i = 0; i < scripts.length; i++) {
@@ -50,7 +49,7 @@ var Loader = (function(document) {
             document.getElementsByTagName('head')[0].appendChild(scriptElem);
         }
     }
-    
+
     return {
         import: function(scripts) {
             importScripts(scripts);
@@ -69,4 +68,4 @@ Loader.onComplete(function() {
     }
 });
 
-Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', '../pluginManager.js', '../chat.js', '../plugins/corePlugins.js']);
+Loader.import(['util.js', 'tooltip.js', 'smilies.js', 'menu.js', 'dialog.js', 'pluginManager.js', 'chat.js', 'corePlugins.js']);

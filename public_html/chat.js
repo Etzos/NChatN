@@ -17,11 +17,12 @@ var Chat = (function (window, $) {
     var version = "2.4.1";
 
     var URL = {
-        send: 'sendchat.php',
-        receive: 'lastchat.php',
-        online: 'rs/online.php',
-        invasion: 'check_invasions.php',
-        player: 'player_info.php'
+        send: '../sendchat.php',
+        receive: '../lastchat.php',
+        channels: '../rs/channels.php',
+        online: '../rs/online.php',
+        invasion: '../check_invasions.php',
+        player: '../player_info.php'
     };
 
     var INVASION_STATUS = {
@@ -92,7 +93,7 @@ var Chat = (function (window, $) {
 
         return "<li id='player-list-player-"+id+"' class=''>" +
                "<a href='#'>" +
-               "<span class='player-icon'><img src='" + icon + "'></span><img src='images/away.gif' class='" + awayClass + "'>" +
+               "<span class='player-icon'><img src='../" + icon + "'></span><img src='../images/away.gif' class='" + awayClass + "'>" +
                "<span class='player-name " + spanAwayClass + "'>" + name + "</span>" +
                "</a>" +
                "<ol class='inactive'><li><a href='#'>Private Chat</a></li><li><a href='#'>Whois</a></li></ol>" +
@@ -363,6 +364,9 @@ var Chat = (function (window, $) {
                         msg = unescape(msg);
                         msg += "<br>";
 
+                        while (msg.indexOf("<img src=smilies/") >= 0) {
+                            msg = msg.replace("<img src=smilies/","<img src=../smilies/");
+                        }
                         msg = $($.parseHTML(msg, !isInit));
 
                         var lineIdent = msg.filter("span.username,span.bot.whisper").text();
@@ -1648,25 +1652,22 @@ var Chat = (function (window, $) {
         renderChannelList();
         if(settings.detectChannels === true) {
             $.ajax({
-                url: "general_chat.php",
-                data: "CHANNEL=0&TAB=0",
+                url: URL.channels,
+                data: "RND=" + _getTime(),
                 type: "GET",
                 context: this,
+                timeout: queryTimeout,
                 success: function(result) {
-                    var r = /\<option[ selected]* value=(\d+)\>([A-Za-z0-9 ]+)\n/gi;
-                    var tmp = result.split(r);
-                    tmp.shift();
-                    tmp.pop();
-                    if(tmp.length < 2) {
-                        return;
-                    }
-                    // This yields a strange array, something like:
-                    // ["<room id>", "<room name>", "", "<next room id>", ...]
-                    // So that's why we're skipping 3 instead of the usual 1
-                    availChannels = [];
-                    for(var i = 0; i < tmp.length; i+=3) {
-                        availChannels.push({id: parseInt(tmp[i]), name: tmp[i+1]});
-                    }
+                    /*
+                        {"channels":[
+                            {"id":"0","name":"Lodge"},
+                            {"id":"1","name":"Newbie"},
+                            {"id":"2","name":"Winged Room"},
+                            {"id":"3","name":"Control Room"},
+                            {"id":"6","name":"Trade channel"}
+                        ]}
+                    */
+                    availChannels = result.channels;
                     renderChannelList();
                 }
             });
@@ -1717,10 +1718,10 @@ function numPad(num) {
 }
 
 function openWhoWindow(player) {
-    var base = "";
+    var base = "../";
     if(window.location.href.indexOf('nowhere-else.org') < 0) {
         base = "http://www.nowhere-else.org/";
     }
-    window.open(base + "player_info.php?SEARCH=" + escape(player), "_blank", "depandant=no,height=600,width=430,scrollbars=no");
+    window.open(base + "player_info.php?SEARCH=" + escape(player), "_blank", "dependant=no,height=600,width=430,scrollbars=no");
     return false;
 }
