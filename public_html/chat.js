@@ -55,7 +55,6 @@ var Chat = (function (window, $) {
         showSysMessages: true,      // Whether or not to show system messages
         chatHistoryLogin: 20,       // The number of history lines shown on entry
         maxHistoryLength: -1,       // The number of chat history lines to save (values < 1 default to all saved)
-        detectChannels: true,       // Attempt to guess which channels (other than the defaults) can be joined
         versionPopup: true,         // Whether to show the version popup when NChatN updates or not
         forceDown: false,           // Whether to just force the chat to bottom when a new message is added
         selfMsgNoDisplay: true,     // Whether to show a new message animation from your own messages or not
@@ -1080,6 +1079,24 @@ var Chat = (function (window, $) {
     }
 
     /**
+     * Makes a call to the server for a new list of available channels and then updates the list
+     */
+    function updateChannels() {
+        $.ajax({
+            url: URL.channels,
+            data: "RND=" + _getTime(),
+            type: "GET",
+            context: this,
+            timeout: queryTimeout,
+            success: function(result) {
+                availChannels = result.channels;
+                renderChannelList();
+            }
+        });
+        // TODO: Handle failure
+    }
+
+    /**
      * Adds a root menu object to the chat header
      * @param {Menu} menu The root menu object
      * @returns {undefined}
@@ -1362,6 +1379,14 @@ var Chat = (function (window, $) {
                     return false;
                 }
             },
+            updateChannels: {
+                text: "Update Channel List",
+                description: "Manually refreshes the channel list",
+                action: function() {
+                    updateChannels();
+                    return false;
+                }
+            },
             settings: {
                 text: "Settings",
                 action: function() {
@@ -1467,19 +1492,6 @@ var Chat = (function (window, $) {
         });
 
         var advSettingMenu = new MenuList({
-            detectChannel: {
-                text: "Detect Channels ["+ (settings.detectChannels ? "on" : "off") +"]",
-                description: "Automatically detect the available channels",
-                action: function() {
-                    var newVal = !settings.detectChannels;
-
-                    advSettingMenu.modifyEntry("detectChannel", "Detect Channels ["+ (newVal ? "on" : "off") +"]");
-
-                    changeSetting("detectChannels", newVal);
-                    // TODO: If changed to true, attempt to load the channels
-                    return false;
-                }
-            },
             forceDown: {
                 text: "Force to Bottom [" + (settings.forceDown ? "on" : "off") + "]",
                 description: "Force the current chat window down to the bottom when new messages are posted",
@@ -1649,29 +1661,7 @@ var Chat = (function (window, $) {
             localStorage.setItem("NChatN-version", version);
         }
 
-        renderChannelList();
-        if(settings.detectChannels === true) {
-            $.ajax({
-                url: URL.channels,
-                data: "RND=" + _getTime(),
-                type: "GET",
-                context: this,
-                timeout: queryTimeout,
-                success: function(result) {
-                    /*
-                        {"channels":[
-                            {"id":"0","name":"Lodge"},
-                            {"id":"1","name":"Newbie"},
-                            {"id":"2","name":"Winged Room"},
-                            {"id":"3","name":"Control Room"},
-                            {"id":"6","name":"Trade channel"}
-                        ]}
-                    */
-                    availChannels = result.channels;
-                    renderChannelList();
-                }
-            });
-        }
+        updateChannels();
     }
 
     return {
