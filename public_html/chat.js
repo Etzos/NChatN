@@ -1763,6 +1763,8 @@ var Chat = (function (window, $) {
                     // If there are no spaces, it must be the first word
                     if(val.indexOf(" ") == -1) {
                         match += ": ";
+                    } else {
+                        match += " ";
                     }
                     $input.val( val.substring(0, fullStartPos) + match + val.substring(endPos, val.length) );
                     var newCursorPos = fullStartPos+match.length;
