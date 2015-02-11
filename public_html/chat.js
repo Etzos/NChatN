@@ -1533,24 +1533,29 @@ var Chat = (function (window, $) {
                     var reg = /http:\/\/(.+?)\//i;
                     var loc = window.location.href.split(reg);
                     var sheet = document.styleSheets[0].href.replace(reg, "http://" + loc[1] + "/");
+                    // Horrible code duplication, but it works
+                    var sheet2 = document.styleSheets[1].href.replace(reg, "http://" + loc[1] + "/");
                     $.get(sheet, function(data) {
-                        var channel = channelMeta[focusedChannel];
+                        $.get(sheet2, function(data2) {
+                            var channel = channelMeta[focusedChannel];
 
-                        var $raw = $(channel.elem.chat).clone();
-                        $raw.find("img").addBack().filter("img").each(function() {
-                            this.src = base64FromImg(this);
+                            var $raw = $(channel.elem.chat).clone();
+                            $raw.find("img").addBack().filter("img").each(function() {
+                                this.src = base64FromImg(this);
+                            });
+                            var raw = $raw.html();
+                            // TODO: Embed at least part of the NChatN stylesheet
+                            var page = "<!DOCTYPE html><html>" +
+                                    "<head><meta charset='UTF-8'>\n" +
+                                    "<script type='text/javascript'>" + openWhoWindow.toString() + "</script>\n" +
+                                    "<style>" + data + "</style>\n" +
+                                    "<style>" + data2 + "</style>\n" +
+                                    "<link href='" + document.styleSheets[1].href + "' rel='stylesheet' type='text/css'>\n" +
+                                    "</head>\n"+
+                                    "<body style='overflow: auto;'>" + raw + "</body></html>";
+
+                            downloadRaw(page);
                         });
-                        var raw = $raw.html();
-                        // TODO: Embed at least part of the NChatN stylesheet
-                        var page = "<!DOCTYPE html><html>" +
-                                "<head><meta charset='UTF-8'>\n" +
-                                "<script type='text/javascript'>" + openWhoWindow.toString() + "</script>\n" +
-                                "<style>" + data + "</style>\n" +
-                                "<link href='" + document.styleSheets[1].href + "' rel='stylesheet' type='text/css'>\n" +
-                                "</head>\n"+
-                                "<body style='overflow: auto;'>" + raw + "</body></html>";
-
-                        downloadRaw(page);
                     });
                     return false;
                 }
