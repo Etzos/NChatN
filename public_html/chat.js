@@ -67,7 +67,6 @@ var Chat = (function (window, $) {
         $tabContainer,              // The container for chat tabs
         $onlineContainer,           // The container for online players
         $chatContainer,             // The container for chat
-        $channelSelect,             // Select to open new channels
         $menu,                      // The menu container
         $invasion;                  // Invasion message container
 
@@ -1067,15 +1066,41 @@ var Chat = (function (window, $) {
 
     /**
      * Handles creation of the channel dropdown
-     * @returns {undefined}
      */
     function renderChannelList() {
-        $channelSelect.empty();
-        $channelSelect.append("<option value='' selected>-- Channels --</option>\n");
+        var menuContents = {};
         for(var i = 0; i < availChannels.length; i++) {
             var c = availChannels[i];
-            $channelSelect.append("<option value='"+c.id+"'>"+c.name+"</option>\n");
+            menuContents["chan-" + c.id] = {
+                text: c.name,
+                description: "Join " + c.name,
+                action: function(c) {
+                    try {
+                        createServerChannel(c.id, c.name);
+                    } catch(e) {
+                        console.error(e);
+                    }
+                }.bind(this, c)
+                // The above bind() is required because the "c" wouldn't be bound until the function is called
+            };
         }
+        var menu = new MenuList(menuContents);
+        var $chan = $("#channelMenu");
+        var $chanLink = $("#channelLink");
+        $chanLink.off("click");
+        $chan.empty();
+        // This must be done because the default setting is set to the far right
+        menu.pos("4", "124"); // 124px was obtained rather arbitrarily, hopefully it will work for everyone
+        $chan.append(menu.getRoot());
+        $("#channelLink").click(function() {
+            $(document).one("click", function() {
+                menu.closeMenu();
+            });
+
+            menu.toggle();
+            this.blur();
+            return false;
+        });
     }
 
     /**
@@ -1089,7 +1114,7 @@ var Chat = (function (window, $) {
             context: this,
             timeout: queryTimeout,
             success: function(result) {
-                availChannels = result.channels;
+                //availChannels = result.channels;
                 renderChannelList();
             }
         });
@@ -1099,7 +1124,6 @@ var Chat = (function (window, $) {
     /**
      * Adds a root menu object to the chat header
      * @param {Menu} menu The root menu object
-     * @returns {undefined}
      */
     function addMenu(menu) {
         $menu.removeClass("headerMenu");
@@ -1240,7 +1264,6 @@ var Chat = (function (window, $) {
         $tabContainer = $("#tabList");
         $onlineContainer = $("#onlineList");
         $chatContainer = $("#chat");
-        $channelSelect = $("#channel");
         $menu = $("#mainMenu");
         $invasion = $("#invasionStatus");
 
@@ -1601,19 +1624,6 @@ var Chat = (function (window, $) {
         // Event Handlers
         $("#chatInputForm").submit(function() {
             sendMessage();
-        });
-        $channelSelect.change(function() {
-            var $chanSel = $channelSelect.children("option:selected");
-            var chanServerId = $chanSel.val();
-            if(chanServerId === '')
-                return;
-            try {
-                createServerChannel(chanServerId, $chanSel.text());
-            } catch(e) {
-                console.error(e);
-            }
-            $channelSelect.children("option:eq(0)").prop("selected", true);
-            $chanSel.prop("selected", false);
         });
         // Track page resizing for scroll
         $(window).resize(function() {

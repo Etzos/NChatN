@@ -1,5 +1,5 @@
 body {
-    background-color: #FFFFFF;
+    background-color: #000000;
     margin: 0;
 
     /* Follow NEaB's default text styling */
@@ -45,8 +45,8 @@ img {
 #chatHelp {
     display: none;
     position: absolute;
-    top: 4em;
-    right: 2px;
+    top: 1.8em;
+    right: 4px;
     height: 200px;
     width: 500px;
     background-color: #FFFFB0;
@@ -89,17 +89,6 @@ img {
     text-align: center;
 }
 
-#headerContainer {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    left: 0px;
-    height: 2em;
-
-    color: white;
-    background-color: black;
-}
-
 .channelPart {
     position: absolute;
     height: 100%;
@@ -116,7 +105,12 @@ img {
 }
 
 .channelHeader a {
-    color: rgb(0, 170, 255);
+    color: lightskyblue;
+    text-shadow: 1px 1px 2px black;
+}
+
+.channelHeaderText {
+    vertical-align: top;
 }
 
 .channelContent {
@@ -130,7 +124,7 @@ img {
 
 #channelContainer {
     position: absolute;
-    top: 2em;
+    top: 2px;
     bottom: 3em;
     left: 0px;
     right: 0px;
@@ -157,7 +151,7 @@ section.noPlayers #chatContainer {
 #onlineList {
     width: 100%;
     background-color: white;
-    
+
     margin-bottom: 0.2em;
     padding: 0px;
 }
@@ -299,10 +293,7 @@ section.noPlayers #chatContainer {
 .headerLinkContainer {
     font-weight: normal;
     height: 100%;
-
-    position: absolute;
-    top: 0px;
-    right: 0px;
+    float: right;
 }
 
 .headerItem {
@@ -366,15 +357,10 @@ section.noPlayers #chatContainer {
     display: block;
 }
 
-#channelAddForm {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-}
-
 /** Invasion Message **/
 #invasions {
-    margin-left: 0.4em;
+    margin-left: 3px;
+    float: left;
 }
 
 .greenText {
@@ -439,8 +425,7 @@ section.noPlayers #chatContainer {
     border: 1px solid brown;
 }
 #mainLight {
-    display: inline;
-    float: left;
+    display: inline-block;
 }
 
 /** Chat History Coloring **/
@@ -537,7 +522,7 @@ section.noPlayers #chatContainer {
 }
 
 #tabList a {
-    color: rgb(0, 170, 255);
+    color: lightskyblue;
     text-shadow: 1px 1px 2px black;
 }
 
