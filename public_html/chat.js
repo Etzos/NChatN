@@ -288,6 +288,7 @@ var Chat = (function (window, $) {
         var rand = _getTime();
 
         // Process text for transmission
+        // TODO: Get around using escape(), it's a nasty thing to do as it's been deprecated
         text = escape(text).replace(/\+/g, "%2B");
 
         // Send the message
@@ -352,7 +353,7 @@ var Chat = (function (window, $) {
                             continue;
                         }
                         // Fix the href attributes
-                        msg = msg.replace(/href=(?!")(.+?) /gi, "href=\"$1\" ");
+                        msg = msg.replace(/(?:<a)(.*)href=(?!")(.+?) /gi, "<a$1href=\"$2\" ");
                         var isScript = scriptRegex.test(msg);
                         // Remove any attempts at inserting script tags a player may have used
                         if(!isScript) {
