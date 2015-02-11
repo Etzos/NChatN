@@ -215,7 +215,7 @@ var Chat = (function (window, $) {
      * Returns the current datetime as a UTC string
      *
      * This is used as the random value in the queries (as far as I can tell)
-     * @returns The escaped time
+     * @returns {string} The escaped time
      */
     function _getTime() {
         return escape(new Date().toUTCString());
@@ -223,8 +223,9 @@ var Chat = (function (window, $) {
 
     /**
      * Attempts to match a partial username to one in the list of online players
-     * @param {String} fragment The player name fragment to attempt to find a match for
-     * @returns {Mixed} Returns an empty string if none found, a string containing the one name matched, or an array of matches
+     *
+     * @param {string} fragment The player name fragment to attempt to find a match for
+     * @returns {mixed} Returns an empty string if none found, a string containing the one name matched, or an array of matches
      */
     function matchPlayerName(fragment) {
         var players = channelMeta[focusedChannel].playerList;
