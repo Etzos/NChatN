@@ -1552,7 +1552,7 @@ var Chat = (function (window, $) {
                                     "<style>" + data2 + "</style>\n" +
                                     "<link href='" + document.styleSheets[1].href + "' rel='stylesheet' type='text/css'>\n" +
                                     "</head>\n"+
-                                    "<body style='overflow: auto;'>" + raw + "</body></html>";
+                                    "<body style='overflow: auto; background-color: white !important;'>" + raw + "</body></html>";
 
                             downloadRaw(page);
                         });
