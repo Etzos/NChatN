@@ -85,6 +85,15 @@ var Chat = (function (window, $) {
         console.error(e);
     }
 
+    /**
+     * Generates a row (one entry) for the online player list
+     *
+     * @param {number} id - The ID of the player
+     * @param {string} name - The name of the player
+     * @param {string} icon - The filename of the player's icon
+     * @param {boolean} isAway - Whether the player is away or not
+     * @returns {string} The templated string for a single plyer entry in the online player list
+     */
     function templateOnlinePlayerRow(id, name, icon, isAway) {
         var awayClass = (isAway === "true") ? "" : "inactive";
         var spanAwayClass = (isAway === "true") ? "dimText" : '';
@@ -100,8 +109,6 @@ var Chat = (function (window, $) {
 
     /**
      * Gets the invasion status from the server
-     * 
-     * @returns {undefined}
      */
     function getInvasionStatus() {
         $.ajax({
@@ -120,8 +127,6 @@ var Chat = (function (window, $) {
 
     /**
      * Updates the connection status light
-     * 
-     * @returns {undefined}
      */
     function updateTickClock() {
         var lightClass = "greenLight";
@@ -149,10 +154,9 @@ var Chat = (function (window, $) {
 
     /**
      * Updates the invasion status portion of chat
-     * 
-     * @param {string} status The numerical status message (treated as a string)
-     * @param {string} message The invasion message to be shown on hovering over the status
-     * @returns {undefined}
+     *
+     * @param {string} status - The numerical status message (treated as a string)
+     * @param {string} message - The invasion message to be shown on hovering over the status
      */
     function _updateInvasionMessage(status, message) {
         if(!INVASION_STATUS.hasOwnProperty(status)) {
@@ -176,9 +180,9 @@ var Chat = (function (window, $) {
 
     /**
      * Wraps a given string is the tags required to mark it as a system message
-     * 
-     * @param {string} message The message to wrap
-     * @returns {String} A string wrapped in the appropiate tags to mark it as a system message
+     *
+     * @param {string} message - The message to wrap
+     * @returns {string} A string wrapped in the appropiate tags to mark it as a system message
      */
     function _formatSystemMsg(message) {
         return '<span class="systemMsg">'+message+'<br></span>';
@@ -186,14 +190,21 @@ var Chat = (function (window, $) {
 
     /**
      * Returns wheter the given element is scrolled all the way down or not
-     * 
-     * @param {jquery} $elem The jQuery wrapped element
-     * @returns {Boolean} True if the given element is scrolled all the way down, false otherwise
+     *
+     * @param {jQuery} $elem - The jQuery wrapped element
+     * @returns {boolean} True if the given element is scrolled all the way down, false otherwise
      */
     function _isAtBottom($elem) {
         return ($elem.prop("scrollHeight") - $elem.prop("scrollTop") === $elem.prop("clientHeight"));
     }
 
+    /**
+     * Subtracts the contents of the second array from the contents of the first and returns the result
+     *
+     * @param {mixed[]} first - The first array, the one that will have elements subtracted
+     * @param {mixed[]} second - The second array, the one that will be subtracted
+     * @returns {mixed[]} The result of first - second
+     */
     function _arrSub(first, second) {
         return $.grep(first, function(x) {
             return $.inArray(x, second) < 0;
@@ -202,7 +213,7 @@ var Chat = (function (window, $) {
 
     /**
      * Returns the current datetime as a UTC string
-     * 
+     *
      * This is used as the random value in the queries (as far as I can tell)
      * @returns The escaped time
      */
@@ -234,6 +245,12 @@ var Chat = (function (window, $) {
     }
 
     // -- Server Methods -- //
+    /**
+     * Sends a message to the server
+     *
+     * @param {string} message - The message to send to the server
+     * @param {Channel} channel - The channel to sendd the message to (this is one of the internal Channel objects)
+     */
     function sendMessage(message, channel) {
         var text;
         var isFromInput = true;
@@ -304,6 +321,11 @@ var Chat = (function (window, $) {
         // TODO: PostSend Hook
     }
 
+    /**
+     * Checks the server for new messages
+     *
+     * @param {Channel} channel - The channel to check for new messages (internal Channel object)
+     */
     function retrieveMessage(channel) {
         // Skip non-server channels
         if(channel.type !== "server") {
@@ -436,6 +458,12 @@ var Chat = (function (window, $) {
         });
     }
 
+    /**
+     * Helper function to get new messages from all channels
+     *
+     * This checks all channels that are marked as type "server" so things like whisper tabs
+     * won't mess it up at all.
+     */
     function retrieveAllMessages() {
         var channel;
         for(var tag in channelMeta) {
@@ -451,6 +479,11 @@ var Chat = (function (window, $) {
         }
     }
 
+    /**
+     * Checks the server for online players
+     *
+     * @param {Channel} channel - The channel to look for online players in (internal Channel object)
+     */
     function retrieveOnline(channel) {
         if(channel.type !== "server") {
             return;
@@ -495,6 +528,12 @@ var Chat = (function (window, $) {
         });
     }
 
+    /**
+     * Helper function to get online players from all channels
+     *
+     * This checks all channels that are marked as type "server" so things like whisper tabs
+     * won't mess it up at all.
+     */
     function retrieveAllOnline() {
         var channel;
         for(var tag in channelMeta) {
@@ -511,6 +550,11 @@ var Chat = (function (window, $) {
     }
 
     // -- Online Player Util Methods -- //
+    /**
+     * Redraws the online player list for a given channel
+     *
+     * @param {Channel} channel - The channel for which to redraw the online list
+     */
     function redrawOnlineList(channel) {
         // TODO: Include guests
         var players = channel.players;
@@ -600,6 +644,12 @@ var Chat = (function (window, $) {
         $onlineWin.empty().append($html);
     }
 
+    /**
+     * Redraws the online player list for a whisper channel
+     *
+     * @param {Channel} channel - The channel for which to redraw the online list
+     * @todo Check to make sure that the channel is a whisper channel
+     */
     function redrawWhisperOnlineList(channel) {
         var $onlineWin = $(channel.elem.online);
         $.each(channel.playerList, function(index, value) {
@@ -618,6 +668,14 @@ var Chat = (function (window, $) {
     }
 
     // -- Channel Methods -- //
+    /**
+     * "Interal" function that handles actually inserting a new message
+     *
+     * @param {Channel} channel - The channel to insert the message into (internal channel object)
+     * @param {string} message - The message to insert into the channel
+     * @param {boolean} [isSys=false] - Sets whether the message is a "system" message (used for join/depart) or not
+     * @param {boolean} [skipNewAnim=false] - Whether to skip the new message animation or not
+     */
     function insertMessage(channel, message, isSys, skipNewAnim) {
         if(typeof isSys === "undefined") {
             isSys = false;
@@ -654,11 +712,29 @@ var Chat = (function (window, $) {
         }
     }
 
+    /**
+     * Gets the tag name for a channel
+     *
+     * This function is almost entirely useless as it's basically just a
+     * string concat. However, it's handy as a shortener.
+     *
+     * @param {string} type - The type of channel
+     * @param {string|number} id - The id of the channel
+     * @return {string} The resulting tag
+     */
     function getTag(type, id) {
         id = (typeof id === "string") ? id.toLowerCase() : id;
         return type.toLowerCase() + "-" + id;
     }
 
+    /**
+     * Creates, returns, and adds a channel to the interal channel store
+     *
+     * @param {string} type - The type of channel (currently only "server" or "local")
+     * @param {string|number} id - The id of the channel
+     * @param {string} name - The name of the channel
+     * @return {Channel} The newly created channel object
+     */
     function addChannelMeta(type, id, name) {
         if(!type in ["server", "local"]) {
             throw Error("Bad channel type '" + type + "'");
@@ -701,10 +777,11 @@ var Chat = (function (window, $) {
     }
 
     /**
-     * Joins a given channel
-     * @param {type} type
-     * @param {type} id
-     * @returns {unresolved}
+     * A helper function for joining a given channel
+     *
+     * @param {string} type - The type of the channel
+     * @param {string|number} id - The ID of the channel
+     * @returns {Channel} A reference to the channel that was joined
      */
     function joinChannel(type, id) {
         var chan;
@@ -731,7 +808,17 @@ var Chat = (function (window, $) {
         return chan;
     }
 
-    // NOTE: I made this because joinChannel() may not be the only one creating channels (e.g. plugins)
+    /**
+     * Creates a new channel (and EVERYTHING along with it)
+     *
+     * This is used to create a channel, tabs, window, etc.
+     *
+     * @param {string} type - The type of channel (server or local)
+     * @param {string|number} id - The id of the channel
+     * @param {string} name - The name of the channel
+     * @return {Channel} A refernce to the newly created channel
+     * @note I made this because joinChannel() may not be the only one creating channels (e.g. plugins)
+     */
     function createChannel(type, id, name) {
         var tag = getTag(type, id);
         if(channelMeta.hasOwnProperty(tag)) {
@@ -792,6 +879,16 @@ var Chat = (function (window, $) {
         return chan;
     }
 
+    /**
+     * Helper function for creating and then focusing on a server channel
+     *
+     * This can safely be used to "create" a channel that already exists.
+     *
+     * @param {number} id - The ID of the channel to create
+     * @param {string} name - The name of the channel to create
+     * @param {boolean} [noFocus=true] - Whether the channel should be focused or just created
+     * @return {Channel} A reference to the channel
+     */
     function createServerChannel(id, name, noFocus) {
         var shouldFocus = (typeof noFocus === "undefined") ? true : !noFocus;
         var channel = createChannel("server", id, name);
@@ -810,6 +907,16 @@ var Chat = (function (window, $) {
         return channel;
     }
 
+    /**
+     * Helper function for creating and then focusing on a whisper channel
+     *
+     * This can safely be used to "create" a channel that already exists.
+     *
+     * @param {number} id - The ID of the channel to create
+     * @param {string} name - The name of the channel to create
+     * @param {boolean} [noFocus=true] - Whether the channel should be focused or just created
+     * @return {Channel} A reference to the channel
+     */
     function createWhisperChannel(player, noFocus) {
         var shouldFocus = (typeof noFocus === "undefined") ? true : !noFocus;
         var normalizedPlayer = player.toLowerCase();
@@ -833,6 +940,15 @@ var Chat = (function (window, $) {
         return channel;
     }
 
+    /**
+     * Interal function for focusing a channel
+     *
+     * This should be used *everywhere* a channel needs to be focused as it
+     * calls a hook.
+     *
+     * @param {string} type - The type of channel
+     * @param {string|number} id - The ID of the channel
+     */
     function focusChannel(type, id) {
         var tag = getTag(type, id);
         var currentExists = (focusedChannel !== null);
@@ -885,6 +1001,14 @@ var Chat = (function (window, $) {
         pluginManager.setChatValue("focusedChannel", focusedChannel);
     }
 
+    /**
+     * Handles drawing the new number of new messages on a chat tab
+     *
+     * Numbers > 99 will automatically be rounded.
+     *
+     * @param {jQuery} $elem - The jQuery object reference of the tab to modify
+     * @param {number} amount - The number of new messages
+     */
     function _showNewMessageNum($elem, amount) {
         if(amount > 99) {
             amount = amount.toString() + "+";
@@ -893,11 +1017,24 @@ var Chat = (function (window, $) {
         $elem.find(".newMsgs").text(amount).show();
     }
 
+    /**
+     * Handles clearing the number of new messages on a chat tab
+     *
+     * @param {jQuery} $elem - The jQuery object reference of the tab to modify
+     */
     function _hideNewMessageNum($elem) {
         $elem.find(".newMsgs").hide();
         $elem.find(".tabName").css("width", "110px");
     }
 
+    /**
+     * Returns whether the player is in the channel already or not
+     *
+     * @param {string} type - The type of channel
+     * @param {number|string} id - The ID of channel
+     * @param {boolean} [ignoreActive=false] - Whether to ignore channels that are active (actually open) or not
+     * @return {boolean} True if the channel exists in the channelMeta list, otherwise False
+     */
     function inChannel(type, id, ignoreActive) {
         var tag = getTag(type, id);
         ignoreActive = (typeof ignoreActive === "undefined") ? false : ignoreActive;
@@ -909,6 +1046,16 @@ var Chat = (function (window, $) {
         return false;
     }
 
+    /**
+     * Handles closing a channel
+     *
+     * More specifically this is used to remove a channel from getting new
+     * message, hiding the channel window (or destrying it if it's a server
+     * channel), and removing the tab. It will not allow closing the Lodge
+     * chat.
+     * @param {string} type - The type of the channel
+     * @param {number|string} id - The ID of the channel
+     */
     function closeChannel(type, id) {
         if(type === "server" && id === 0) {
             return; // Leaving Lodge is not allowed
@@ -941,6 +1088,13 @@ var Chat = (function (window, $) {
         $tab.addClass("closedTab");
     }
 
+    /**
+     * Handles opening a channel
+     *
+     * More specifically this handles showing the chat window, adding the
+     * previous chat indicator, and showing the tab in the tab list.
+     * @param {Channel} channel - The channel to open
+     */
     function openChannel(channel) {
         if(channel.active) {
             return;
@@ -957,6 +1111,16 @@ var Chat = (function (window, $) {
         }, 1);
     }
 
+    /**
+     * Sets the channel's internal store of the scroll position
+     *
+     * This function is a bit hard to explain. It's used to store the channel.atBottom property
+     * based on the scroll position of the chat window. It's called when a new message is inserted
+     * or when switching chat tabs. Needless to say, this should ONLY be called on channels that
+     * are visible.
+     *
+     * @param {Channel} channel - The channel to store scroll information on
+     */
     function scrollCheck(channel) {
         var $chatWin = $(channel.elem.chat);
         var atBottom = channel.atBottom;
@@ -972,19 +1136,8 @@ var Chat = (function (window, $) {
         }
     }
 
-    function getChannelFromTarget(target) {
-        for(var prop in channelMeta) {
-            var chan = channelMeta[prop];
-            if(chan.type === "local" && chan.pm.toLowerCase() === target.toLowerCase()) {
-                return chan;
-            }
-        }
-        return null;
-    }
-
     /**
      * Loads saved settings from localStorage into the internal NChatN variables
-     * @returns {undefined}
      */
     function _loadSettings() {
         if(!localStorageSupport) {
@@ -1006,7 +1159,6 @@ var Chat = (function (window, $) {
 
     /**
      * Saves the internal NChatN settings to localStorage
-     * @returns {undefined}
      */
     function _saveSettings() {
         if(!localStorageSupport) {
@@ -1018,9 +1170,9 @@ var Chat = (function (window, $) {
 
     /**
      * Sets an internal NChatN setting and commits the change
-     * @param {String} setting The name of the setting to change
-     * @param {Mixed} newValue The value to change the given setting to
-     * @returns {undefined}
+     *
+     * @param {string} setting - The name of the setting to change
+     * @param {mixed} newValue - The value to change the given setting to
      */
     function changeSetting(setting, newValue) {
         if(!settings.hasOwnProperty(setting)) {
@@ -1036,7 +1188,6 @@ var Chat = (function (window, $) {
 
     /**
      * Changes whether system messages are shown or hidden in chat
-     * @returns {undefined}
      */
     function toggleSysMsgVisibility() {
         if(settings.showSysMessages) {
@@ -1049,7 +1200,6 @@ var Chat = (function (window, $) {
 
     /**
      * Changes how many lines of chat history are shown when entering chat (prompt)
-     * @returns {undefined}
      */
     function changeLoginHistory() {
         var result = window.prompt("How many lines of chat history should show on entry?\n(Enter a number less than 0 to reset to default)", settings.chatHistoryLogin);
@@ -1124,7 +1274,8 @@ var Chat = (function (window, $) {
 
     /**
      * Adds a root menu object to the chat header
-     * @param {Menu} menu The root menu object
+     *
+     * @param {Menu} menu - The root menu object
      */
     function addMenu(menu) {
         $menu.removeClass("headerMenu");
@@ -1142,9 +1293,10 @@ var Chat = (function (window, $) {
 
     /**
      * Queues a plugin for registration if init() hasn't been called
-     * TODO: Load settings before init() is called so that there's no need for this (since plugin registration relies on settings.disabledPlugins)
-     * 
-     * @param {JSON} plugin The plugin to queue to be added
+     *
+     * @todo Load settings before init() is called so that there's no need for this (since plugin registration relies on settings.disabledPlugins)
+     *
+     * @param {JSON} plugin - The plugin to queue to be added
      * @returns {bool} Result of pluginManager.registerPlugin() or true if init() not called yet
      */
     function queuePlugin(plugin) {
