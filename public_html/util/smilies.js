@@ -44,12 +44,12 @@ var Smilies = (function($, Tooltip, document){
         { id:'24', name: 'Sealed Lips', text: [':X'] },
         { id:'25', name: 'Dead', text: ['X.X', 'x.x'] },
         { id:'26', name: 'Money Eyes', text: ['$.$'] },
-        { id:'27', name: 'Embarrased', text: ['o@@o'] },
+        { id:'27', name: 'Embarrassed', text: ['o@@o'] },
         { id:'28', name: 'Eye Roll', text: ['9.9'] },
         { id:'29', name: 'Angry Yell', text: ['O:<'] },
         { id:'30', name: 'Straight Face', text: ['B|'] },
         { id:'31', name: 'Puppy Eyes', text: ['B('] },
-        { id:'32', name: 'Firey Eyes', text: ['B0'] },
+        { id:'32', name: 'Fiery Eyes', text: ['B0'] },
         { id:'33', name: 'Confused', text: ['@.@'] },
         { id:'34', name: 'Evil Horns', text: ['^**^'] },
         { id:'35', name: 'Eyes Spinning', text: ['9.6'] },
@@ -58,7 +58,7 @@ var Smilies = (function($, Tooltip, document){
         { id:'38', name: 'Annoyed', text: ['>.>'] },
         { id:'39', name: 'Kitty', text: ['=^_^='] }
     ];
-    
+
     function isSmiley(text) {
         $.each(smilies, function(index, smiley) {
             if($.inArray(text, smiley.text)) {
@@ -67,7 +67,7 @@ var Smilies = (function($, Tooltip, document){
         });
         return false;
     }
-    
+
     function drawTable() {
         // Get the container
         $container = $('#smileyContainer');
@@ -77,7 +77,7 @@ var Smilies = (function($, Tooltip, document){
                 $('#smileyContainer').hide();
             });
             $('#smileyContainer').toggle();
-            
+
             event.stopPropagation();
             return false;
         });
@@ -96,7 +96,7 @@ var Smilies = (function($, Tooltip, document){
             $container.append($entry);
         });
     }
-    
+
     function getId(smileyId) {
         for(var i=0; i<smilies.length; i++) {
             if(smilies[i].id === smileyId)
@@ -104,17 +104,17 @@ var Smilies = (function($, Tooltip, document){
         }
         console.error('Given smiley id is not valid: '+smileyId);
     }
-    
+
     function getSmileyText(id) {
         return getId(id).text[0];
     }
-    
+
     function replaceTagsWithText(str) {
         return str.replace(/\<img src\="*smilies\/(\d+)\.gif"* [\w\="]*>/gi, function(match, p1) {
             return getSmileyText(p1);
         });
     }
-    
+
     return {
         'init': function() {
             drawTable();
