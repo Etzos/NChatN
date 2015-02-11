@@ -1536,8 +1536,11 @@ var Chat = (function (window, $) {
                     $.get(sheet, function(data) {
                         var channel = channelMeta[focusedChannel];
 
-                        var raw = $(channel.elem.chat).html();
-                        raw = Smilies.replaceTagsWithText(raw);
+                        var $raw = $(channel.elem.chat).clone();
+                        $raw.find("img").addBack().filter("img").each(function() {
+                            this.src = base64FromImg(this);
+                        });
+                        var raw = $raw.html();
                         // TODO: Embed at least part of the NChatN stylesheet
                         var page = "<!DOCTYPE html><html>" +
                                 "<head><meta charset='UTF-8'>\n" +
@@ -1883,4 +1886,23 @@ function openWhoWindow(player) {
     }
     window.open(base + "player_info.php?SEARCH=" + escape(player), "_blank", "dependant=no,height=600,width=430,scrollbars=no");
     return false;
+}
+
+/**
+ * Returns a base64 data stream from a given img element (always PNG)
+ *
+ * This was largely inspired by various StackOverflow answers.
+ *
+ * @param {HTMLImageElement} img - The image element to turn into a data url
+ * @return {string} The base64 encoded image
+ */
+function base64FromImg(img) {
+    var cvs = document.createElement("canvas");
+    cvs.width = img.naturalWidth;
+    cvs.height = img.naturalHeight;
+
+    var ctx = cvs.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+
+    return cvs.toDataURL("image/png");
 }
