@@ -1760,6 +1760,10 @@ var Chat = (function (window, $) {
 
                 var match = matchPlayerName(namePart);
                 if(match !== "") {
+                    // If there are no spaces, it must be the first word
+                    if(val.indexOf(" ") == -1) {
+                        match += ": ";
+                    }
                     $input.val( val.substring(0, fullStartPos) + match + val.substring(endPos, val.length) );
                     var newCursorPos = fullStartPos+match.length;
                     $input[0].setSelectionRange(newCursorPos, newCursorPos);
