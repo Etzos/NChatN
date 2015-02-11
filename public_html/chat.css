@@ -216,6 +216,7 @@ section.noPlayers #chatContainer {
     padding: 0.2em;
     font-size: 9pt;
     line-height: 16px;
+    word-wrap: break-word;
 
     transition: box-shadow 0.3s;
 }
