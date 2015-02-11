@@ -496,6 +496,7 @@ var Chat = (function (window, $) {
             type: "GET",
             context: this,
             timeout: queryTimeout,
+            dataType: "json",
             success: function(result) {
                 var oldPlayerList = $.merge([], channel.playerList);
 
@@ -1265,8 +1266,12 @@ var Chat = (function (window, $) {
             type: "GET",
             context: this,
             timeout: queryTimeout,
+            dataType: "json",
             success: function(result) {
-                //availChannels = result.channels;
+                availChannels = result.channels;
+                renderChannelList();
+            },
+            error: function() {
                 renderChannelList();
             }
         });
