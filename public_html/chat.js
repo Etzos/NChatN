@@ -197,13 +197,13 @@ var Chat = (function (window, $) {
     function _isAtBottom($elem) {
         var elem = $elem[0]
         // Chrome seems to think that elements can be scrolled at least 1px
-        // more than their container size so that's why it's "<==" and not
+        // more than their container size so that's why it's "<=" and not
         // just "==="
         // Also, a little explantion of the logic here:
         // scrollHeight is the entire height of the element including occluded stuff
         // scrollTop is the amount the element has been scrolled from the top
         // clientHeight is the height of the visible box
-        return (elem.scrollHeight - elem.scrollTop <== elem.clientHeight);
+        return (elem.scrollHeight - elem.scrollTop <= elem.clientHeight);
     }
 
     /**
